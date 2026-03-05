@@ -18,6 +18,12 @@
         {{ claim.tribe_identified }} &middot;
         Case {{ claim.case_number }} &middot;
         Allotment {{ claim.allotment_number }}
+        &middot;
+        {% if patents and patents[0].patents_accession_number %}
+        <a href="{{ allotment_map_url }}?tribe={{ claim.tribe_identified|urlencode }}&accession={{ patents[0].patents_accession_number|urlencode }}" target="_blank" class="small">View on Map</a>
+        {% else %}
+        <a href="{{ allotment_map_url }}?tribe={{ claim.tribe_identified|urlencode }}" target="_blank" class="small">View on Map</a>
+        {% endif %}
     </p>
 </div>
 

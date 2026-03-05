@@ -13,6 +13,12 @@ DATABASE_URL = os.environ.get(
     "dbname=allotment_research user=cwm6W"
 )
 
+ALLOTMENT_MAP_URL = os.environ.get("ALLOTMENT_MAP_URL", "http://localhost:8000")
+
+@app.context_processor
+def inject_map_url():
+    return dict(allotment_map_url=ALLOTMENT_MAP_URL)
+
 
 def get_db():
     conn = psycopg2.connect(DATABASE_URL)
