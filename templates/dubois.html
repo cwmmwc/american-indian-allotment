@@ -1,0 +1,717 @@
+{% extends "base.html" %}
+{% block title %}Du Bois Visualizations{% endblock %}
+
+{% block head %}
+<style>
+    /* Du Bois plate styling */
+    .dubois-plate {
+        background-color: #d2c4a0;
+        border: none;
+        box-shadow: none;
+        padding: 2rem 2rem 1.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    .dubois-plate::before {
+        content: '';
+        position: absolute;
+        top: 8px; left: 8px; right: 8px; bottom: 8px;
+        border: 2px solid #3d2b1f;
+        pointer-events: none;
+    }
+    .dubois-title {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #1a1a1a;
+        margin-bottom: 0.25rem;
+        line-height: 1.4;
+    }
+    .dubois-subtitle {
+        font-family: "Georgia", serif;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #3d2b1f;
+        margin-bottom: 1.5rem;
+        font-style: italic;
+    }
+    .dubois-source {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        text-align: center;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #5a4a3a;
+        margin-top: 1rem;
+    }
+    .dubois-legend {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    .dubois-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #1a1a1a;
+    }
+    .dubois-legend-swatch {
+        width: 14px;
+        height: 14px;
+        display: inline-block;
+    }
+    .dubois-annotation {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        fill: #1a1a1a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Data Portraits of Indian Land Loss</h1>
+    <p class="lead">Experimental visualizations inspired by W.E.B. Du Bois's data portraits for the 1900 Paris Exposition. Du Bois used bold color, unconventional form, and declarative composition to make statistical evidence speak to injustice. These plates attempt the same for the allotment era.</p>
+</div>
+
+<!-- Plate 1: Spiral chart of cumulative land sales -->
+<div class="dubois-plate">
+    <div class="dubois-title">Acres of Indian Allotted Land Sold Each Year</div>
+    <div class="dubois-title" style="font-size: 0.9rem; font-weight: 400;">1903 &mdash; 1934</div>
+    <div class="dubois-subtitle">Showing original allotments and inherited lands separately</div>
+    <div class="dubois-legend">
+        <div class="dubois-legend-item">
+            <span class="dubois-legend-swatch" style="background: #b22222;"></span> Original Allotments
+        </div>
+        <div class="dubois-legend-item">
+            <span class="dubois-legend-swatch" style="background: #d4a24e;"></span> Inherited Lands
+        </div>
+        <div class="dubois-legend-item">
+            <span class="dubois-legend-swatch" style="background: #2d6a2e;"></span> Proceeds
+        </div>
+    </div>
+    <div id="spiral-chart" style="text-align: center;"></div>
+    <div class="dubois-source">Source: Wilson Report Table VIII &mdash; Annual sales of Indian allotted lands</div>
+</div>
+
+<!-- Plate 2: Comparative bars — alienation by reservation -->
+<div class="dubois-plate">
+    <div class="dubois-title">Land Allotted Compared With Land Alienated</div>
+    <div class="dubois-title" style="font-size: 0.9rem; font-weight: 400;">For Selected Reservations as of 1934</div>
+    <div class="dubois-subtitle">Showing what share of allotted land had been sold off by the end of the allotment era</div>
+    <div class="dubois-legend">
+        <div class="dubois-legend-item">
+            <span class="dubois-legend-swatch" style="background: #b22222;"></span> Alienated (Sold)
+        </div>
+        <div class="dubois-legend-item">
+            <span class="dubois-legend-swatch" style="background: #2d6a2e;"></span> Retained
+        </div>
+    </div>
+    <div id="bars-chart" style="text-align: center;"></div>
+    <div class="dubois-source">Source: Wilson Report Table VI &mdash; 212 reservations surveyed by the Office of Indian Affairs</div>
+</div>
+
+<!-- Plate 3: Forced fee claims by year -->
+<div class="dubois-plate">
+    <div class="dubois-title">Forced Fee Patent Claims Filed in the Federal Register</div>
+    <div class="dubois-title" style="font-size: 0.9rem; font-weight: 400;">By Year the Patent Was Issued &mdash; 1900 to 1935</div>
+    <div class="dubois-subtitle">9,649 allottees or heirs claimed their land was taken without consent</div>
+    <div id="forced-timeline" style="text-align: center;"></div>
+    <div class="dubois-source">Source: Federal Register Vol. 48, Nos. 213 &amp; 214 (November 1983) &mdash; Forced Fee Patent Claims</div>
+</div>
+
+<!-- Plate 4: Forced fee claims by tribe — radial chart -->
+<div class="dubois-plate">
+    <div class="dubois-title">Forced Fee Patent Claims by Tribe</div>
+    <div class="dubois-title" style="font-size: 0.9rem; font-weight: 400;">Top Twenty Tribes &mdash; Claims Filed in the 1983 Federal Register</div>
+    <div class="dubois-subtitle">The length of each bar shows how many allottees or heirs claimed their land was taken without consent</div>
+    <div id="tribe-radial" style="text-align: center;"></div>
+    <div class="dubois-source">Source: Federal Register Vol. 48, Nos. 213 &amp; 214 (November 1983)</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+$(function() {
+
+    // ────────────────────────────────────────────
+    // PLATE 1: Spiral bar chart — annual land sales
+    // ────────────────────────────────────────────
+    var wilsonSales = {{ wilson_sales|tojson }};
+
+    (function() {
+        var width = 700, height = 700;
+        var cx = width / 2, cy = height / 2;
+        var maxRadius = Math.min(width, height) / 2 - 60;
+        var innerRadius = 60;
+
+        var svg = d3.select('#spiral-chart')
+            .append('svg')
+            .attr('viewBox', '0 0 ' + width + ' ' + height)
+            .attr('width', '100%')
+            .attr('style', 'max-width: 700px')
+            .append('g')
+            .attr('transform', 'translate(' + cx + ',' + cy + ')');
+
+        // Each year gets a wedge; angle spans full circle across 32 years
+        var n = wilsonSales.length;
+        var angleScale = d3.scaleLinear().domain([0, n]).range([0, 2 * Math.PI]);
+        var padAngle = 0.02;
+
+        var maxAcres = d3.max(wilsonSales, function(d) { return d.acres_sold || 0; });
+        var radiusScale = d3.scaleLinear()
+            .domain([0, maxAcres])
+            .range([innerRadius, maxRadius]);
+
+        var arc = d3.arc();
+
+        // Draw inherited (outer) + original (inner, stacked)
+        wilsonSales.forEach(function(d, i) {
+            var startAngle = angleScale(i) + padAngle;
+            var endAngle = angleScale(i + 1) - padAngle;
+            var origAcres = d.original_acres || 0;
+            var inhAcres = d.inherited_acres || 0;
+            var totalAcres = origAcres + inhAcres;
+
+            // Original allotment portion
+            if (origAcres > 0) {
+                svg.append('path')
+                    .attr('d', arc({
+                        innerRadius: innerRadius,
+                        outerRadius: radiusScale(origAcres),
+                        startAngle: startAngle,
+                        endAngle: endAngle
+                    }))
+                    .attr('fill', '#b22222')
+                    .attr('stroke', '#d2c4a0')
+                    .attr('stroke-width', 0.5);
+            }
+
+            // Inherited portion (stacked on top)
+            if (inhAcres > 0) {
+                svg.append('path')
+                    .attr('d', arc({
+                        innerRadius: radiusScale(origAcres),
+                        outerRadius: radiusScale(totalAcres),
+                        startAngle: startAngle,
+                        endAngle: endAngle
+                    }))
+                    .attr('fill', '#d4a24e')
+                    .attr('stroke', '#d2c4a0')
+                    .attr('stroke-width', 0.5);
+            }
+
+            // Year label
+            var labelAngle = (startAngle + endAngle) / 2;
+            var labelRadius = maxRadius + 18;
+            var lx = labelRadius * Math.sin(labelAngle);
+            var ly = -labelRadius * Math.cos(labelAngle);
+            var rotation = (labelAngle * 180 / Math.PI);
+            if (rotation > 90 && rotation < 270) rotation += 180;
+
+            svg.append('text')
+                .attr('x', lx)
+                .attr('y', ly)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .attr('transform', 'rotate(' + rotation + ',' + lx + ',' + ly + ')')
+                .attr('class', 'dubois-annotation')
+                .style('font-size', '8px')
+                .text(d.year);
+        });
+
+        // Inner circle with total
+        svg.append('circle')
+            .attr('r', innerRadius - 4)
+            .attr('fill', '#d2c4a0')
+            .attr('stroke', '#3d2b1f')
+            .attr('stroke-width', 1.5);
+
+        var totalAcres = d3.sum(wilsonSales, function(d) { return d.acres_sold || 0; });
+        svg.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('y', -8)
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '11px')
+            .style('font-weight', '700')
+            .text(Math.round(totalAcres / 1e6 * 10) / 10 + ' MILLION');
+        svg.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('y', 8)
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '9px')
+            .text('ACRES SOLD');
+
+        // Policy era annotations — draw radial lines at key years
+        var annotations = [
+            { year: 1906, label: 'BURKE ACT' },
+            { year: 1917, label: 'SELLS DECLARATION' },
+            { year: 1920, label: 'ORDER OF RESTORATION' },
+            { year: 1934, label: 'I.R.A.' }
+        ];
+        annotations.forEach(function(ann) {
+            var idx = wilsonSales.findIndex(function(d) { return d.year === ann.year; });
+            if (idx < 0) return;
+            var angle = angleScale(idx);
+            var x1 = (maxRadius + 28) * Math.sin(angle);
+            var y1 = -(maxRadius + 28) * Math.cos(angle);
+            var x2 = (maxRadius + 50) * Math.sin(angle);
+            var y2 = -(maxRadius + 50) * Math.cos(angle);
+
+            svg.append('line')
+                .attr('x1', x1).attr('y1', y1)
+                .attr('x2', x2).attr('y2', y2)
+                .attr('stroke', '#3d2b1f')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '2,2');
+        });
+    })();
+
+    // ────────────────────────────────────────────
+    // PLATE 2: Horizontal comparative bars
+    // ────────────────────────────────────────────
+    $.getJSON('{{ url_for("api_wilson") }}', function(resp) {
+        var data = resp.reservations || [];
+
+        // Filter to those with allotment acreage and alienation data, take top 25
+        data = data.filter(function(d) {
+            return d.allotment_acreage > 0 && d.land_alienated > 0;
+        });
+        data.sort(function(a, b) { return b.allotment_acreage - a.allotment_acreage; });
+        data = data.slice(0, 25);
+
+        var margin = { top: 10, right: 40, bottom: 30, left: 200 };
+        var barH = 24;
+        var gap = 4;
+        var chartH = data.length * (barH + gap);
+        var width = 700;
+        var innerW = width - margin.left - margin.right;
+
+        var svg = d3.select('#bars-chart')
+            .append('svg')
+            .attr('viewBox', '0 0 ' + width + ' ' + (chartH + margin.top + margin.bottom))
+            .attr('width', '100%')
+            .attr('style', 'max-width: 700px')
+            .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+        var maxAcres = d3.max(data, function(d) { return d.allotment_acreage; });
+        var x = d3.scaleLinear().domain([0, maxAcres]).range([0, innerW]);
+
+        data.forEach(function(d, i) {
+            var y = i * (barH + gap);
+            var alienated = d.land_alienated;
+            var retained = d.allotment_acreage - alienated;
+            var pct = Math.round(alienated / d.allotment_acreage * 100);
+
+            // Full bar (retained) in green
+            svg.append('rect')
+                .attr('x', 0)
+                .attr('y', y)
+                .attr('width', x(d.allotment_acreage))
+                .attr('height', barH)
+                .attr('fill', '#2d6a2e');
+
+            // Alienated portion overlaid in red (from left)
+            svg.append('rect')
+                .attr('x', 0)
+                .attr('y', y)
+                .attr('width', x(alienated))
+                .attr('height', barH)
+                .attr('fill', '#b22222');
+
+            // Thin divider line
+            if (alienated < d.allotment_acreage) {
+                svg.append('line')
+                    .attr('x1', x(alienated))
+                    .attr('y1', y)
+                    .attr('x2', x(alienated))
+                    .attr('y2', y + barH)
+                    .attr('stroke', '#d2c4a0')
+                    .attr('stroke-width', 1.5);
+            }
+
+            // Percentage label on bar
+            var labelX = Math.max(x(alienated) / 2, 20);
+            svg.append('text')
+                .attr('x', labelX)
+                .attr('y', y + barH / 2)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'central')
+                .attr('class', 'dubois-annotation')
+                .style('font-size', '8px')
+                .style('fill', '#fff')
+                .text(pct + '%');
+
+            // Reservation name
+            svg.append('text')
+                .attr('x', -8)
+                .attr('y', y + barH / 2)
+                .attr('text-anchor', 'end')
+                .attr('dominant-baseline', 'central')
+                .attr('class', 'dubois-annotation')
+                .style('font-size', '9px')
+                .text(d.reservation.length > 28 ? d.reservation.substring(0, 26) + '...' : d.reservation);
+        });
+
+        // Acreage scale ticks
+        var ticks = x.ticks(5);
+        ticks.forEach(function(t) {
+            svg.append('line')
+                .attr('x1', x(t)).attr('y1', -4)
+                .attr('x2', x(t)).attr('y2', chartH)
+                .attr('stroke', '#3d2b1f')
+                .attr('stroke-width', 0.3)
+                .attr('stroke-dasharray', '2,2');
+            svg.append('text')
+                .attr('x', x(t))
+                .attr('y', chartH + 16)
+                .attr('text-anchor', 'middle')
+                .attr('class', 'dubois-annotation')
+                .style('font-size', '8px')
+                .text(t >= 1e6 ? (t / 1e6).toFixed(1) + 'M' : Math.round(t / 1000) + 'K');
+        });
+
+        svg.append('text')
+            .attr('x', innerW / 2)
+            .attr('y', chartH + 28)
+            .attr('text-anchor', 'middle')
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '8px')
+            .text('ACRES');
+    });
+
+    // ────────────────────────────────────────────
+    // PLATE 3: Forced fee timeline — vertical bars with policy annotations
+    // ────────────────────────────────────────────
+    var frByYear = {{ fr_by_year|tojson }};
+
+    (function() {
+        var margin = { top: 30, right: 30, bottom: 50, left: 50 };
+        var width = 700;
+        var height = 420;
+        var innerW = width - margin.left - margin.right;
+        var innerH = height - margin.top - margin.bottom;
+
+        var svg = d3.select('#forced-timeline')
+            .append('svg')
+            .attr('viewBox', '0 0 ' + width + ' ' + height)
+            .attr('width', '100%')
+            .attr('style', 'max-width: 700px')
+            .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+        var years = frByYear.map(function(d) { return d.year; });
+        var maxCount = d3.max(frByYear, function(d) { return d.count; });
+
+        var x = d3.scaleBand()
+            .domain(years)
+            .range([0, innerW])
+            .padding(0.15);
+
+        var y = d3.scaleLinear()
+            .domain([0, maxCount * 1.1])
+            .range([innerH, 0]);
+
+        // Policy era shading
+        var eras = [
+            { start: 1906, end: 1907, label: 'BURKE ACT', color: 'rgba(178,34,34,0.08)' },
+            { start: 1917, end: 1920, label: 'SELLS DECLARATION\nTO RESTORATION', color: 'rgba(178,34,34,0.15)' }
+        ];
+        eras.forEach(function(era) {
+            var x0 = x(era.start);
+            var x1 = x(era.end);
+            if (x0 === undefined || x1 === undefined) return;
+            svg.append('rect')
+                .attr('x', x0 - x.step() * x.padding() / 2)
+                .attr('y', 0)
+                .attr('width', x1 - x0 + x.bandwidth() + x.step() * x.padding())
+                .attr('height', innerH)
+                .attr('fill', era.color);
+        });
+
+        // Bars
+        frByYear.forEach(function(d) {
+            svg.append('rect')
+                .attr('x', x(d.year))
+                .attr('y', y(d.count))
+                .attr('width', x.bandwidth())
+                .attr('height', innerH - y(d.count))
+                .attr('fill', '#b22222');
+        });
+
+        // Policy annotation lines and labels
+        var policyAnnotations = [
+            { year: 1906, label: 'BURKE ACT', side: 'left' },
+            { year: 1907, label: 'DECLARATION\nOF POLICY', side: 'left' },
+            { year: 1917, label: 'SELLS\nDECLARATION', side: 'right' },
+            { year: 1920, label: 'ORDER OF\nRESTORATION', side: 'right' },
+            { year: 1934, label: 'I.R.A.', side: 'right' }
+        ];
+        policyAnnotations.forEach(function(ann) {
+            var xPos = x(ann.year);
+            if (xPos === undefined) return;
+            xPos += x.bandwidth() / 2;
+
+            svg.append('line')
+                .attr('x1', xPos).attr('y1', -5)
+                .attr('x2', xPos).attr('y2', innerH + 5)
+                .attr('stroke', '#3d2b1f')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '4,3');
+
+            var lines = ann.label.split('\n');
+            lines.forEach(function(line, li) {
+                svg.append('text')
+                    .attr('x', xPos)
+                    .attr('y', -10 - (lines.length - 1 - li) * 10)
+                    .attr('text-anchor', 'middle')
+                    .attr('class', 'dubois-annotation')
+                    .style('font-size', '7px')
+                    .style('font-weight', '600')
+                    .text(line);
+            });
+        });
+
+        // X axis — show every 5th year
+        years.forEach(function(yr) {
+            if (yr % 5 === 0) {
+                svg.append('text')
+                    .attr('x', x(yr) + x.bandwidth() / 2)
+                    .attr('y', innerH + 18)
+                    .attr('text-anchor', 'middle')
+                    .attr('class', 'dubois-annotation')
+                    .style('font-size', '8px')
+                    .text(yr);
+            }
+        });
+
+        // Y axis
+        y.ticks(6).forEach(function(t) {
+            svg.append('line')
+                .attr('x1', -5).attr('y1', y(t))
+                .attr('x2', innerW).attr('y2', y(t))
+                .attr('stroke', '#3d2b1f')
+                .attr('stroke-width', 0.3)
+                .attr('stroke-dasharray', '2,2');
+            svg.append('text')
+                .attr('x', -10)
+                .attr('y', y(t))
+                .attr('text-anchor', 'end')
+                .attr('dominant-baseline', 'central')
+                .attr('class', 'dubois-annotation')
+                .style('font-size', '8px')
+                .text(t.toLocaleString());
+        });
+
+        // Y axis label
+        svg.append('text')
+            .attr('transform', 'rotate(-90)')
+            .attr('x', -innerH / 2)
+            .attr('y', -40)
+            .attr('text-anchor', 'middle')
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '8px')
+            .text('CLAIMS');
+
+        // Total callout
+        var total = d3.sum(frByYear, function(d) { return d.count; });
+        var peakYear = frByYear.reduce(function(a, b) { return a.count > b.count ? a : b; });
+
+        svg.append('text')
+            .attr('x', innerW)
+            .attr('y', innerH + 38)
+            .attr('text-anchor', 'end')
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '8px')
+            .text('PEAK: ' + peakYear.year + ' (' + peakYear.count.toLocaleString() + ' CLAIMS)');
+
+        svg.append('text')
+            .attr('x', 0)
+            .attr('y', innerH + 38)
+            .attr('text-anchor', 'start')
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '8px')
+            .text(total.toLocaleString() + ' TOTAL LINKED CLAIMS');
+    })();
+
+    // ────────────────────────────────────────────
+    // PLATE 4: Forced fee claims by tribe — radial bar chart
+    // ────────────────────────────────────────────
+    var frByTribe = {{ fr_by_tribe|tojson }};
+
+    (function() {
+        var data = frByTribe.slice(0, 20);
+        var n = data.length;
+
+        var size = 820;
+        var cx = size / 2, cy = size / 2;
+        var innerRadius = 80;
+        var maxRadius = size / 2 - 140;
+
+        var svg = d3.select('#tribe-radial')
+            .append('svg')
+            .attr('viewBox', '0 0 ' + size + ' ' + size)
+            .attr('width', '100%')
+            .attr('style', 'max-width: 820px')
+            .append('g')
+            .attr('transform', 'translate(' + cx + ',' + cy + ')');
+
+        // Du Bois palette — bold, flat, alternating
+        var palette = [
+            '#b22222', '#d4a24e', '#2d6a2e', '#1a1a1a', '#654321',
+            '#c55a11', '#4a6fa5', '#8b4513', '#a0522d', '#2e4057'
+        ];
+
+        var maxClaims = d3.max(data, function(d) { return d.forced; });
+        var radiusScale = d3.scaleLinear()
+            .domain([0, maxClaims])
+            .range([innerRadius, maxRadius]);
+
+        var angleSlice = (2 * Math.PI) / n;
+        var padAngle = 0.03;
+
+        var arc = d3.arc();
+
+        // Concentric reference rings
+        var ringValues = [250, 500, 750, 1000, 1250];
+        ringValues.forEach(function(v) {
+            if (v > maxClaims) return;
+            svg.append('circle')
+                .attr('r', radiusScale(v))
+                .attr('fill', 'none')
+                .attr('stroke', '#3d2b1f')
+                .attr('stroke-width', 0.4)
+                .attr('stroke-dasharray', '3,3')
+                .attr('opacity', 0.35);
+        });
+
+        // Inner circle
+        svg.append('circle')
+            .attr('r', innerRadius)
+            .attr('fill', '#d2c4a0')
+            .attr('stroke', '#3d2b1f')
+            .attr('stroke-width', 1.5);
+
+        // Draw wedges, connector lines, and labels
+        data.forEach(function(d, i) {
+            var startAngle = i * angleSlice + padAngle;
+            var endAngle = (i + 1) * angleSlice - padAngle;
+            var outerR = radiusScale(d.forced);
+            var color = palette[i % palette.length];
+            var midAngle = (startAngle + endAngle) / 2;
+
+            // Wedge
+            svg.append('path')
+                .attr('d', arc({
+                    innerRadius: innerRadius,
+                    outerRadius: outerR,
+                    startAngle: startAngle,
+                    endAngle: endAngle
+                }))
+                .attr('fill', color)
+                .attr('stroke', '#d2c4a0')
+                .attr('stroke-width', 1);
+
+            // Small color dot at the outer edge of the wedge (connector start)
+            var dotR = outerR + 3;
+            var dotX = dotR * Math.sin(midAngle);
+            var dotY = -dotR * Math.cos(midAngle);
+
+            // Connector line: from wedge tip out to label area
+            var elbowR = maxRadius + 16;
+            var labelR = maxRadius + 24;
+            var elbowX = elbowR * Math.sin(midAngle);
+            var elbowY = -elbowR * Math.cos(midAngle);
+
+            // Horizontal tail direction
+            var onRight = (midAngle <= Math.PI);
+            var tailX = elbowX + (onRight ? 40 : -40);
+            var tailY = elbowY;
+
+            svg.append('path')
+                .attr('d', 'M' + dotX + ',' + dotY +
+                           ' L' + elbowX + ',' + elbowY +
+                           ' L' + tailX + ',' + tailY)
+                .attr('fill', 'none')
+                .attr('stroke', color)
+                .attr('stroke-width', 1.2);
+
+            // Color dot at elbow
+            svg.append('circle')
+                .attr('cx', dotX)
+                .attr('cy', dotY)
+                .attr('r', 2.5)
+                .attr('fill', color);
+
+            // Tribe name + count, anchored at end of horizontal tail
+            var name = d.tribe;
+            if (name.length > 22) name = name.substring(0, 20) + '...';
+            var labelText = name + '  ' + d.forced.toLocaleString();
+
+            svg.append('text')
+                .attr('x', tailX + (onRight ? 4 : -4))
+                .attr('y', tailY)
+                .attr('text-anchor', onRight ? 'start' : 'end')
+                .attr('dominant-baseline', 'central')
+                .attr('class', 'dubois-annotation')
+                .style('font-size', '8.5px')
+                .text(name);
+
+            // Count in bold, slightly offset
+            svg.append('text')
+                .attr('x', tailX + (onRight ? 4 : -4))
+                .attr('y', tailY + 11)
+                .attr('text-anchor', onRight ? 'start' : 'end')
+                .attr('dominant-baseline', 'central')
+                .attr('class', 'dubois-annotation')
+                .style('font-size', '9px')
+                .style('font-weight', '700')
+                .style('fill', color)
+                .text(d.forced.toLocaleString() + ' claims');
+        });
+
+        // Center text — total across ALL tribes, not just top 20
+        var totalForced = d3.sum(frByTribe, function(d) { return d.forced; });
+        svg.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('y', -14)
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '14px')
+            .style('font-weight', '700')
+            .text(totalForced.toLocaleString());
+        svg.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('y', 4)
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '8px')
+            .text('FORCED FEE');
+        svg.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('y', 16)
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '8px')
+            .text('CLAIMS');
+        svg.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('y', 32)
+            .attr('class', 'dubois-annotation')
+            .style('font-size', '7px')
+            .style('font-style', 'italic')
+            .text('TOP 20 TRIBES');
+    })();
+});
+</script>
+{% endblock %}

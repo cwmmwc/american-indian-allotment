@@ -1061,8 +1061,23 @@ def patents_timeline():
         """)
         murray_data = [{"year": r["year"], "acres_removed": float(r["acres"])} for r in cur.fetchall()]
 
+        # Wilson annual land sales (1903-1934)
+        cur.execute("""
+            SELECT year, total_acres, total_tracts, total_proceeds,
+                   original_acreage, inherited_acreage
+            FROM wilson_annual_sales
+            ORDER BY year
+        """)
+        wilson_data = [{"year": r["year"], "acres_sold": float(r["total_acres"]),
+                        "tracts": int(r["total_tracts"]) if r["total_tracts"] else 0,
+                        "proceeds": float(r["total_proceeds"]) if r["total_proceeds"] else 0,
+                        "original_acres": float(r["original_acreage"]) if r["original_acreage"] else 0,
+                        "inherited_acres": float(r["inherited_acreage"]) if r["inherited_acreage"] else 0,
+                       } for r in cur.fetchall()]
+
         return render_template("patents_timeline.html", tribes=tribes,
-                               timeline_data=timeline_data, murray_data=murray_data)
+                               timeline_data=timeline_data, murray_data=murray_data,
+                               wilson_sales_data=wilson_data)
     finally:
         conn.close()
 
@@ -1110,7 +1125,21 @@ def api_patents_timeline():
         """)
         murray = [{"year": r["year"], "acres_removed": float(r["acres"])} for r in cur.fetchall()]
 
-        return jsonify({"timeline": timeline, "murray": murray})
+        # Wilson annual land sales (1903-1934)
+        cur.execute("""
+            SELECT year, total_acres, total_tracts, total_proceeds,
+                   original_acreage, inherited_acreage
+            FROM wilson_annual_sales
+            ORDER BY year
+        """)
+        wilson_sales = [{"year": r["year"], "acres_sold": float(r["total_acres"]),
+                         "tracts": int(r["total_tracts"]) if r["total_tracts"] else 0,
+                         "proceeds": float(r["total_proceeds"]) if r["total_proceeds"] else 0,
+                         "original_acres": float(r["original_acreage"]) if r["original_acreage"] else 0,
+                         "inherited_acres": float(r["inherited_acreage"]) if r["inherited_acreage"] else 0,
+                        } for r in cur.fetchall()]
+
+        return jsonify({"timeline": timeline, "murray": murray, "wilson_sales": wilson_sales})
     finally:
         conn.close()
 
@@ -1774,6 +1803,64 @@ def api_wilson():
                 "murray_transactions": int(mtxn_total) if mtxn_total else 0,
             }
         })
+    finally:
+        conn.close()
+
+
+@app.route("/dubois")
+def dubois():
+    """Du Bois-inspired data visualizations."""
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT year, total_acres, total_tracts, total_proceeds,
+                   original_acreage, inherited_acreage
+            FROM wilson_annual_sales
+            ORDER BY year
+        """)
+        wilson_sales = [{"year": r["year"],
+                         "acres_sold": float(r["total_acres"]) if r["total_acres"] else 0,
+                         "tracts": int(r["total_tracts"]) if r["total_tracts"] else 0,
+                         "proceeds": float(r["total_proceeds"]) if r["total_proceeds"] else 0,
+                         "original_acres": float(r["original_acreage"]) if r["original_acreage"] else 0,
+                         "inherited_acres": float(r["inherited_acreage"]) if r["inherited_acreage"] else 0,
+                        } for r in cur.fetchall()]
+
+        # Forced fee claims by tribe (FR source only)
+        cur.execute("""
+            SELECT tribe_identified as tribe,
+                COUNT(*) FILTER (WHERE claim_type ILIKE '%%FORCED FEE%%') as forced,
+                COUNT(*) FILTER (WHERE claim_type ILIKE '%%SECRETARIAL%%') as secretarial,
+                COUNT(*) as total
+            FROM federal_register_claims
+            GROUP BY tribe_identified
+            ORDER BY COUNT(*) FILTER (WHERE claim_type ILIKE '%%FORCED FEE%%') DESC
+        """)
+        fr_by_tribe = [{"tribe": r["tribe"], "forced": r["forced"],
+                        "secretarial": r["secretarial"], "total": r["total"]}
+                       for r in cur.fetchall() if r["forced"] > 0]
+
+        # Forced fee claims by year (signature date from linked BLM patents)
+        cur.execute("""
+            SELECT
+                EXTRACT(YEAR FROM ffp.patents_signature_date)::int as yr,
+                COUNT(DISTINCT fr.id) as cnt
+            FROM federal_register_claims fr
+            JOIN forced_fee_patents_rails ffp
+                ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
+                AND fr.allottee_name = ffp.fedreg_allottee
+            WHERE ffp.patents_signature_date IS NOT NULL
+                AND fr.claim_type ILIKE '%%FORCED FEE%%'
+            GROUP BY yr
+            ORDER BY yr
+        """)
+        fr_by_year = [{"year": r["yr"], "count": r["cnt"]}
+                      for r in cur.fetchall()
+                      if r["yr"] and 1900 <= r["yr"] <= 1935]
+
+        return render_template("dubois.html", wilson_sales=wilson_sales,
+                               fr_by_tribe=fr_by_tribe, fr_by_year=fr_by_year)
     finally:
         conn.close()
 

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <h1>All Patent Timeline</h1>
-    <p class="lead">Distribution of all 239,845 BLM allotment patents by year issued, showing fee patents vs. trust patents. The Murray Memorandum overlay (1948–1957) shows acres removed from trust during the termination era.</p>
+    <p class="lead">Distribution of all 239,845 BLM allotment patents by year issued, showing fee patents vs. trust patents. Overlays show Wilson Report acres sold (1903–1934) and Murray Memorandum acres removed from trust (1948–1957).</p>
 </div>
 
 <div class="card mb-4">
@@ -26,12 +26,45 @@
                     <label class="form-check-label" for="showForced">Show forced fee</label>
                 </div>
                 <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="showWilson" checked>
+                    <label class="form-check-label" for="showWilson">Wilson sales</label>
+                </div>
+                <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="showMurray" checked>
                     <label class="form-check-label" for="showMurray">Murray overlay</label>
                 </div>
             </div>
         </div>
         <canvas id="mainTimeline" height="100"></canvas>
+    </div>
+</div>
+
+<!-- Wilson Annual Sales 1903-1934 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Annual Land Sales, 1903–1934 (Wilson Report Table VIII)</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Acres of allotted Indian land sold each year, split by original allotments vs. inherited lands. Proceeds shown on the right axis. Source: Wilson Report Table VIII — 3.7 million acres total.</p>
+        <canvas id="wilsonSalesChart" height="90"></canvas>
+        <div class="row mt-3">
+            <div class="col-md-3 text-center">
+                <div class="stat-card-number" id="wilsonTotalAcres">—</div>
+                <div class="stat-card-label">Total acres sold</div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="stat-card-number" id="wilsonTotalTracts">—</div>
+                <div class="stat-card-label">Tracts sold</div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="stat-card-number" id="wilsonTotalProceeds">—</div>
+                <div class="stat-card-label">Total proceeds</div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="stat-card-number" id="wilsonPeakYear">—</div>
+                <div class="stat-card-label">Peak year</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -96,11 +129,13 @@ $(function() {
 
     var initialData = {{ timeline_data|tojson }};
     var murrayData = {{ murray_data|tojson }};
+    var wilsonSalesData = {{ wilson_sales_data|tojson }};
     var currentData = initialData;
     var currentMurray = murrayData;
+    var currentWilson = wilsonSalesData;
     var chart;
 
-    function buildChart(data, showForced, murray, showMurray) {
+    function buildChart(data, showForced, murray, showMurray, wilsonSales, showWilson) {
         var labels = data.map(function(d) { return d.yr || d.year; });
         var trustValues = data.map(function(d) { return d.trust_count || d.trust || 0; });
         var otherValues = data.map(function(d) { return d.other_count || d.other || 0; });
@@ -171,7 +206,8 @@ $(function() {
         }
 
         // Murray overlay — acres removed from trust (1948-1957)
-        if (showMurray && murray && murray.length > 0) {
+        var hasMurray = showMurray && murray && murray.length > 0;
+        if (hasMurray) {
             var murrayByYear = {};
             murray.forEach(function(m) { murrayByYear[m.year] = m.acres_removed; });
             var murrayValues = labels.map(function(yr) { return murrayByYear[yr] || null; });
@@ -184,6 +220,27 @@ $(function() {
                 borderWidth: 2.5,
                 pointRadius: 3,
                 pointBackgroundColor: 'rgba(139, 0, 0, 0.9)',
+                fill: true,
+                yAxisID: 'y2',
+                spanGaps: false
+            });
+        }
+
+        // Wilson overlay — acres sold per year (1903-1934)
+        var hasWilson = showWilson && wilsonSales && wilsonSales.length > 0;
+        if (hasWilson) {
+            var wilsonByYear = {};
+            wilsonSales.forEach(function(w) { wilsonByYear[w.year] = w.acres_sold; });
+            var wilsonValues = labels.map(function(yr) { return wilsonByYear[yr] || null; });
+            datasets.push({
+                label: 'Wilson: acres sold',
+                data: wilsonValues,
+                type: 'line',
+                borderColor: 'rgba(34, 139, 34, 0.9)',
+                backgroundColor: 'rgba(34, 139, 34, 0.1)',
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(34, 139, 34, 0.9)',
                 fill: true,
                 yAxisID: 'y2',
                 spanGaps: false
@@ -204,11 +261,14 @@ $(function() {
             }
         };
 
-        if (showMurray && murray && murray.length > 0) {
+        if (hasMurray || hasWilson) {
+            var y2Label = hasMurray && hasWilson ? 'Acres (Wilson sales / Murray removals)'
+                        : hasMurray ? 'Acres Removed from Trust (Murray)'
+                        : 'Acres Sold (Wilson)';
             scales.y2 = {
                 beginAtZero: true,
                 position: 'right',
-                title: { display: true, text: 'Acres Removed from Trust (Murray)' },
+                title: { display: true, text: y2Label },
                 grid: { drawOnChartArea: false },
                 ticks: {
                     callback: function(val) { return (val / 1000).toFixed(0) + 'K'; }
@@ -241,22 +301,135 @@ $(function() {
         });
     }
 
-    buildChart(currentData, false, currentMurray, $('#showMurray').is(':checked'));
+    function rebuildChart() {
+        buildChart(currentData, $('#showForced').is(':checked'),
+                   currentMurray, $('#showMurray').is(':checked'),
+                   currentWilson, $('#showWilson').is(':checked'));
+    }
 
-    $('#showForced').on('change', function() {
-        buildChart(currentData, $(this).is(':checked'), currentMurray, $('#showMurray').is(':checked'));
-    });
+    rebuildChart();
 
-    $('#showMurray').on('change', function() {
-        buildChart(currentData, $('#showForced').is(':checked'), currentMurray, $(this).is(':checked'));
-    });
+    // Dedicated Wilson sales chart
+    var wilsonChart;
+    function buildWilsonChart(data) {
+        if (!data || data.length === 0) {
+            $('#wilsonSalesChart').closest('.card').hide();
+            return;
+        }
+        $('#wilsonSalesChart').closest('.card').show();
+
+        var labels = data.map(function(d) { return d.year; });
+        var originalAcres = data.map(function(d) { return d.original_acres || 0; });
+        var inheritedAcres = data.map(function(d) { return d.inherited_acres || 0; });
+        var proceeds = data.map(function(d) { return d.proceeds || 0; });
+
+        // Summary stats
+        var totalAcres = 0, totalTracts = 0, totalProceeds = 0, peakAcres = 0, peakYear = '';
+        data.forEach(function(d) {
+            var a = d.acres_sold || 0;
+            totalAcres += a;
+            totalTracts += (d.tracts || 0);
+            totalProceeds += (d.proceeds || 0);
+            if (a > peakAcres) { peakAcres = a; peakYear = d.year; }
+        });
+        $('#wilsonTotalAcres').text(Math.round(totalAcres).toLocaleString());
+        $('#wilsonTotalTracts').text(Math.round(totalTracts).toLocaleString());
+        $('#wilsonTotalProceeds').text('$' + Math.round(totalProceeds / 1e6 * 10) / 10 + 'M');
+        $('#wilsonPeakYear').text(peakYear + ' (' + Math.round(peakAcres).toLocaleString() + ' ac)');
+
+        if (wilsonChart) wilsonChart.destroy();
+
+        var ctx = document.getElementById('wilsonSalesChart').getContext('2d');
+        wilsonChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Original allotment acres',
+                        data: originalAcres,
+                        backgroundColor: 'rgba(178, 34, 34, 0.7)',
+                        borderColor: 'rgba(178, 34, 34, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Inherited land acres',
+                        data: inheritedAcres,
+                        backgroundColor: 'rgba(205, 133, 63, 0.7)',
+                        borderColor: 'rgba(205, 133, 63, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Proceeds ($)',
+                        data: proceeds,
+                        type: 'line',
+                        borderColor: 'rgba(34, 100, 34, 0.9)',
+                        backgroundColor: 'rgba(34, 100, 34, 0.05)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: 'rgba(34, 100, 34, 0.9)',
+                        fill: false,
+                        yAxisID: 'y2'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            title: function(items) { return 'Year: ' + items[0].label; },
+                            label: function(ctx) {
+                                if (ctx.dataset.yAxisID === 'y2') {
+                                    return 'Proceeds: $' + Math.round(ctx.parsed.y).toLocaleString();
+                                }
+                                return ctx.dataset.label + ': ' + Math.round(ctx.parsed.y).toLocaleString() + ' acres';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stacked: true,
+                        title: { display: true, text: 'Acres Sold' },
+                        ticks: {
+                            callback: function(val) { return (val / 1000).toFixed(0) + 'K'; }
+                        }
+                    },
+                    x: {
+                        stacked: true,
+                        title: { display: true, text: 'Year' }
+                    },
+                    y2: {
+                        beginAtZero: true,
+                        position: 'right',
+                        title: { display: true, text: 'Proceeds ($)' },
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            callback: function(val) { return '$' + (val / 1e6).toFixed(1) + 'M'; }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    buildWilsonChart(currentWilson);
+
+    $('#showForced').on('change', rebuildChart);
+    $('#showMurray').on('change', rebuildChart);
+    $('#showWilson').on('change', rebuildChart);
 
     $('#updateTimeline').on('click', function() {
         var tribe = $('#timelineTribe').val();
         $.getJSON('{{ url_for("api_patents_timeline") }}', { tribe: tribe }, function(resp) {
             currentData = resp.timeline || resp;
             currentMurray = resp.murray || [];
-            buildChart(currentData, $('#showForced').is(':checked'), currentMurray, $('#showMurray').is(':checked'));
+            currentWilson = resp.wilson_sales || [];
+            rebuildChart();
+            buildWilsonChart(currentWilson);
         });
     });
 });
