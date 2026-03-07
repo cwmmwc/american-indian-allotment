@@ -90,13 +90,16 @@ a:hover {
 .stat-card {
     text-align: center;
 }
-.stat-number {
+.stat-number,
+.stat-card-number {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 1.8rem;
     font-weight: 700;
     color: var(--brand-medium);
     line-height: 1.2;
 }
-.stat-label {
+.stat-label,
+.stat-card-label {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 0.8rem;
     text-transform: uppercase;

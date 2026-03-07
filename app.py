@@ -93,8 +93,14 @@ def add_claim_type_filter(claim_type, conditions, params):
 # ──────────────────────────────────────────────
 
 @app.route("/")
-def index():
-    """Main search / browse page."""
+def home():
+    """Landing page."""
+    return render_template("home.html")
+
+
+@app.route("/claims")
+def claims_search():
+    """Claims search / browse page."""
     conn = get_db()
     try:
         cur = conn.cursor()

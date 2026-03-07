@@ -4,7 +4,7 @@
 {% block content %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Search</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('claims_search') }}">Claims</a></li>
         <li class="breadcrumb-item">
             <a href="{{ url_for('tribe_detail', tribe_slug=slugify(claim.tribe_identified)) }}">{{ claim.tribe_identified }}</a>
         </li>

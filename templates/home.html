@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Indian Land Allotment Research{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Indian Land Allotment Research</h1>
+    <p class="lead">Tracing the dispossession of Indian allotment land from the Dawes Act (1887) through the termination era (1950s), using BLM patent records, Federal Register claims, and government land surveys.</p>
+</div>
+
+<!-- Key numbers -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">239,845</div>
+            <div class="stat-card-label">BLM Allotment Patents</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">10,976</div>
+            <div class="stat-card-label">Federal Register Claims</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">23.2M</div>
+            <div class="stat-card-label">Acres alienated by 1934</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">3.3M</div>
+            <div class="stat-card-label">More acres lost, 1947–1957</div>
+        </div>
+    </div>
+</div>
+
+<!-- Three datasets -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">BLM Allotment Patents</h2></div>
+            <div class="card-body">
+                <p>239,845 General Land Office patent records covering trust patents, fee patents, and other allotment actions across all tribes. The primary record of how Indian land was allotted and converted.</p>
+                <a href="{{ url_for('patents_index') }}" class="btn btn-outline-dark btn-sm">Browse Patents</a>
+                <a href="{{ url_for('patents_timeline') }}" class="btn btn-outline-dark btn-sm">Patent Timeline</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">Federal Register Claims</h2></div>
+            <div class="card-body">
+                <p>10,976 claims published in two 1983 Federal Register notices — 9,649 forced fee patent claims and 1,327 secretarial transfers. Filed by allottees or heirs asserting their trust land was converted without consent.</p>
+                <a href="{{ url_for('claims_search') }}" class="btn btn-outline-dark btn-sm">Search Claims</a>
+                <a href="{{ url_for('tribes_list') }}" class="btn btn-outline-dark btn-sm">Browse by Tribe</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">Historical Land Surveys</h2></div>
+            <div class="card-body">
+                <p>The Wilson Report (1934) documented 23.2 million acres alienated across 212 reservations by the end of the allotment era. The Murray Memorandum (1958) recorded 3.3 million more acres lost during termination.</p>
+                <a href="{{ url_for('wilson') }}" class="btn btn-outline-dark btn-sm">1934 Baseline</a>
+                <a href="{{ url_for('sankey') }}" class="btn btn-outline-dark btn-sm">Trust-to-Fee Flows</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- The arc -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h5" style="color: var(--brand-dark);">Three Datasets, One Story</h2>
+        <p>These datasets document different moments in a long history of Indian land dispossession:</p>
+        <div class="row">
+            <div class="col-md-4">
+                <p><strong style="color: var(--brand-medium);">Wilson Report (1934)</strong> — The baseline. How much land had been allotted, and how much had already been sold off by the time the Indian Reorganization Act ended general allotment. Documents the damage of the allotment era: forced fee patents, competency commissions, and the Burke Act.</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong style="color: var(--brand-medium);">Murray Memorandum (1947–1957)</strong> — The second wave. Trust land removed during the termination era, when Congress pursued ending federal trust responsibilities. 18,546 trust removal transactions across 52 BIA agencies in a single decade.</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong style="color: var(--brand-medium);">Federal Register (1983)</strong> — The claims for redress. Nearly 50 years after the IRA, allottees and heirs filed formal claims asserting their land had been taken without consent. A fraction of all conversions, but the most detailed record of individual forced fee cases.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Visualizations -->
+<div class="card mb-4">
+    <div class="card-header"><h2 class="h5 mb-0">Visualizations</h2></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl>
+                    <dt><a href="{{ url_for('sankey') }}">Trust-to-Fee Conversion</a></dt>
+                    <dd class="text-muted">How allotment patents moved between trust and fee status, with Federal Register claims shown as a sub-flow. Per-tribe Wilson and Murray context.</dd>
+
+                    <dt><a href="{{ url_for('patents_timeline') }}">All Patents Timeline</a></dt>
+                    <dd class="text-muted">Distribution of 239,845 patents by year issued. Murray Memorandum overlay shows termination-era trust removal.</dd>
+
+                    <dt><a href="{{ url_for('timeline') }}">Forced Fee Claims Timeline</a></dt>
+                    <dd class="text-muted">Federal Register forced fee claims by year, with policy era context.</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl>
+                    <dt><a href="{{ url_for('wilson') }}">1934 Reservation Baseline</a></dt>
+                    <dd class="text-muted">Wilson Report land composition, alienation rates, and Murray termination-era comparison — two documented waves of land loss.</dd>
+
+                    <dt><a href="{{ url_for('claims_rate') }}">Claims by Reservation</a></dt>
+                    <dd class="text-muted">Fee patents vs. FR forced fee claims per tribe — how many conversions resulted in formal claims.</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
