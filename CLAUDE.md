@@ -64,10 +64,16 @@ AND fr.allottee_name = ffp.fedreg_allottee
 ### Patent authority categories (defined in app.py)
 - **FEE_AUTHORITIES:** Indian Fee Patent (and variants), Indian Homestead Fee Patent, Indian Trust to Fee
 - **TRUST_AUTHORITIES:** Indian Trust Patent (and variants), Indian Allotment - General, Indian Partition, etc.
-- **Forced fee:** `WHERE forced_fee = 'True'` (15,045 patents in BLM data vs 9,649 FR claims — different datasets)
+- **Forced fee:** See rule below — always use Federal Register claims, never BLM flag.
 
-## Data Discrepancy Note
-The FR lists 9,649 forced fee claims; BLM flags 15,045 patents as forced fee. Both pages have explanatory notes about this. The difference is because BLM's classification is broader than the two 1983 FR publications.
+## RULE: Forced Fee Numbers Must Come From the Federal Register
+The sole authoritative source for forced fee counts is the `federal_register_claims` table (9,649 forced fee claims, 1,327 secretarial transfers). NEVER use the BLM `forced_fee` flag (`WHERE forced_fee = 'True'`) to count or label forced fee patents. The BLM flag is inflated because the one-to-many join between FR claims and BLM patents marks BOTH trust and fee patents for the same allotment, roughly doubling the count. For example, Blackfeet: FR says 1,241 forced fee claims; BLM flag yields 2,886 — the latter is wrong.
+
+When showing forced fee data:
+- Count from `federal_register_claims` WHERE `claim_type ILIKE '%FORCED FEE%'`
+- Label as "FR forced fee claims" (these are CLAIMS — a subset of all trust-to-fee conversions)
+- Never say "forced fee patents" based on the BLM flag
+- Never conflate FR claims with the total number of trust-to-fee conversions
 
 ## Templates
 All extend `base.html`. Navigation: Claims | Patents | Tribes | Timeline (dropdown) | About | Main Site.

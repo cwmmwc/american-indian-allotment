@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% block title %}Claims by Reservation{% endblock %}
+
+{% block head %}
+<style>
+    .scatter-container {
+        position: relative;
+        width: 100%;
+    }
+    .scatter-container canvas {
+        display: block;
+        width: 100%;
+    }
+    .scatter-tooltip {
+        display: none;
+        position: absolute;
+        background: rgba(44, 24, 16, 0.92);
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+        pointer-events: none;
+        z-index: 10;
+        max-width: 280px;
+    }
+    .scatter-tooltip strong {
+        color: #f0d9b5;
+    }
+    .bar-section {
+        margin-top: 1.5rem;
+    }
+    .rate-bar-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 12px;
+    }
+    .rate-bar-label {
+        width: 200px;
+        text-align: right;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .rate-bar-track {
+        flex: 1;
+        height: 16px;
+        background: #eee;
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+    }
+    .rate-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+    }
+    .rate-bar-value {
+        min-width: 120px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        color: var(--text-secondary);
+    }
+    .rate-bar-value strong {
+        color: var(--brand-medium);
+    }
+    .stat-insight {
+        font-size: 0.95rem;
+        line-height: 1.7;
+    }
+    .stat-insight strong { color: var(--brand-medium); }
+    .stat-insight .warn { color: #a33; font-weight: 600; }
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-right: 16px;
+        font-family: "Helvetica Neue", sans-serif;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Forced Fee Claims by Reservation</h1>
+    <p class="lead">Comparing fee patent volume against forced fee claims filed in the 1983 Federal Register. Some reservations saw massive trust-to-fee conversion but few formal claims; others had high claim rates relative to their conversions.</p>
+</div>
+
+<!-- Scatter plot -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Fee Patents vs. Forced Fee Claims</h2>
+    </div>
+    <div class="card-body">
+        <div class="mb-2">
+            <span class="legend-item"><span class="legend-dot" style="background:#c0392b;"></span> Has forced fee claims</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#bbb;"></span> No forced fee claims filed</span>
+        </div>
+        <div class="scatter-container">
+            <canvas id="scatterChart" height="420"></canvas>
+            <div class="scatter-tooltip" id="scatterTooltip"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Bar chart: claim rate ranking -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Claim Rate: Forced Fee Claims as % of Fee Patents</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted" style="font-size:13px;">Reservations with at least 50 fee patents. Higher rates indicate more allottees or heirs sought recognition of forced conversion. Rates capped at 100%; some tribes show inflated rates due to naming differences between Federal Register claims and BLM patent records.</p>
+        <div id="rateBarChart"></div>
+    </div>
+</div>
+
+<!-- Insight -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">High Conversion, Few Claims</h2></div>
+            <div class="card-body stat-insight" id="low-claims-insight">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">High Claim Rates</h2></div>
+            <div class="card-body stat-insight" id="high-claims-insight">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    $.getJSON('{{ url_for("api_claims_rate") }}', function(data) {
+        var tribes = data.tribes;
+        drawScatter(tribes);
+        drawRateBars(tribes);
+        drawInsights(tribes);
+    });
+
+    function drawScatter(tribes) {
+        var canvas = document.getElementById('scatterChart');
+        var container = canvas.parentElement;
+        var dpr = window.devicePixelRatio || 1;
+        var W = container.offsetWidth;
+        var H = 420;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        var ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        var margin = { top: 20, right: 30, bottom: 50, left: 70 };
+        var plotW = W - margin.left - margin.right;
+        var plotH = H - margin.top - margin.bottom;
+
+        var maxFee = Math.max.apply(null, tribes.map(function(t) { return t.fee_patents; }));
+        var maxClaims = Math.max.apply(null, tribes.map(function(t) { return t.forced_claims; }));
+
+        // Use sqrt scale so smaller tribes are visible
+        function xScale(v) { return margin.left + (Math.sqrt(v) / Math.sqrt(maxFee)) * plotW; }
+        function yScale(v) { return margin.top + plotH - (Math.sqrt(v) / Math.sqrt(maxClaims)) * plotH; }
+
+        ctx.clearRect(0, 0, W, H);
+
+        // Grid lines
+        ctx.strokeStyle = '#eee';
+        ctx.lineWidth = 1;
+        for (var i = 0; i <= 5; i++) {
+            var xVal = Math.round(Math.pow(i / 5 * Math.sqrt(maxFee), 2));
+            var x = xScale(xVal);
+            ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, margin.top + plotH); ctx.stroke();
+
+            var yVal = Math.round(Math.pow(i / 5 * Math.sqrt(maxClaims), 2));
+            var y = yScale(yVal);
+            ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(margin.left + plotW, y); ctx.stroke();
+        }
+
+        // Axes
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, margin.top);
+        ctx.lineTo(margin.left, margin.top + plotH);
+        ctx.lineTo(margin.left + plotW, margin.top + plotH);
+        ctx.stroke();
+
+        // Axis labels
+        ctx.fillStyle = '#999';
+        ctx.font = '11px "Helvetica Neue", sans-serif';
+        ctx.textAlign = 'center';
+        for (var i = 0; i <= 5; i++) {
+            var xVal = Math.round(Math.pow(i / 5 * Math.sqrt(maxFee), 2));
+            ctx.fillText(xVal.toLocaleString(), xScale(xVal), margin.top + plotH + 16);
+        }
+        ctx.textAlign = 'right';
+        for (var i = 0; i <= 5; i++) {
+            var yVal = Math.round(Math.pow(i / 5 * Math.sqrt(maxClaims), 2));
+            ctx.fillText(yVal.toLocaleString(), margin.left - 8, yScale(yVal) + 4);
+        }
+
+        // Axis titles
+        ctx.fillStyle = '#666';
+        ctx.font = '12px "Helvetica Neue", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Fee Patents (sqrt scale)', margin.left + plotW / 2, H - 6);
+        ctx.save();
+        ctx.translate(14, margin.top + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('Forced Fee Claims', 0, 0);
+        ctx.restore();
+
+        // Store point positions for hover
+        var points = [];
+
+        // Draw points — no-claims first (behind), then claims
+        var sorted = tribes.slice().sort(function(a, b) { return a.forced_claims - b.forced_claims; });
+        sorted.forEach(function(t) {
+            var x = xScale(t.fee_patents);
+            var y = yScale(t.forced_claims);
+            var r = Math.max(4, Math.min(14, Math.sqrt(t.total_patents) / 8));
+            var hasClaims = t.forced_claims > 0;
+
+            ctx.globalAlpha = hasClaims ? 0.75 : 0.4;
+            ctx.fillStyle = hasClaims ? '#c0392b' : '#bbb';
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Label large or notable tribes
+            if (t.fee_patents > maxFee * 0.15 || t.forced_claims > maxClaims * 0.2 ||
+                (t.claim_rate > 30 && t.fee_patents >= 50)) {
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = '#333';
+                ctx.font = '10px "Helvetica Neue", sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(t.tribe, x + r + 3, y + 3);
+            }
+
+            points.push({ x: x, y: y, r: r, tribe: t });
+        });
+        ctx.globalAlpha = 1;
+
+        // Tooltip on hover
+        var tooltip = document.getElementById('scatterTooltip');
+        canvas.addEventListener('mousemove', function(e) {
+            var rect = canvas.getBoundingClientRect();
+            var mx = e.clientX - rect.left;
+            var my = e.clientY - rect.top;
+
+            var found = null;
+            for (var i = points.length - 1; i >= 0; i--) {
+                var p = points[i];
+                var dx = mx - p.x, dy = my - p.y;
+                if (dx * dx + dy * dy <= (p.r + 3) * (p.r + 3)) {
+                    found = p;
+                    break;
+                }
+            }
+
+            if (found) {
+                var t = found.tribe;
+                var frLabel = '';
+                if (t.fr_names && t.fr_names.length > 0) {
+                    var diff = t.fr_names.filter(function(n) { return n !== t.tribe; });
+                    if (diff.length > 0) frLabel = '<br><span style="font-size:11px;opacity:0.7;">FR: ' + diff.join(', ') + '</span>';
+                }
+                tooltip.innerHTML = '<strong>' + t.tribe + '</strong>' + frLabel +
+                    '<br>Fee patents: ' + t.fee_patents.toLocaleString() +
+                    '<br>Forced fee patents: ' + t.forced_fee_patents.toLocaleString() +
+                    '<br>FR forced claims: ' + t.forced_claims.toLocaleString() +
+                    '<br>Claim rate: <strong>' + t.claim_rate + '%</strong>';
+                tooltip.style.display = 'block';
+                tooltip.style.left = Math.min(found.x + 12, W - 200) + 'px';
+                tooltip.style.top = (found.y - 10) + 'px';
+            } else {
+                tooltip.style.display = 'none';
+            }
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            tooltip.style.display = 'none';
+        });
+    }
+
+    function drawRateBars(tribes) {
+        // Filter to tribes with at least 50 fee patents
+        var filtered = tribes.filter(function(t) { return t.fee_patents >= 50; });
+        // Sort by claim rate descending
+        filtered.sort(function(a, b) { return b.claim_rate - a.claim_rate; });
+
+        var container = document.getElementById('rateBarChart');
+        var maxRate = Math.max.apply(null, filtered.map(function(t) { return t.claim_rate; }).concat([1]));
+
+        var html = '';
+        filtered.forEach(function(t) {
+            var barPct = (t.claim_rate / maxRate * 100).toFixed(0);
+            var color = t.forced_claims === 0 ? '#ddd' :
+                        t.claim_rate > 30 ? '#c0392b' :
+                        t.claim_rate > 15 ? '#e67e22' :
+                        t.claim_rate > 5 ? '#d4a017' : '#999';
+            html += '<div class="rate-bar-row">';
+            html += '<span class="rate-bar-label" title="' + t.tribe + '">' + t.tribe + '</span>';
+            html += '<div class="rate-bar-track">';
+            html += '<div class="rate-bar-fill" style="width:' + barPct + '%;background:' + color + ';"></div>';
+            html += '</div>';
+            html += '<span class="rate-bar-value"><strong>' + t.claim_rate + '%</strong> (' + t.forced_claims.toLocaleString() + ' / ' + t.fee_patents.toLocaleString() + ')</span>';
+            html += '</div>';
+        });
+
+        container.innerHTML = html;
+    }
+
+    function drawInsights(tribes) {
+        var filtered = tribes.filter(function(t) { return t.fee_patents >= 100; });
+
+        // High conversion, few claims
+        var lowClaims = filtered.filter(function(t) { return t.claim_rate < 2; });
+        lowClaims.sort(function(a, b) { return b.fee_patents - a.fee_patents; });
+
+        var el1 = document.getElementById('low-claims-insight');
+        if (lowClaims.length > 0) {
+            var html = '<p>These reservations had significant fee patent activity but few or no forced fee claims filed in the Federal Register:</p><ul>';
+            lowClaims.slice(0, 8).forEach(function(t) {
+                html += '<li><strong>' + t.tribe + '</strong>: ' + t.fee_patents.toLocaleString() + ' fee patents, ';
+                html += t.forced_claims === 0 ? 'no claims filed' : 'only ' + t.forced_claims + ' claim(s)';
+                html += ' (' + t.claim_rate + '%)</li>';
+            });
+            html += '</ul>';
+            html += '<p>This may reflect voluntary conversion, different tribal circumstances, or barriers to filing claims.</p>';
+            el1.innerHTML = html;
+        } else {
+            el1.innerHTML = '<p class="text-muted">No tribes with high conversion and low claim rates in this dataset.</p>';
+        }
+
+        // High claim rates
+        var highClaims = filtered.filter(function(t) { return t.claim_rate > 15; });
+        highClaims.sort(function(a, b) { return b.claim_rate - a.claim_rate; });
+
+        var el2 = document.getElementById('high-claims-insight');
+        if (highClaims.length > 0) {
+            var html = '<p>These reservations had the highest rates of forced fee claims relative to fee patents:</p><ul>';
+            highClaims.slice(0, 8).forEach(function(t) {
+                html += '<li><strong>' + t.tribe + '</strong>: ' + t.forced_claims.toLocaleString() + ' claims / ';
+                html += t.fee_patents.toLocaleString() + ' fee patents (<strong class="warn">' + t.claim_rate + '%</strong>)</li>';
+            });
+            html += '</ul>';
+            html += '<p>High claim rates suggest widespread coerced conversion, where allottees or heirs later sought formal recognition of the forced loss of their land.</p>';
+            el2.innerHTML = html;
+        } else {
+            el2.innerHTML = '<p class="text-muted">No tribes with notably high claim rates in this dataset.</p>';
+        }
+    }
+});
+</script>
+{% endblock %}

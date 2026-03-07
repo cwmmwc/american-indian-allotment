@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+{% block title %}Trust-to-Fee Conversion{% endblock %}
+
+{% block head %}
+<style>
+    .sankey-container {
+        position: relative;
+        width: 100%;
+        overflow-x: auto;
+    }
+    .sankey-container svg {
+        display: block;
+        margin: 0 auto;
+    }
+    .sankey-container .link {
+        fill: none;
+        stroke-opacity: 0.3;
+        transition: stroke-opacity 0.2s;
+    }
+    .sankey-container .link:hover {
+        stroke-opacity: 0.55;
+    }
+    .sankey-container .node rect {
+        shape-rendering: crispEdges;
+    }
+    .sankey-container .node-label {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 13px;
+        fill: var(--text-primary);
+        font-weight: 600;
+    }
+    .sankey-container .node-value {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 11px;
+        fill: var(--text-secondary);
+    }
+    .sankey-container .link-pct {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        pointer-events: none;
+    }
+    .stat-insight {
+        font-size: 0.95rem;
+        line-height: 1.7;
+    }
+    .stat-insight strong {
+        color: var(--brand-medium);
+    }
+    .stat-insight .warn {
+        color: #a33;
+        font-weight: 600;
+    }
+    .timing-bar {
+        display: flex;
+        height: 28px;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+    .timing-bar > div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 11px;
+        color: #fff;
+        font-weight: 600;
+        min-width: 32px;
+    }
+    .fr-claims-section {
+        border-top: 1px solid #eee;
+        margin-top: 1rem;
+        padding-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Trust-to-Fee Conversion</h1>
+    <p class="lead">How 239,845 allotment patents moved between trust and fee status — and the pathways of forced dispossession.</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-end mb-3">
+            <div class="col-md-4">
+                <label for="sankeyTribe" class="form-label">Filter by Tribe</label>
+                <select class="form-select" id="sankeyTribe">
+                    <option value="">All Tribes</option>
+                    {% for t in tribes %}
+                    <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary" id="updateSankey">Update</button>
+            </div>
+        </div>
+        <div class="sankey-container" id="sankey-chart"></div>
+    </div>
+</div>
+
+<!-- Insight cards -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">Reading This Diagram</h2></div>
+            <div class="card-body stat-insight" id="overview-insight">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">Trust-to-Fee Conversion Timing</h2></div>
+            <div class="card-body stat-insight" id="timing-insight">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acreage card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h2 class="h5 mb-0">Acreage: Trust-to-Fee Conversions</h2></div>
+            <div class="card-body stat-insight" id="acreage-insight">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Wilson 1934 baseline (shown when a tribe is selected) -->
+<div class="row mb-4" id="wilson-card" style="display:none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h2 class="h5 mb-0">1934 Baseline (Wilson Report)</h2></div>
+            <div class="card-body stat-insight" id="wilson-insight">
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mb-4" id="murray-card" style="display:none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h2 class="h5 mb-0">Termination Era (Murray Memorandum, 1947–1957)</h2></div>
+            <div class="card-body stat-insight" id="murray-insight">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<script>
+$(function() {
+    var nodeColors = {
+        all:              '#8b5a2b',
+        trust:            '#4682B4',
+        fee:              '#B22222',
+        other:            '#aaa',
+        trust_remained:   '#5a9ecf',
+        trust_converted:  '#8B6914',
+        fee_from_trust:   '#8B6914',
+        fee_direct:       '#B22222',
+        fr_forced:        '#FF8C00',
+        fee_other:        '#B22222'
+    };
+
+    function buildSankey(data) {
+        var container = document.getElementById('sankey-chart');
+        container.innerHTML = '';
+
+        var margin = { top: 24, right: 200, bottom: 24, left: 16 };
+        var width = Math.min(container.offsetWidth, 1000) - margin.left - margin.right;
+        var height = 480 - margin.top - margin.bottom;
+
+        var svg = d3.select('#sankey-chart')
+            .append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+            .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+        // Map node ids to indices
+        var nodeMap = {};
+        data.nodes.forEach(function(n, i) { nodeMap[n.id] = i; });
+
+        var sankeyData = {
+            nodes: data.nodes.map(function(n) { return { id: n.id, label: n.label }; }),
+            links: data.links.map(function(l) {
+                return { source: nodeMap[l.source], target: nodeMap[l.target], value: l.value };
+            })
+        };
+
+        var sankey = d3.sankey()
+            .nodeId(function(d) { return d.index; })
+            .nodeWidth(18)
+            .nodePadding(18)
+            .nodeAlign(d3.sankeyLeft)
+            .extent([[0, 0], [width, height]]);
+
+        var graph = sankey(sankeyData);
+
+        // Draw links
+        svg.append('g')
+            .selectAll('.link')
+            .data(graph.links)
+            .join('path')
+            .attr('class', 'link')
+            .attr('d', d3.sankeyLinkHorizontal())
+            .attr('stroke', function(d) {
+                return nodeColors[d.target.id] || nodeColors[d.source.id] || '#999';
+            })
+            .attr('stroke-width', function(d) { return Math.max(2, d.width); })
+            .append('title')
+            .text(function(d) {
+                return d.source.label + ' \u2192 ' + d.target.label + '\n' + d.value.toLocaleString() + ' patents';
+            });
+
+        // Draw nodes
+        var node = svg.append('g')
+            .selectAll('.node')
+            .data(graph.nodes)
+            .join('g')
+            .attr('class', 'node');
+
+        node.append('rect')
+            .attr('x', function(d) { return d.x0; })
+            .attr('y', function(d) { return d.y0; })
+            .attr('width', function(d) { return d.x1 - d.x0; })
+            .attr('height', function(d) { return Math.max(2, d.y1 - d.y0); })
+            .attr('fill', function(d) { return nodeColors[d.id] || '#999'; })
+            .attr('opacity', 0.9)
+            .append('title')
+            .text(function(d) { return d.label; });
+
+        // Labels — position to the right of each node
+        node.append('text')
+            .attr('class', 'node-label')
+            .attr('x', function(d) { return d.x1 + 8; })
+            .attr('y', function(d) { return (d.y0 + d.y1) / 2; })
+            .attr('dy', '-0.15em')
+            .attr('text-anchor', 'start')
+            .text(function(d) {
+                var parts = d.label.match(/^(.+?)\s*\((.+)\)$/);
+                return parts ? parts[1] : d.label;
+            });
+
+        node.append('text')
+            .attr('class', 'node-value')
+            .attr('x', function(d) { return d.x1 + 8; })
+            .attr('y', function(d) { return (d.y0 + d.y1) / 2; })
+            .attr('dy', '1.05em')
+            .attr('text-anchor', 'start')
+            .text(function(d) {
+                var parts = d.label.match(/\((.+)\)$/);
+                return parts ? parts[1] : '';
+            });
+
+        // Percentage labels on first-level links (All → X)
+        var total = data.stats.total;
+        svg.append('g')
+            .selectAll('.link-pct')
+            .data(graph.links.filter(function(d) {
+                return d.source.id === 'all' && d.value > total * 0.02;
+            }))
+            .join('text')
+            .attr('class', 'link-pct')
+            .attr('x', function(d) { return (d.source.x1 + d.target.x0) / 2; })
+            .attr('y', function(d) { return (d.y0 + d.y1) / 2; })
+            .attr('dy', '0.35em')
+            .attr('text-anchor', 'middle')
+            .attr('fill', function(d) { return nodeColors[d.target.id] || '#666'; })
+            .text(function(d) {
+                return (d.value / total * 100).toFixed(1) + '%';
+            });
+
+        updateOverviewInsight(data.stats);
+        updateTimingInsight(data.stats);
+        updateAcreageInsight(data.stats);
+        updateWilsonInsight(data.stats);
+        updateMurrayInsight(data.stats);
+    }
+
+    function updateWilsonInsight(stats) {
+        var card = document.getElementById('wilson-card');
+        var el = document.getElementById('wilson-insight');
+        if (!stats.wilson) {
+            card.style.display = 'none';
+            return;
+        }
+        card.style.display = '';
+        var w = stats.wilson;
+        var html = '<p>The Wilson Report (1935) recorded the state of the <strong>' + w.reservation + '</strong> reservation as of 1934:</p>';
+        html += '<ul>';
+        html += '<li>Original reservation area: <strong>' + w.original_acres.toLocaleString() + '</strong> acres</li>';
+        html += '<li>Total allotments made: <strong>' + w.allotments_1934.toLocaleString() + '</strong></li>';
+        html += '<li>Allotment acreage: <strong>' + w.allotment_acreage.toLocaleString() + '</strong> acres</li>';
+        html += '<li>Land alienated (sold off) by 1934: <strong>' + w.land_alienated.toLocaleString() + '</strong> acres';
+        if (w.allotment_acreage > 0) {
+            var alienPct = (w.land_alienated / w.allotment_acreage * 100).toFixed(1);
+            html += ' (<strong class="warn">' + alienPct + '%</strong> of allotted)';
+        }
+        html += '</li></ul>';
+
+        // Compare with BLM data
+        if (stats.total > 0) {
+            html += '<p>BLM records show <strong>' + stats.total.toLocaleString() + '</strong> allotment patents for this tribe. ';
+            if (w.allotments_1934 > 0) {
+                var ratio = (stats.total / w.allotments_1934 * 100).toFixed(0);
+                html += 'Wilson reported ' + w.allotments_1934.toLocaleString() + ' allotments by 1934, while BLM records contain ' + ratio + '% as many patent records (including trust and fee patents for the same allotments).';
+            }
+            html += '</p>';
+        }
+        el.innerHTML = html;
+    }
+
+    function updateMurrayInsight(stats) {
+        var card = document.getElementById('murray-card');
+        var el = document.getElementById('murray-insight');
+        if (!stats.murray) {
+            card.style.display = 'none';
+            return;
+        }
+        card.style.display = '';
+        var m = stats.murray;
+        var html = '<p>The Murray Memorandum documented trust land changes under the <strong>' + m.agency + '</strong> agency (' + m.area_office + ' Area) during 1947–1957:</p>';
+        html += '<ul>';
+        html += '<li>Individual trust land in 1947: <strong>' + m.individual_1947.toLocaleString() + '</strong> acres</li>';
+        html += '<li>Individual trust land in 1957: <strong>' + m.individual_1957.toLocaleString() + '</strong> acres</li>';
+        if (m.individual_loss > 0) {
+            var lossPct = (m.individual_loss / m.individual_1947 * 100).toFixed(1);
+            html += '<li>Individual land lost: <strong class="warn">' + m.individual_loss.toLocaleString() + '</strong> acres (' + lossPct + '% decline)</li>';
+        }
+        if (m.individual_gain > 0) {
+            html += '<li>Individual land gained: <strong>' + m.individual_gain.toLocaleString() + '</strong> acres</li>';
+        }
+        if (m.acres_removed) {
+            html += '<li>Total acres removed from trust: <strong class="warn">' + m.acres_removed.toLocaleString() + '</strong></li>';
+        }
+        if (m.transactions) {
+            html += '<li>Trust removal transactions: <strong>' + m.transactions.toLocaleString() + '</strong></li>';
+        }
+        html += '</ul>';
+
+        // Connect Wilson → Murray narrative if both exist
+        if (stats.wilson && m.individual_loss > 0) {
+            html += '<p class="text-muted">Wilson (1934) recorded ' + stats.wilson.land_alienated.toLocaleString() + ' acres alienated through allotment-era sales. ';
+            html += 'The Murray data shows an additional ' + m.individual_loss.toLocaleString() + ' acres of individual trust land lost during the termination era — a distinct wave of land loss.</p>';
+        }
+        el.innerHTML = html;
+    }
+
+    function updateOverviewInsight(stats) {
+        var el = document.getElementById('overview-insight');
+        var total = stats.total;
+        if (total === 0) {
+            el.innerHTML = '<p class="text-muted">No data for this selection.</p>';
+            return;
+        }
+
+        var trustPct = (stats.trust / total * 100).toFixed(1);
+        var feePct = (stats.fee / total * 100).toFixed(1);
+        var convertedPct = stats.trust > 0 ? (stats.trust_converted / stats.trust * 100).toFixed(1) : '0';
+
+        var html = '';
+        html += '<p>Of <strong>' + total.toLocaleString() + '</strong> allotment patents:</p>';
+        html += '<ul>';
+        html += '<li><strong style="color:#4682B4">' + trustPct + '%</strong> remain in federal trust (' + stats.trust.toLocaleString() + ' patents).';
+        if (stats.trust_converted > 0) {
+            html += ' Of these, <strong>' + stats.trust_converted.toLocaleString() + '</strong> (' + convertedPct + '%) were later followed by a fee patent for the same allotment.';
+        }
+        html += '</li>';
+        html += '<li><strong style="color:#B22222">' + feePct + '%</strong> were converted to fee status (' + stats.fee.toLocaleString() + ' patents).';
+        if (stats.fee_with_trust_origin > 0) {
+            html += ' <strong>' + stats.fee_with_trust_origin.toLocaleString() + '</strong> have a traceable trust patent origin.';
+        }
+        html += '</li>';
+        html += '</ul>';
+
+        if (stats.fr_total > 0) {
+            var linkedPct = (stats.fr_linked / stats.fr_total * 100).toFixed(0);
+            html += '<div class="fr-claims-section">';
+            html += '<p><strong>1983 Federal Register Claims:</strong> ';
+            html += stats.fr_total.toLocaleString() + ' claims filed (' + stats.fr_forced_claims.toLocaleString() + ' forced fee, ';
+            html += stats.fr_sec_claims.toLocaleString() + ' secretarial transfer). ';
+            html += '<strong>' + linkedPct + '%</strong> (' + stats.fr_linked.toLocaleString() + ') linked to BLM patent records; ';
+            html += stats.fr_unlinked.toLocaleString() + ' unlinked.</p>';
+            html += '<p style="font-size:13px;color:var(--text-secondary);">These claims are the ground truth for forced fee conversions — allottees or heirs who asserted their trust land was converted without consent. They represent a subset of all trust-to-fee conversions.</p>';
+            html += '</div>';
+        }
+
+        el.innerHTML = html;
+    }
+
+    function updateTimingInsight(stats) {
+        var el = document.getElementById('timing-insight');
+        var t = stats.timing;
+
+        if (!t || t.count === 0) {
+            el.innerHTML = '<p class="text-muted">No trust\u2192fee conversion data available for this selection.</p>';
+            return;
+        }
+
+        var totalLinked = t.count;
+        var pctFast = (t.fast / totalLinked * 100).toFixed(0);
+        var pctMedium = (t.medium / totalLinked * 100).toFixed(0);
+        var pctSlow = (t.slow / totalLinked * 100).toFixed(0);
+
+        var html = '<p>Across <strong>' + totalLinked.toLocaleString() + '</strong> tracked trust\u2192fee conversions:</p>';
+
+        html += '<div class="timing-bar">';
+        if (t.fast > 0) html += '<div style="width:' + pctFast + '%;background:#c0392b;" title="Under 10 years: ' + t.fast.toLocaleString() + '">&lt; 10y (' + pctFast + '%)</div>';
+        if (t.medium > 0) html += '<div style="width:' + pctMedium + '%;background:#e67e22;" title="10\u201325 years: ' + t.medium.toLocaleString() + '">10\u201325y (' + pctMedium + '%)</div>';
+        if (t.slow > 0) html += '<div style="width:' + pctSlow + '%;background:#27ae60;" title="25+ years: ' + t.slow.toLocaleString() + '">25+y (' + pctSlow + '%)</div>';
+        html += '</div>';
+
+        html += '<p style="margin-top:0.75rem;">';
+        html += 'Median time from trust patent to fee patent: <strong>' + t.median_years + ' years</strong>. ';
+        html += 'Average: ' + t.avg_years + ' years.</p>';
+
+        if (parseInt(pctFast) > 30) {
+            html += '<p class="warn">' + pctFast + '% of conversions happened in under 10 years \u2014 ';
+            html += 'well before the 25-year trust period expired. ';
+            html += 'This suggests widespread use of the Burke Act to bypass trust protections.</p>';
+        } else if (parseInt(pctFast) > 15) {
+            html += '<p>' + pctFast + '% of conversions happened in under 10 years, ';
+            html += 'indicating notable early conversion under Burke Act authority.</p>';
+        }
+
+        el.innerHTML = html;
+    }
+
+    function updateAcreageInsight(stats) {
+        var el = document.getElementById('acreage-insight');
+        var a = stats.acreage;
+
+        if (!a) {
+            el.innerHTML = '<p class="text-muted">No acreage data available for this selection.</p>';
+            return;
+        }
+
+        var gap = a.trust_acres - a.fee_acres;
+        var total = a.shrunk + a.same + a.grew;
+        var pctShrunk = (a.shrunk / total * 100).toFixed(0);
+        var pctSame = (a.same / total * 100).toFixed(0);
+        var pctGrew = (a.grew / total * 100).toFixed(0);
+
+        var html = '<div class="row">';
+
+        // Left column: summary
+        html += '<div class="col-md-6">';
+        html += '<p>BLM records contain <strong>' + total.toLocaleString() + '</strong> trust\u2192fee conversions with acreage data, covering <strong>' + a.fee_acres.toLocaleString() + ' acres</strong> converted to fee status.</p>';
+        html += '<p style="font-size:13px;">Average allotment: <strong>' + a.avg_trust_acres + ' acres</strong>. ';
+        html += '' + pctShrunk + '% of parcels shrank during conversion, ' + pctSame + '% stayed the same size, ' + pctGrew + '% grew.</p>';
+        html += '<p style="font-size:13px;color:var(--text-secondary);">These are the conversions where both trust and fee patents survive in BLM records — a subset of total allotment-era conversions.</p>';
+        html += '</div>';
+
+        // Right column: top tribes by total fee acreage (land removed from trust)
+        html += '<div class="col-md-6">';
+        if (a.top_tribes && a.top_tribes.length > 0) {
+            var maxFeeAcres = Math.max.apply(null, a.top_tribes.map(function(t) { return t.fee_acres; }).concat([1]));
+            html += '<p>Most land converted to fee status (removed from trust):</p>';
+            a.top_tribes.forEach(function(t) {
+                var barPct = (t.fee_acres / maxFeeAcres * 100).toFixed(0);
+                var diff = t.trust_acres - t.fee_acres;
+                var diffLabel = diff > 0 ? ' (\u2212' + diff.toLocaleString() + ')' : diff < 0 ? ' (+' + Math.abs(diff).toLocaleString() + ')' : '';
+                html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">';
+                html += '<span style="width:180px;text-align:right;font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + t.tribe + '">' + t.tribe + '</span>';
+                html += '<div style="flex:1;height:14px;background:#eee;border-radius:1px;overflow:hidden;">';
+                html += '<div style="width:' + barPct + '%;height:100%;background:rgba(178,34,34,0.6);border-radius:1px;"></div></div>';
+                html += '<span style="min-width:90px;text-align:right;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;">' + t.fee_acres.toLocaleString() + ' ac</span>';
+                html += '</div>';
+            });
+            html += '<p style="font-size:11px;color:var(--text-secondary);margin-top:0.5rem;">Fee acreage from ' + total.toLocaleString() + ' tracked trust\u2192fee conversions.</p>';
+        }
+        html += '</div>';
+
+        html += '</div>'; // row
+
+        el.innerHTML = html;
+    }
+
+    function loadSankey(tribe) {
+        $.getJSON('{{ url_for("api_sankey") }}', { tribe: tribe || '' }, function(data) {
+            if (data.stats.total === 0) {
+                document.getElementById('sankey-chart').innerHTML =
+                    '<p class="text-muted text-center py-5">No patent data found for this selection.</p>';
+                document.getElementById('overview-insight').innerHTML =
+                    '<p class="text-muted">No data available.</p>';
+                document.getElementById('timing-insight').innerHTML =
+                    '<p class="text-muted">No data available.</p>';
+                document.getElementById('acreage-insight').innerHTML =
+                    '<p class="text-muted">No data available.</p>';
+                document.getElementById('wilson-card').style.display = 'none';
+                document.getElementById('murray-card').style.display = 'none';
+                return;
+            }
+            buildSankey(data);
+        });
+    }
+
+    loadSankey('');
+
+    $('#updateSankey').on('click', function() {
+        loadSankey($('#sankeyTribe').val());
+    });
+
+    var resizeTimer;
+    $(window).on('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            loadSankey($('#sankeyTribe').val());
+        }, 300);
+    });
+});
+</script>
+{% endblock %}

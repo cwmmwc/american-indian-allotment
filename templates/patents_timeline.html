@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <h1>All Patent Timeline</h1>
-    <p class="lead">Distribution of all 239,845 BLM allotment patents by year issued, showing fee patents vs. trust patents.</p>
+    <p class="lead">Distribution of all 239,845 BLM allotment patents by year issued, showing fee patents vs. trust patents. The Murray Memorandum overlay (1948–1957) shows acres removed from trust during the termination era.</p>
 </div>
 
 <div class="card mb-4">
@@ -24,6 +24,10 @@
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="showForced">
                     <label class="form-check-label" for="showForced">Show forced fee</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="showMurray" checked>
+                    <label class="form-check-label" for="showMurray">Murray overlay</label>
                 </div>
             </div>
         </div>
@@ -63,6 +67,12 @@
 
                     <dt>1934 — Indian Reorganization Act</dt>
                     <dd>Ended allotment and attempted to restore tribal self-governance.</dd>
+
+                    <dt>1948–1957 — Termination Era (Murray Memorandum)</dt>
+                    <dd>Congress pursued termination of federal trust responsibilities. The Murray Memorandum documents 2.6 million acres removed from individual Indian trust status during this period.</dd>
+
+                    <dt>1953 — House Concurrent Resolution 108</dt>
+                    <dd>Declared congressional policy to terminate federal supervision over selected tribes "at the earliest possible time."</dd>
                 </dl>
             </div>
         </div>
@@ -80,14 +90,17 @@ $(function() {
         { year: 1907, label: 'Declaration of Policy', color: '#D2691E' },
         { year: 1917, label: 'Sells Declaration', color: '#B22222' },
         { year: 1920, label: 'Order of Restoration', color: '#2E8B57' },
-        { year: 1934, label: 'Indian Reorganization Act', color: '#4682B4' }
+        { year: 1934, label: 'Indian Reorganization Act', color: '#4682B4' },
+        { year: 1953, label: 'Termination Resolution (HCR 108)', color: '#8B0000' }
     ];
 
     var initialData = {{ timeline_data|tojson }};
+    var murrayData = {{ murray_data|tojson }};
     var currentData = initialData;
+    var currentMurray = murrayData;
     var chart;
 
-    function buildChart(data, showForced) {
+    function buildChart(data, showForced, murray, showMurray) {
         var labels = data.map(function(d) { return d.yr || d.year; });
         var trustValues = data.map(function(d) { return d.trust_count || d.trust || 0; });
         var otherValues = data.map(function(d) { return d.other_count || d.other || 0; });
@@ -157,7 +170,51 @@ $(function() {
             ];
         }
 
+        // Murray overlay — acres removed from trust (1948-1957)
+        if (showMurray && murray && murray.length > 0) {
+            var murrayByYear = {};
+            murray.forEach(function(m) { murrayByYear[m.year] = m.acres_removed; });
+            var murrayValues = labels.map(function(yr) { return murrayByYear[yr] || null; });
+            datasets.push({
+                label: 'Murray: acres removed from trust',
+                data: murrayValues,
+                type: 'line',
+                borderColor: 'rgba(139, 0, 0, 0.9)',
+                backgroundColor: 'rgba(139, 0, 0, 0.1)',
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(139, 0, 0, 0.9)',
+                fill: true,
+                yAxisID: 'y2',
+                spanGaps: false
+            });
+        }
+
         if (chart) chart.destroy();
+
+        var scales = {
+            y: {
+                beginAtZero: true,
+                stacked: true,
+                title: { display: true, text: 'Number of Patents' }
+            },
+            x: {
+                stacked: true,
+                title: { display: true, text: 'Year Issued' }
+            }
+        };
+
+        if (showMurray && murray && murray.length > 0) {
+            scales.y2 = {
+                beginAtZero: true,
+                position: 'right',
+                title: { display: true, text: 'Acres Removed from Trust (Murray)' },
+                grid: { drawOnChartArea: false },
+                ticks: {
+                    callback: function(val) { return (val / 1000).toFixed(0) + 'K'; }
+                }
+            };
+        }
 
         var ctx = document.getElementById('mainTimeline').getContext('2d');
         chart = new Chart(ctx, {
@@ -169,36 +226,37 @@ $(function() {
                     legend: { display: true, position: 'top' },
                     tooltip: {
                         callbacks: {
-                            title: function(items) { return 'Year: ' + items[0].label; }
+                            title: function(items) { return 'Year: ' + items[0].label; },
+                            label: function(ctx) {
+                                if (ctx.dataset.yAxisID === 'y2') {
+                                    return ctx.dataset.label + ': ' + Math.round(ctx.parsed.y).toLocaleString() + ' acres';
+                                }
+                                return ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + ' patents';
+                            }
                         }
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        stacked: true,
-                        title: { display: true, text: 'Number of Patents' }
-                    },
-                    x: {
-                        stacked: true,
-                        title: { display: true, text: 'Year Issued' }
-                    }
-                }
+                scales: scales
             }
         });
     }
 
-    buildChart(currentData, false);
+    buildChart(currentData, false, currentMurray, $('#showMurray').is(':checked'));
 
     $('#showForced').on('change', function() {
-        buildChart(currentData, $(this).is(':checked'));
+        buildChart(currentData, $(this).is(':checked'), currentMurray, $('#showMurray').is(':checked'));
+    });
+
+    $('#showMurray').on('change', function() {
+        buildChart(currentData, $('#showForced').is(':checked'), currentMurray, $(this).is(':checked'));
     });
 
     $('#updateTimeline').on('click', function() {
         var tribe = $('#timelineTribe').val();
-        $.getJSON('{{ url_for("api_patents_timeline") }}', { tribe: tribe }, function(data) {
-            currentData = data;
-            buildChart(data, $('#showForced').is(':checked'));
+        $.getJSON('{{ url_for("api_patents_timeline") }}', { tribe: tribe }, function(resp) {
+            currentData = resp.timeline || resp;
+            currentMurray = resp.murray || [];
+            buildChart(currentData, $('#showForced').is(':checked'), currentMurray, $('#showMurray').is(':checked'));
         });
     });
 });

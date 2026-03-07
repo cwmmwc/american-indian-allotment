@@ -1,0 +1,619 @@
+{% extends "base.html" %}
+{% block title %}1934 Reservation Baseline{% endblock %}
+
+{% block head %}
+<style>
+    .wilson-bar-container {
+        position: relative;
+        width: 100%;
+    }
+    .wilson-bar-container canvas {
+        display: block;
+        width: 100%;
+    }
+    .wilson-tooltip {
+        display: none;
+        position: absolute;
+        background: rgba(44, 24, 16, 0.92);
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 4px;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.6;
+        pointer-events: none;
+        z-index: 10;
+        max-width: 380px;
+    }
+    .wilson-tooltip strong { color: #f0d9b5; }
+    .wilson-tooltip .label { color: #ccc; }
+
+    .alienation-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 3px;
+        font-family: "Helvetica Neue", sans-serif;
+        font-size: 12px;
+    }
+    .alienation-label {
+        width: 200px;
+        text-align: right;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .alienation-track {
+        flex: 1;
+        height: 18px;
+        background: #f0ebe3;
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+    }
+    .alienation-bar {
+        height: 100%;
+        border-radius: 2px;
+        position: absolute;
+        top: 0;
+    }
+    .alienation-value {
+        min-width: 160px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        color: var(--text-secondary);
+    }
+    .alienation-value strong { color: var(--brand-medium); }
+
+    .stat-card-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--brand-warm);
+        line-height: 1.1;
+    }
+    .stat-card-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-right: 16px;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    .legend-swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>1934 Reservation Baseline</h1>
+    <p class="lead">Data from the Wilson Report (1935) and Murray Memorandum (1958), documenting two waves of Indian land loss. Wilson captures the state of reservations as of 1934 — how much land had been allotted, alienated, and lost during the allotment era. Murray tracks a second wave during the termination era (1947–1957), when 3.3 million more acres of individual trust land were removed.</p>
+</div>
+
+<!-- Summary stats -->
+<div class="row mb-4" id="summaryCards">
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" id="statReservations">—</div>
+            <div class="stat-card-label">Reservations in Wilson Report</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" id="statOriginal">—</div>
+            <div class="stat-card-label">Original reservation acres</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" id="statAllotted">—</div>
+            <div class="stat-card-label">Acres allotted by 1934</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" id="statAlienated">—</div>
+            <div class="stat-card-label">Acres alienated by 1934</div>
+        </div>
+    </div>
+</div>
+
+<!-- Land composition chart -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Reservation Land Use in 1934</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted" style="font-size:13px;">Top reservations by original area. Each bar shows how the land was distributed by 1934: allotments still held by living or deceased allottees, land already alienated (sold), remaining tribal land, and government reserves.</p>
+        <div class="mb-2">
+            <span class="legend-item"><span class="legend-swatch" style="background:#4682B4;"></span> Living allotments</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#7BA7CC;"></span> Deceased allotments</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#c0392b;"></span> Alienated (sold)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#d4a017;"></span> Tribal land</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#999;"></span> Government reserve</span>
+        </div>
+        <div class="wilson-bar-container">
+            <canvas id="landChart" height="600"></canvas>
+            <div class="wilson-tooltip" id="landTooltip"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Alienation rate comparison -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Alienation Rate vs. Forced Fee Claims</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted" style="font-size:13px;">Two related but distinct measures. Wilson's "alienation rate" tracks land that <strong>left Indian ownership entirely</strong> (sold to non-Indians) by 1934. The FR forced fee claims are the <strong>~9,500 formal claims</strong> filed in the 1983 Federal Register by allottees or heirs who believed their trust land was converted to fee status without consent. These claims represent a small fraction of all trust-to-fee conversions — most conversions did not result in a formal claim. Where the red bar exceeds zero but the alienation bar is low (as with Klamath), it suggests trust-to-fee conversion happened but the land had not yet been sold by 1934.</p>
+        <div class="mb-2">
+            <span class="legend-item"><span class="legend-swatch" style="background:#d4a017;"></span> Alienation rate (Wilson 1934)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#c0392b;"></span> FR forced fee claims (% of allottees)</span>
+            <span class="legend-item"><span style="color:#c0392b;">&#9670;</span> Low alienation, significant claims</span>
+        </div>
+        <div id="alienationBars"></div>
+    </div>
+</div>
+
+<!-- Insights -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">Highest Land Loss by 1934</h2></div>
+            <div class="card-body" id="highLossInsight">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">Forced Fee in Context</h2></div>
+            <div class="card-body" id="forcedContextInsight">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h2 class="h5 mb-0">Forced Conversion Without Alienation</h2></div>
+            <div class="card-body" id="postWilsonInsight">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Murray Memorandum: Termination Era -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Termination Era: Individual Trust Land Lost, 1947–1957 (Murray Memorandum)</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted" style="font-size:13px;">The Murray Memorandum (1958) documented a second wave of individual Indian land loss during the termination era. While Wilson captured 23.2M acres alienated through allotment-era sales by 1934, Murray recorded an additional <strong id="murrayNetLoss">—</strong> acres of individual trust land lost between 1947 and 1957 across <strong id="murrayAgencies">—</strong> agencies — through trust removal transactions, fee patents, and forced sales under termination policy. The chart shows agencies with the largest losses, comparing 1947 holdings to 1957 holdings.</p>
+        <div class="mb-2">
+            <span class="legend-item"><span class="legend-swatch" style="background:#4682B4;"></span> Individual trust land remaining (1957)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#c0392b;"></span> Individual trust land lost (1947–1957)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#d4a017; opacity:0.4;"></span> Wilson alienation by 1934 (where matched)</span>
+        </div>
+        <canvas id="murrayChart" height="400"></canvas>
+    </div>
+</div>
+
+<!-- Murray summary row -->
+<div class="row mb-4" id="murraySummaryRow">
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" id="statMurray1947">—</div>
+            <div class="stat-card-label">Individual trust acres (1947)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" id="statMurray1957">—</div>
+            <div class="stat-card-label">Individual trust acres (1957)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number text-danger" id="statMurrayLoss">—</div>
+            <div class="stat-card-label">Net individual acres lost</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" id="statMurrayTxn">—</div>
+            <div class="stat-card-label">Trust removal transactions</div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>About This Data</h5>
+        <p class="text-muted mb-1" style="font-size:13px;">The Wilson Report (1935) was compiled by the Bureau of Indian Affairs to document the condition of Indian reservations as of June 30, 1934. Table VI provides per-reservation data on original areas, allotments made, land alienated through sales and fee patents, and remaining tribal holdings. This data is cross-referenced with BLM General Land Office patent records and Federal Register forced fee claims (1983) to show how allotment-era land loss connects to later claims for redress.</p>
+        <p class="text-muted mb-1" style="font-size:13px;">The Wilson Report records 23.2 million acres alienated across all reservations. Of that, 14.2 million (61%) was from the Five Civilized Tribes (Cherokee, Choctaw, Chickasaw, Creek, Seminole), whose allotments in Indian Territory were administered under the Curtis Act and Dawes Commission — a separate system not covered by BLM General Land Office patent records. Osage accounts for another 1 million acres. The charts comparing Wilson data with BLM patents cover 93 of 212 reservations (7.7M alienated acres), representing the reservations allotted under the general allotment system.</p>
+        <p class="text-muted mb-1" style="font-size:13px;">Reservation names were mapped between datasets using manual matching. Unmatched reservations include the Five Civilized Tribes, Osage, Pueblos (communal land grants), Mission rancherias, and New York state reservations.</p>
+        <p class="text-muted mb-0" style="font-size:13px;">The Murray Memorandum (1958) documented trust land transactions during 1947–1957, the termination era. It records individual and tribal land holdings at the start and end of the decade, trust removal transactions, and lands taken for public purposes. Murray agencies are BIA jurisdictions, often covering multiple tribes. Mapping to BLM preferred names covers 35 of 52 agencies. Together, Wilson (1934) and Murray (1947–1957) bracket the allotment and termination eras, showing two distinct waves of Indian land loss.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    $.getJSON('{{ url_for("api_wilson") }}', function(data) {
+        var res = data.reservations;
+        var sum = data.summary;
+
+        // Summary cards — show full Wilson totals
+        $('#statReservations').text(sum.total_reservations);
+        $('#statOriginal').text((sum.all_original_acres / 1e6).toFixed(1) + 'M');
+        $('#statAllotted').text((sum.all_allotted_acres / 1e6).toFixed(1) + 'M');
+        $('#statAlienated').text((sum.all_alienated_acres / 1e6).toFixed(1) + 'M');
+
+        drawLandChart(res);
+        drawAlienationBars(res);
+        drawInsights(res);
+
+        // Murray summary cards
+        if (sum.murray_individual_1947) {
+            $('#murrayNetLoss').text((sum.murray_net_loss / 1e6).toFixed(1) + 'M');
+            $('#murrayAgencies').text(sum.murray_agencies);
+            $('#statMurray1947').text((sum.murray_individual_1947 / 1e6).toFixed(1) + 'M');
+            $('#statMurray1957').text((sum.murray_individual_1957 / 1e6).toFixed(1) + 'M');
+            $('#statMurrayLoss').text('-' + (sum.murray_net_loss / 1e6).toFixed(1) + 'M');
+            $('#statMurrayTxn').text(sum.murray_transactions.toLocaleString());
+        }
+        drawMurrayChart(res);
+    });
+
+    function drawLandChart(reservations) {
+        // Top reservations by original area, with land breakdown
+        var filtered = reservations.filter(function(r) {
+            return r.original_acres > 100000;
+        });
+        filtered.sort(function(a, b) { return b.original_acres - a.original_acres; });
+        filtered = filtered.slice(0, 25);
+
+        var canvas = document.getElementById('landChart');
+        var container = canvas.parentElement;
+        var dpr = window.devicePixelRatio || 1;
+        var W = container.offsetWidth;
+        var barH = 22;
+        var gap = 3;
+        var margin = { top: 10, right: 80, bottom: 30, left: 220 };
+        var H = margin.top + filtered.length * (barH + gap) + margin.bottom;
+        canvas.height = H * dpr;
+        canvas.width = W * dpr;
+        canvas.style.height = H + 'px';
+        canvas.style.width = W + 'px';
+        var ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        var plotW = W - margin.left - margin.right;
+        var maxAcres = Math.max.apply(null, filtered.map(function(r) { return r.original_acres; }));
+
+        function xScale(v) { return margin.left + (v / maxAcres) * plotW; }
+
+        ctx.clearRect(0, 0, W, H);
+
+        var points = [];
+        filtered.forEach(function(r, i) {
+            var y = margin.top + i * (barH + gap);
+            var livingAc = r.living_acres || 0;
+            var deceasedAc = r.deceased_acres || 0;
+            var alienated = r.land_alienated || 0;
+            var tribal = r.tribal_acres || 0;
+            var govt = r.govt_acres || 0;
+            var original = r.original_acres;
+
+            // Stacked segments
+            var segments = [
+                { value: livingAc, color: '#4682B4', label: 'Living allotments' },
+                { value: deceasedAc, color: '#7BA7CC', label: 'Deceased allotments' },
+                { value: alienated, color: '#c0392b', label: 'Alienated' },
+                { value: tribal, color: '#d4a017', label: 'Tribal' },
+                { value: govt, color: '#999', label: 'Government' },
+            ];
+
+            var x = margin.left;
+            segments.forEach(function(seg) {
+                if (seg.value <= 0) return;
+                var w = (seg.value / maxAcres) * plotW;
+                ctx.fillStyle = seg.color;
+                ctx.fillRect(x, y, w, barH);
+                x += w;
+            });
+
+            // Label
+            ctx.fillStyle = '#333';
+            ctx.font = '11px "Helvetica Neue", sans-serif';
+            ctx.textAlign = 'right';
+            var label = r.reservation.replace(/ \(A\. and R\.\)/, '').replace(/ \(A\.\):/, ':');
+            ctx.fillText(label, margin.left - 6, y + barH / 2 + 4);
+
+            // Acreage label
+            ctx.fillStyle = '#999';
+            ctx.textAlign = 'left';
+            ctx.fillText((original / 1e6).toFixed(1) + 'M', xScale(original) + 4, y + barH / 2 + 4);
+
+            points.push({
+                x1: margin.left, x2: xScale(original), y1: y, y2: y + barH,
+                r: r
+            });
+        });
+
+        // X axis ticks
+        ctx.fillStyle = '#999';
+        ctx.font = '10px "Helvetica Neue", sans-serif';
+        ctx.textAlign = 'center';
+        var tickInterval = maxAcres > 20000000 ? 10000000 : maxAcres > 5000000 ? 2000000 : 1000000;
+        for (var v = 0; v <= maxAcres; v += tickInterval) {
+            ctx.fillText((v / 1e6).toFixed(0) + 'M', xScale(v), H - margin.bottom + 16);
+        }
+
+        // Tooltip
+        var tooltip = document.getElementById('landTooltip');
+        canvas.addEventListener('mousemove', function(e) {
+            var rect = canvas.getBoundingClientRect();
+            var mx = e.clientX - rect.left;
+            var my = e.clientY - rect.top;
+            var found = null;
+            for (var i = 0; i < points.length; i++) {
+                var p = points[i];
+                if (my >= p.y1 && my <= p.y2 && mx >= p.x1 && mx <= p.x2 + 80) {
+                    found = p.r;
+                    break;
+                }
+            }
+            if (found) {
+                var r = found;
+                var html = '<strong>' + r.reservation + '</strong>';
+                html += '<br><span class="label">Original area:</span> ' + r.original_acres.toLocaleString() + ' acres';
+                html += '<br><span class="label">Allotted:</span> ' + r.allotment_acreage.toLocaleString() + ' acres';
+                if (r.living_acres) html += '<br><span class="label">  Living allotments:</span> ' + r.living_acres.toLocaleString() + ' acres';
+                if (r.deceased_acres) html += '<br><span class="label">  Deceased allotments:</span> ' + r.deceased_acres.toLocaleString() + ' acres';
+                html += '<br><span class="label">Alienated:</span> ' + r.land_alienated.toLocaleString() + ' acres';
+                if (r.alienation_rate) html += ' (<strong>' + r.alienation_rate + '%</strong>)';
+                html += '<br><span class="label">Tribal land:</span> ' + r.tribal_acres.toLocaleString() + ' acres';
+                if (r.blm_tribe) {
+                    html += '<br><br><span class="label">BLM:</span> ' + r.blm_tribe;
+                    html += '<br><span class="label">Total patents:</span> ' + r.blm_total_patents.toLocaleString();
+                    html += '<br><span class="label">Fee patents:</span> ' + r.blm_fee_patents.toLocaleString();
+                    if (r.fr_forced_claims > 0) html += '<br><span class="label">FR forced fee claims:</span> ' + r.fr_forced_claims.toLocaleString();
+                }
+                tooltip.innerHTML = html;
+                tooltip.style.display = 'block';
+                tooltip.style.left = Math.min(mx + 12, W - 300) + 'px';
+                tooltip.style.top = (my - 10) + 'px';
+            } else {
+                tooltip.style.display = 'none';
+            }
+        });
+        canvas.addEventListener('mouseleave', function() { tooltip.style.display = 'none'; });
+    }
+
+    function drawAlienationBars(reservations) {
+        var filtered = reservations.filter(function(r) {
+            return r.blm_tribe && r.allottee_count >= 100 && r.alienation_rate !== null;
+        });
+        filtered.sort(function(a, b) { return b.alienation_rate - a.alienation_rate; });
+
+        var container = document.getElementById('alienationBars');
+        var html = '';
+
+        filtered.forEach(function(r) {
+            var label = r.reservation.replace(/ \(A\. and R\.\)/, '').replace(/ \(A\.\):/, ':');
+            var alienPct = Math.min(r.alienation_rate, 100);
+            var forcedPct = 0;
+            if (r.allottee_count > 0 && r.fr_forced_claims > 0) {
+                forcedPct = Math.min(r.fr_forced_claims / r.allottee_count * 100, 100);
+            }
+
+            var alienColor = alienPct > 60 ? '#a33' : alienPct > 30 ? '#d4a017' : '#8b5a2b';
+
+            html += '<div class="alienation-row">';
+            html += '<span class="alienation-label" title="' + r.reservation + '">' + label + '</span>';
+            html += '<div class="alienation-track">';
+            html += '<div class="alienation-bar" style="width:' + alienPct + '%;background:' + alienColor + ';opacity:0.5;"></div>';
+            if (forcedPct > 0) {
+                html += '<div class="alienation-bar" style="width:' + forcedPct.toFixed(1) + '%;background:#c0392b;opacity:0.85;"></div>';
+            }
+            html += '</div>';
+            // Flag post-1934 cases: low alienation but significant forced claims
+            var isPostWilson = alienPct < 15 && forcedPct > 3;
+
+            html += '<span class="alienation-value"><strong>' + r.alienation_rate + '%</strong> alien.';
+            if (forcedPct > 0) {
+                html += ' / <span style="color:#c0392b;">' + forcedPct.toFixed(0) + '%</span> forced';
+            }
+            if (isPostWilson) {
+                html += ' <span title="Forced fee conversion occurred primarily after 1934" style="color:#c0392b;cursor:help;">&#9670;</span>';
+            }
+            html += '</span>';
+            html += '</div>';
+        });
+
+        container.innerHTML = html;
+    }
+
+    function drawInsights(reservations) {
+        var matched = reservations.filter(function(r) { return r.blm_tribe && r.allottee_count >= 100; });
+
+        // Highest land loss
+        var byAlienation = matched.filter(function(r) { return r.alienation_rate; });
+        byAlienation.sort(function(a, b) { return b.alienation_rate - a.alienation_rate; });
+
+        var el1 = document.getElementById('highLossInsight');
+        var html = '<p>Reservations that lost the highest proportion of allotted land by 1934:</p><ul>';
+        byAlienation.slice(0, 8).forEach(function(r) {
+            var label = r.reservation.replace(/ \(A\. and R\.\)/, '').replace(/ \(A\.\):/, ':');
+            html += '<li><strong>' + label + '</strong>: ';
+            html += '<span style="color:#a33;">' + r.alienation_rate + '%</span> of allotted land alienated';
+            html += ' (' + r.land_alienated.toLocaleString() + ' / ' + r.allotment_acreage.toLocaleString() + ' acres)</li>';
+        });
+        html += '</ul>';
+        html += '<p class="text-muted" style="font-size:13px;">"Alienated" in the Wilson Report includes land sold through fee patents, certificates of competency, and other mechanisms that removed land from trust protection.</p>';
+        el1.innerHTML = html;
+
+        // Forced fee in context — use FR claims as ground truth
+        var withForced = matched.filter(function(r) { return r.fr_forced_claims > 0; });
+        withForced.sort(function(a, b) { return b.fr_forced_claims - a.fr_forced_claims; });
+
+        var el2 = document.getElementById('forcedContextInsight');
+        html = '<p>Formal forced fee claims filed in the 1983 Federal Register, relative to Wilson Report allottee counts (1934). These claims represent cases where allottees or heirs asserted that trust-to-fee conversion was done without consent — a fraction of all conversions:</p><ul>';
+        withForced.slice(0, 8).forEach(function(r) {
+            var label = r.reservation.replace(/ \(A\. and R\.\)/, '').replace(/ \(A\.\):/, ':');
+            var claimPct = (r.fr_forced_claims / r.allottee_count * 100).toFixed(1);
+            html += '<li><strong>' + label + '</strong>: ';
+            html += r.fr_forced_claims.toLocaleString() + ' forced fee claims';
+            html += ' (' + claimPct + '% of ' + r.allottee_count.toLocaleString() + ' allottees)';
+            if (r.alienation_rate) {
+                html += ' — Wilson alienation rate: ' + r.alienation_rate + '%';
+            }
+            html += '</li>';
+        });
+        html += '</ul>';
+        html += '<p class="text-muted" style="font-size:13px;">The 1983 Federal Register invited allottees and heirs to file claims asserting that fee patents were issued without the allottee\'s consent. Forced fee patents were issued without consent, often by "competency commissions" under the Burke Act (1906). The ~9,500 forced fee claims filed represent a fraction of all trust-to-fee conversions — many conversions, whether voluntary or coerced, did not result in a formal claim.</p>';
+        el2.innerHTML = html;
+
+        // Post-1934 forced conversion
+        var postWilson = matched.filter(function(r) {
+            var alien = r.alienation_rate || 0;
+            var claimPct = r.allottee_count > 0 ? r.fr_forced_claims / r.allottee_count * 100 : 0;
+            return alien < 15 && claimPct > 3;
+        });
+        postWilson.sort(function(a, b) {
+            var aPct = a.allottee_count > 0 ? a.fr_forced_claims / a.allottee_count : 0;
+            var bPct = b.allottee_count > 0 ? b.fr_forced_claims / b.allottee_count : 0;
+            return bPct - aPct;
+        });
+
+        var el3 = document.getElementById('postWilsonInsight');
+        if (postWilson.length > 0) {
+            html = '<p>These reservations had <strong>little or no land alienated by 1934</strong> according to the Wilson Report, yet saw forced fee claims filed in the 1983 Federal Register. Trust-to-fee conversion and alienation are different events: conversion removed trust protection (making the land taxable and saleable), while alienation means the land actually left Indian ownership. On these reservations, allotments were converted from trust to fee — some without consent — but the allottees had not yet sold the land by 1934.</p><ul>';
+            postWilson.forEach(function(r) {
+                var label = r.reservation.replace(/ \(A\. and R\.\)/, '').replace(/ \(A\.\):/, ':');
+                var claimPct = (r.fr_forced_claims / r.allottee_count * 100).toFixed(1);
+                html += '<li><strong>' + label + '</strong>: ';
+                html += 'Wilson alienation rate ' + (r.alienation_rate || 0) + '%';
+                html += ', but ' + r.fr_forced_claims.toLocaleString() + ' forced fee claims filed';
+                html += ' (' + claimPct + '% of ' + r.allottee_count.toLocaleString() + ' allottees). ';
+
+                if (r.reservation.indexOf('Klamath') >= 0) {
+                    html += '<em>BLM records show ~300 fee patents issued to Klamath allottees in 1917\u20131920 during the competency commission era, yet Wilson recorded zero alienation in 1934 — allottees had received forced fee patents but had not yet sold the land. Klamath was later terminated entirely in 1954.</em>';
+                } else if (r.reservation.indexOf('Crow') >= 0) {
+                    html += '<em>Crow allottees received fee patents through competency commissions but retained much of the land through 1934, with Wilson showing only 10.6% alienation despite significant forced conversion activity.</em>';
+                } else if (r.reservation.indexOf('Mille') >= 0) {
+                    html += '<em>Mille Lacs allotments faced forced fee conversion but limited immediate alienation.</em>';
+                }
+                html += '</li>';
+            });
+            html += '</ul>';
+            html += '<p class="text-muted" style="font-size:13px;">Wilson\'s "alienation" measures land that left Indian ownership entirely (sold to non-Indians). Conversion from trust to fee status removed federal trust protection — making the land taxable and saleable — but the actual sale could come years or decades later. The Federal Register forced fee claims (1983) are formal claims filed by allottees or heirs asserting that their specific conversion was done without consent. These claims are a subset of all trust-to-fee conversions, which in turn are a subset of all the forces that led to alienation.</p>';
+            el3.innerHTML = html;
+        } else {
+            el3.parentElement.parentElement.style.display = 'none';
+        }
+    }
+
+    function drawMurrayChart(reservations) {
+        // Get reservations that have Murray data, sorted by individual land loss
+        var withMurray = reservations.filter(function(r) { return r.murray && r.murray.individual_loss > 0; });
+        withMurray.sort(function(a, b) { return b.murray.individual_loss - a.murray.individual_loss; });
+        var top = withMurray.slice(0, 25);
+        if (!top.length) return;
+
+        var labels = top.map(function(r) {
+            var name = r.reservation.replace(/ \(A\. and R\.\)/, '').replace(/ \(R\.\)/, '').replace(/ \(A\.\)/, '');
+            return name.length > 25 ? name.substring(0, 22) + '...' : name;
+        });
+
+        var remaining = top.map(function(r) { return r.murray.individual_1957; });
+        var lost = top.map(function(r) { return r.murray.individual_loss; });
+        var wilsonAlienated = top.map(function(r) { return r.land_alienated || 0; });
+
+        var datasets = [
+            {
+                label: 'Individual trust land remaining (1957)',
+                data: remaining,
+                backgroundColor: 'rgba(70, 130, 180, 0.7)',
+                borderColor: 'rgba(70, 130, 180, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Individual trust land lost (1947–1957)',
+                data: lost,
+                backgroundColor: 'rgba(192, 57, 43, 0.8)',
+                borderColor: 'rgba(192, 57, 43, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Wilson alienation by 1934',
+                data: wilsonAlienated,
+                backgroundColor: 'rgba(212, 160, 23, 0.35)',
+                borderColor: 'rgba(212, 160, 23, 0.8)',
+                borderWidth: 1
+            }
+        ];
+
+        var ctx = document.getElementById('murrayChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: datasets },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + Math.round(context.parsed.x).toLocaleString() + ' acres';
+                            },
+                            afterBody: function(items) {
+                                var idx = items[0].dataIndex;
+                                var r = top[idx];
+                                var lines = [];
+                                if (r.murray.transactions) {
+                                    lines.push('Transactions: ' + r.murray.transactions.toLocaleString());
+                                }
+                                if (r.murray.individual_1947 > 0) {
+                                    var pct = (r.murray.individual_loss / r.murray.individual_1947 * 100).toFixed(1);
+                                    lines.push('Loss: ' + pct + '% of 1947 holdings');
+                                }
+                                return lines;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: { display: true, text: 'Acres' },
+                        ticks: {
+                            callback: function(val) {
+                                return val >= 1e6 ? (val / 1e6).toFixed(1) + 'M' : val >= 1e3 ? (val / 1e3).toFixed(0) + 'K' : val;
+                            }
+                        }
+                    },
+                    y: { stacked: true }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

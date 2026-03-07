@@ -30,10 +30,14 @@
                         <a class="nav-link" href="{{ url_for('tribes_list') }}">Tribes</a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Timeline</a>
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Visualizations</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('timeline') }}">Forced Fee Claims</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('patents_timeline') }}">All Patents</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('timeline') }}">Forced Fee Timeline</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('patents_timeline') }}">All Patents Timeline</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('sankey') }}">Trust-to-Fee Conversion</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('claims_rate') }}">Claims by Reservation</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('wilson') }}">1934 Reservation Baseline</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
