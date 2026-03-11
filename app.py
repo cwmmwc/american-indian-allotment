@@ -93,8 +93,14 @@ def add_claim_type_filter(claim_type, conditions, params):
 # ──────────────────────────────────────────────
 
 @app.route("/")
+def splash():
+    """Splash / gateway page styled after the IATH main site."""
+    return render_template("splash.html")
+
+
+@app.route("/home")
 def home():
-    """Landing page."""
+    """Research overview page."""
     return render_template("home.html")
 
 
@@ -1803,6 +1809,97 @@ def api_wilson():
                 "murray_transactions": int(mtxn_total) if mtxn_total else 0,
             }
         })
+    finally:
+        conn.close()
+
+
+@app.route("/murray")
+def murray():
+    """Murray Memorandum (1947-1957) — trust removal during termination era."""
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # Summary stats
+        cur.execute("SELECT SUM(individual_acres_1947) as i47, SUM(individual_acres_1957) as i57, "
+                     "SUM(individual_decrease) as loss FROM murray_comparative")
+        comp_totals = cur.fetchone()
+        cur.execute("SELECT SUM(transaction_count) as total FROM murray_transactions")
+        txn_total = cur.fetchone()["total"]
+        cur.execute("SELECT SUM(total_acreage) as total FROM murray_lands_acquired")
+        acq_total = cur.fetchone()["total"]
+
+        class Summary:
+            individual_1947 = float(comp_totals["i47"])
+            individual_1957 = float(comp_totals["i57"])
+            individual_loss = float(comp_totals["loss"])
+            total_transactions = int(txn_total)
+            lands_acquired = float(acq_total)
+        summary = Summary()
+
+        # Removal by year (trust_removal aggregated)
+        cur.execute("""
+            SELECT year, SUM(acres_removed) as acres
+            FROM murray_trust_removal
+            GROUP BY year ORDER BY year
+        """)
+        removal_by_year = [{"year": r["year"], "acres": float(r["acres"])}
+                           for r in cur.fetchall()]
+
+        # Transactions by year
+        cur.execute("""
+            SELECT year, SUM(transaction_count) as count
+            FROM murray_transactions
+            GROUP BY year ORDER BY year
+        """)
+        txn_by_year = [{"year": r["year"], "count": int(r["count"])}
+                       for r in cur.fetchall()]
+
+        # Lands acquired (top agencies)
+        cur.execute("""
+            SELECT agency, total_acreage
+            FROM murray_lands_acquired
+            WHERE total_acreage > 0
+            ORDER BY total_acreage DESC
+        """)
+        lands_acquired = [{"agency": r["agency"],
+                           "acreage": float(r["total_acreage"])}
+                          for r in cur.fetchall()]
+
+        # Comparative 1947 vs 1957
+        cur.execute("""
+            SELECT agency,
+                individual_acres_1947, individual_acres_1957,
+                individual_decrease
+            FROM murray_comparative
+            WHERE individual_decrease IS NOT NULL AND individual_decrease > 0
+            ORDER BY individual_decrease DESC
+        """)
+        comparative = [{"agency": r["agency"],
+                        "acres_1947": float(r["individual_acres_1947"]) if r["individual_acres_1947"] else 0,
+                        "acres_1957": float(r["individual_acres_1957"]) if r["individual_acres_1957"] else 0,
+                        "loss": float(r["individual_decrease"]) if r["individual_decrease"] else 0}
+                       for r in cur.fetchall()]
+
+        # Agency removal with transaction counts
+        cur.execute("""
+            SELECT a.agency, a.acres_removed, a.blm_tribe_name,
+                COALESCE(t.txn, 0) as transactions
+            FROM murray_agency_removal a
+            LEFT JOIN (
+                SELECT agency, SUM(transaction_count) as txn
+                FROM murray_transactions GROUP BY agency
+            ) t ON t.agency = a.agency
+            ORDER BY a.acres_removed DESC
+        """)
+        agency_removal = cur.fetchall()
+
+        return render_template("murray.html", summary=summary,
+                               removal_by_year=removal_by_year,
+                               txn_by_year=txn_by_year,
+                               lands_acquired=lands_acquired,
+                               comparative=comparative,
+                               agency_removal=agency_removal)
     finally:
         conn.close()
 

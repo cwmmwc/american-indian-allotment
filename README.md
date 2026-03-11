@@ -1,13 +1,55 @@
 # Indian Land Allotment Research
 
-A Flask application for researching the history of Indian allotment land dispossession — from the allotment era through termination. Integrates three primary datasets: 239,845 BLM allotment patents, 10,976 Federal Register forced fee claims, and historical land surveys from the Wilson Report (1934) and Murray Memorandum (1958).
+A Flask web application for researching the history of Indian allotment land dispossession — from the allotment era (1887–1934) through termination (1947–1957). Built at the [Institute for Advanced Technology in the Humanities](https://www.iath.virginia.edu/), University of Virginia, as part of the [Indian Land Allotment Research](https://land-sales.iath.virginia.edu/) project directed by Christian W. McMillen.
 
-Built at the [Institute for Advanced Technology in the Humanities](https://www.iath.virginia.edu/), University of Virginia, as part of the [Indian Land Allotment Research](https://land-sales.iath.virginia.edu/) project.
+The site integrates four primary historical datasets — 239,845 BLM allotment patents, 10,976 Federal Register forced fee claims, the Wilson Report (1934), and the Murray Memorandum (1958) — into a searchable, cross-referenced research tool with interactive visualizations.
+
+## Site Structure
+
+### Landing Page (`/`)
+A splash page modeled after the [IATH main site](https://land-sales.iath.virginia.edu/), featuring full-width historical document images with clickable hotspots linking to high-resolution scans. Includes the Neda Laura Parker quote (Comanche, 1925) and links to the four primary datasets. Serves as the gateway to the research application.
+
+### Research Home (`/home`)
+Overview of the project's four datasets — BLM Patents, Federal Register Claims, the Wilson Report, and the Murray Memorandum — with summary statistics and navigation to all sections of the site.
+
+### Claims Search (`/claims`)
+Full-text search across 10,976 Federal Register claims (9,649 forced fee, 1,327 secretarial transfer). Filter by allottee name, allotment number, tribe, claim type, and date range. Server-side pagination and CSV export.
+
+### Individual Claim Pages (`/claim/<id>`)
+Detailed view of each FR claim including linked BLM patents, trust-to-fee conversion details, PLSS land descriptions, and direct links to GLO patent images.
+
+### Patent Search (`/patents`)
+Browse and search 239,845 BLM allotment patent records. Filter by name, tribe, state, county, authority type, and date range. CSV export.
+
+### Individual Patent Pages (`/patent/<id>`)
+Full patent detail with legal land descriptions, authority citations, and links to the companion Leaflet map.
+
+### Tribe Pages (`/tribes`, `/tribe/<slug>`)
+Landing pages for each of 57 tribes with summary statistics, timeline charts, sortable claims tables, and links to the companion allotment map.
+
+### Visualizations
+
+- **Forced Fee Timeline** (`/timeline`) — FR claims plotted by year with policy era context and historical annotations.
+
+- **All Patents Timeline** (`/patents/timeline`) — Distribution of 239,845 patents by year with forced fee toggle, Wilson Table VIII annual sales overlay (1903–1934), and Murray Memorandum overlay (acres removed from trust, 1948–1957). Includes a dedicated Wilson annual sales chart showing original vs. inherited land breakdowns and proceeds.
+
+- **Trust-to-Fee Conversion / Sankey** (`/sankey`) — D3 Sankey diagram showing how patents moved between trust and fee status, with FR forced fee claims as a sub-flow. Per-tribe Wilson baseline cards and Murray termination-era context.
+
+- **Claims by Reservation** (`/claims-rate`) — Scatter plot and bar chart comparing fee patents vs. FR claims per tribe.
+
+- **Wilson Report** (`/wilson`) — Stacked bar charts of 1934 reservation land composition (212 reservations), alienation rates vs. FR forced fee comparison, and Murray termination-era comparison showing two waves of land loss. Links to all digitized Wilson source tables and the original 1935 PDF.
+
+- **Murray Memorandum** (`/murray`) — Comprehensive page with summary statistics, four interactive charts (trust removal by year, transactions by year, lands acquired, 1947 vs 1957 comparative), a searchable agency table, a complete source table directory linking to every IATH-digitized table, and the original PDF.
+
+- **Du Bois Data Portraits** (`/dubois`) — Experimental visualizations inspired by W.E.B. Du Bois's data portraits: a spiral chart of Wilson annual sales, horizontal bars of land alienated vs. retained by reservation, a forced fee timeline with policy era shading, and a radial bar chart of FR claims by tribe.
+
+### About (`/about`)
+Project background, methodology, data sources, and acknowledgments.
 
 ## The Data
 
 ### Federal Register Claims (1983)
-In 1983, the Bureau of Indian Affairs published two Federal Register notices listing Indian allotment claims. These documented allotments where fee patents had been issued without the allottee's consent ("forced fee patents"), as well as secretarial transfers.
+In 1983, the Bureau of Indian Affairs published two Federal Register notices listing Indian allotment claims — documenting allotments where fee patents had been issued without the allottee's consent ("forced fee patents"), as well as secretarial transfers.
 
 - **9,649** forced fee patent claims
 - **1,327** secretarial transfers
@@ -24,28 +66,13 @@ The Wilson Report documented the state of **212 Indian reservations** as of 1934
 ### Murray Memorandum (1947–1957)
 The Murray Memorandum documented a second wave of land loss during the termination era. Across **52 BIA agencies**, individual Indian trust land fell from **15.9 million acres (1947) to 12.6 million (1957)** — a net loss of 3.3 million acres through 18,546 trust removal transactions.
 
-## Features
+## Tech Stack
 
-### Search and Browse
-- **Claims search** — Filter by allottee name, allotment number, tribe, claim type, date range. Server-side pagination.
-- **Patent search** — Browse 239,845 BLM patents with filters for name, tribe, state, authority type, date.
-- **Individual claim pages** — FR data, linked BLM patents, trust-to-fee conversion details, PLSS land descriptions.
-- **Tribe landing pages** — Summary statistics, timeline charts, and sortable claims tables for each of 57 tribes.
-- **CSV downloads** — Export filtered results for claims or patents.
-- **GLO record links** — Direct links to BLM General Land Office patent images.
-
-### Visualizations
-- **Trust-to-Fee Conversion (Sankey)** — How patents moved between trust and fee status, with FR forced fee claims as a sub-flow. Wilson baseline and Murray termination-era cards per tribe.
-- **All Patents Timeline** — Distribution of 239,845 patents by year, with forced fee toggle and Murray Memorandum overlay (acres removed from trust, 1948–1957).
-- **1934 Reservation Baseline** — Wilson Report land composition charts, alienation rates vs. FR claims, and Murray termination-era comparison showing two waves of land loss.
-- **Claims by Reservation** — Scatter and bar charts comparing fee patents vs. FR claims per tribe.
-- **Forced Fee Timeline** — FR claims by year with policy era context.
-
-## Requirements
-
-- Python 3
-- PostgreSQL with the `allotment_research` database
-- Flask, psycopg2
+- **Backend**: Python 3, Flask, psycopg2
+- **Database**: PostgreSQL (`allotment_research`)
+- **Frontend**: Bootstrap 5, jQuery, DataTables
+- **Charts**: Chart.js (bar/line charts), D3.js v7 (Sankey, radial/spiral, Du Bois plates)
+- **Templates**: Jinja2
 
 ## Setup
 
@@ -66,11 +93,12 @@ export DATABASE_URL="dbname=allotment_research user=your_user host=localhost"
 ## Running
 
 ```bash
+cd /Users/cwm6W/projects/federal-register-app
 source venv/bin/activate
 python3 app.py
 ```
 
-The app runs on http://127.0.0.1:5001 by default.
+The app runs at http://127.0.0.1:5001.
 
 ## Database Tables
 
@@ -81,10 +109,27 @@ The app runs on http://127.0.0.1:5001 by default.
 | `forced_fee_patents_rails` | 17,560 | Hand-verified claim-to-patent linkages |
 | `trust_fee_linkages` | 29,229 | Trust-to-fee patent conversion records |
 | `wilson_table_vi` | 212 | Wilson Report 1934 reservation baseline data |
+| `wilson_annual_sales` | ~32 | Wilson Table VIII annual land sales 1903–1934 |
 | `murray_comparative` | 52 | Murray Memorandum 1947 vs 1957 land by agency |
 | `murray_transactions` | 520 | Murray trust removal transaction counts by agency and year |
 | `murray_trust_removal` | 83 | Murray trust land removed by area office and year |
 | `murray_agency_removal` | 41 | Murray total acres removed by agency |
 | `murray_lands_acquired` | 23 | Federal lands acquired since 1930 |
 | `parcels_patents_by_tribe` | 401,811 | PLSS legal land descriptions |
-| `fee_patents` / `trust_patents` | 88,537 / 95,353 | Older BLM patent tables (legacy) |
+
+## Key Files
+
+- `app.py` — All routes, queries, and API endpoints (single file)
+- `templates/` — Jinja2 HTML templates (splash, home, claims, patents, tribe pages, visualizations)
+- `static/style.css` — Global styles
+- `scripts/` — Data import and scraping scripts (Wilson, Murray)
+- `CLAUDE.md` — Full architecture guide (auto-loaded by Claude Code)
+- `DATABASE.md` — Complete database documentation
+
+## Companion App
+
+The Leaflet map application at `/Users/cwm6W/projects/patent-analysis` (port 8000) provides spatial exploration of patent locations on an interactive map. Cross-linked via `?tribe={name}&accession={id}`.
+
+## GitHub
+
+https://github.com/cwmmwc/federal-register-forced-fee

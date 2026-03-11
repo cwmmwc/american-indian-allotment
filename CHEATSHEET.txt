@@ -1,0 +1,123 @@
+===========================================================
+  INDIAN LAND ALLOTMENT RESEARCH — QUICK REFERENCE
+===========================================================
+
+PROJECT LOCATION
+  /Users/cwm6W/projects/federal-register-app
+
+GITHUB
+  https://github.com/cwmmwc/federal-register-forced-fee
+
+-----------------------------------------------------------
+START THE APP
+-----------------------------------------------------------
+  cd /Users/cwm6W/projects/federal-register-app
+  source venv/bin/activate
+  python3 app.py
+
+  Then open: http://localhost:5001
+
+STOP THE APP
+  Ctrl+C in the terminal
+
+-----------------------------------------------------------
+START CLAUDE CODE
+-----------------------------------------------------------
+  cd /Users/cwm6W/projects/federal-register-app
+  claude
+
+  Claude Code reads CLAUDE.md automatically for full
+  project context.
+
+-----------------------------------------------------------
+ALL PAGES
+-----------------------------------------------------------
+  /                  Splash / landing page (document images)
+  /home              Research home (four datasets overview)
+  /claims            Claims search (10,976 FR claims)
+  /claim/<id>        Individual claim detail
+  /tribes            Browse all 57 tribes
+  /tribe/<slug>      Individual tribe page
+  /patents           Patent search (239,845 BLM records)
+  /patent/<id>       Individual patent detail
+  /patents/timeline  All patents timeline + Wilson/Murray overlays
+  /timeline          Forced fee claims timeline
+  /sankey            Trust-to-fee conversion (Sankey diagram)
+  /claims-rate       Claims by reservation (scatter + bar)
+  /wilson            Wilson Report (1934) — charts + source tables
+  /murray            Murray Memorandum — charts + source tables
+  /dubois            Du Bois-inspired data portraits
+  /about             About page
+
+-----------------------------------------------------------
+KEY FILES
+-----------------------------------------------------------
+  app.py               All routes and logic (single file)
+  templates/            HTML templates (Jinja2)
+    splash.html           Landing page
+    home.html             Research home
+    base.html             Shared layout (navbar, footer)
+    claims_search.html    Claims search
+    claim_detail.html     Individual claim
+    tribes_list.html      Tribe listing
+    tribe_detail.html     Individual tribe
+    patents_index.html    Patent search
+    patent_detail.html    Individual patent
+    patents_timeline.html Patent timeline + Wilson overlay
+    timeline.html         Forced fee timeline
+    sankey.html           Trust-to-fee Sankey
+    wilson.html           Wilson Report page
+    murray.html           Murray Memorandum page
+    dubois.html           Du Bois data portraits
+    about.html            About page
+  static/style.css     Global styles
+  scripts/             Data import scripts
+  CLAUDE.md            Architecture guide (for Claude Code)
+  DATABASE.md          Database documentation
+
+-----------------------------------------------------------
+GIT BASICS
+-----------------------------------------------------------
+  git status            See what's changed
+  git log --oneline     Recent commits
+  git add <files>       Stage files
+  git commit -m "msg"   Commit
+  git push              Push to GitHub
+
+-----------------------------------------------------------
+COMPANION APP (LEAFLET MAP)
+-----------------------------------------------------------
+  /Users/cwm6W/projects/patent-analysis
+  Runs on port 8000
+  Cross-linked via ?tribe={name}&accession={id}
+
+  To start:
+    cd /Users/cwm6W/projects/patent-analysis
+    python3 -m http.server 8000
+
+-----------------------------------------------------------
+DATABASE
+-----------------------------------------------------------
+  PostgreSQL database: allotment_research
+
+  Main tables:
+    federal_register_claims   10,976 rows  FR claims
+    blm_allotment_patents    239,845 rows  BLM patents
+    forced_fee_patents_rails  17,560 rows  Claim-patent links
+    trust_fee_linkages        29,229 rows  Trust-to-fee conversions
+    wilson_table_vi              212 rows  1934 reservation data
+    wilson_annual_sales          ~32 rows  Annual sales 1903-1934
+    murray_comparative            52 rows  1947 vs 1957 by agency
+    murray_transactions          520 rows  Transactions by agency/year
+    murray_trust_removal          83 rows  Removal by area office/year
+    murray_agency_removal         41 rows  Total removal by agency
+    murray_lands_acquired         23 rows  Lands acquired since 1930
+
+-----------------------------------------------------------
+IMPORTANT RULE
+-----------------------------------------------------------
+  Forced fee counts come ONLY from federal_register_claims
+  (9,649 claims). Never use the BLM forced_fee flag — it
+  inflates through one-to-many patent matching.
+
+===========================================================

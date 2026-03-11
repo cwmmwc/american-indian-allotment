@@ -95,8 +95,8 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>1934 Reservation Baseline</h1>
-    <p class="lead">Data from the Wilson Report (1935) and Murray Memorandum (1958), documenting two waves of Indian land loss. Wilson captures the state of reservations as of 1934 — how much land had been allotted, alienated, and lost during the allotment era. Murray tracks a second wave during the termination era (1947–1957), when 3.3 million more acres of individual trust land were removed.</p>
+    <h1>Wilson Report (1934)</h1>
+    <p class="lead">Data from <em>Indian Land Tenure, Economic Status, and Population Trends</em> (1935), documenting the condition of 212 reservations as of 1934. How much land had been allotted, alienated, and lost during the allotment era — from 138 million acres in 1887 to 52 million by the mid-1930s. Cross-referenced with BLM patent records and Federal Register claims. The <a href="{{ url_for('murray') }}">Murray Memorandum</a> documents a second wave during 1947–1957.</p>
 </div>
 
 <!-- Summary stats -->
@@ -239,13 +239,53 @@
     </div>
 </div>
 
+<!-- Full document link -->
+<div class="card mb-4">
+    <div class="card-body d-flex align-items-center gap-3">
+        <div>
+            <h2 class="h5 mb-1">Full Document</h2>
+            <p class="mb-0 text-muted"><em>Indian Land Tenure, Economic Status, and Population Trends</em> (1935). Part X of the Supplemental Report of the Land Planning Committee to the National Resources Board. Compiled by the Office of Indian Affairs.</p>
+        </div>
+        <a href="https://land-sales.iath.virginia.edu/documents/wilson/wilson-1935-indian-land-tenure-economic-status-and-population-trends.pdf" target="_blank" class="btn btn-outline-dark btn-sm ms-auto" style="white-space: nowrap;">View PDF</a>
+    </div>
+</div>
+
+<!-- Source tables -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Source Tables</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Tables from the Wilson Report, digitized by the <a href="https://land-sales.iath.virginia.edu/">Indian Land Allotment Research Project</a> at UVA/IATH.</p>
+        <div class="row">
+            <div class="col-md-6">
+                <dl style="font-size: 0.9rem;">
+                    <dt><a href="https://land-sales.iath.virginia.edu/wilson_t05.php" target="_blank">Table V</a></dt>
+                    <dd class="text-muted">Acreage of Indian reservations in 1934, by states, classified as to ownership and character</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/wilson_t06.php" target="_blank">Table VI</a></dt>
+                    <dd class="text-muted">Basic Indian land statistics for 1934 — 212 reservations with original area, allotments, alienation, tribal and government holdings. Primary data source for the charts on this page.</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl style="font-size: 0.9rem;">
+                    <dt><a href="https://land-sales.iath.virginia.edu/wilson_t07.php" target="_blank">Table VII</a></dt>
+                    <dd class="text-muted">Original tribal land acreage and reductions by state through September 1934</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/wilson_t08.php" target="_blank">Table VIII</a></dt>
+                    <dd class="text-muted">Annual sales of Indian allotted lands, 1903–1934 — number of tracts, acreage, and proceeds for original allotments vs. inherited lands. Also shown on the <a href="{{ url_for('patents_timeline') }}">Patents Timeline</a>.</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- About -->
 <div class="card mb-4">
     <div class="card-body">
         <h5>About This Data</h5>
         <p class="text-muted mb-1" style="font-size:13px;">The Wilson Report (1935) was compiled by the Bureau of Indian Affairs to document the condition of Indian reservations as of June 30, 1934. Table VI provides per-reservation data on original areas, allotments made, land alienated through sales and fee patents, and remaining tribal holdings. This data is cross-referenced with BLM General Land Office patent records and Federal Register forced fee claims (1983) to show how allotment-era land loss connects to later claims for redress.</p>
         <p class="text-muted mb-1" style="font-size:13px;">The Wilson Report records 23.2 million acres alienated across all reservations. Of that, 14.2 million (61%) was from the Five Civilized Tribes (Cherokee, Choctaw, Chickasaw, Creek, Seminole), whose allotments in Indian Territory were administered under the Curtis Act and Dawes Commission — a separate system not covered by BLM General Land Office patent records. Osage accounts for another 1 million acres. The charts comparing Wilson data with BLM patents cover 93 of 212 reservations (7.7M alienated acres), representing the reservations allotted under the general allotment system.</p>
         <p class="text-muted mb-1" style="font-size:13px;">Reservation names were mapped between datasets using manual matching. Unmatched reservations include the Five Civilized Tribes, Osage, Pueblos (communal land grants), Mission rancherias, and New York state reservations.</p>
-        <p class="text-muted mb-0" style="font-size:13px;">The Murray Memorandum (1958) documented trust land transactions during 1947–1957, the termination era. It records individual and tribal land holdings at the start and end of the decade, trust removal transactions, and lands taken for public purposes. Murray agencies are BIA jurisdictions, often covering multiple tribes. Mapping to BLM preferred names covers 35 of 52 agencies. Together, Wilson (1934) and Murray (1947–1957) bracket the allotment and termination eras, showing two distinct waves of Indian land loss.</p>
+        <p class="text-muted mb-0" style="font-size:13px;">The Murray Memorandum (1958) documented trust land transactions during 1947–1957, the termination era. It records individual and tribal land holdings at the start and end of the decade, trust removal transactions, and lands taken for public purposes. Murray agencies are BIA jurisdictions, often covering multiple tribes. Mapping to BLM preferred names covers 35 of 52 agencies. Together, Wilson (1934) and Murray (1947–1957) bracket the allotment and termination eras, showing two distinct waves of Indian land loss. <a href="{{ url_for('murray') }}">See the full Murray Memorandum page.</a></p>
     </div>
 </div>
 {% endblock %}

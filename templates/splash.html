@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Land Sales and the Loss of Indian Property</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f8f5ef;
+            color: #2c1810;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── Top bar ─── */
+        .top-bar {
+            background-color: #2c1810;
+            padding: 0.6rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+        .top-bar a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 0.06em;
+            transition: color 0.2s;
+        }
+        .top-bar a:hover { color: #fff; }
+        .top-bar .site-name {
+            color: #fff;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .top-bar nav { display: flex; gap: 1.5rem; }
+
+        /* ─── Hero with document images ─── */
+        .hero-visual {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .hero-visual svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        .hero-visual svg rect {
+            fill: transparent;
+            cursor: pointer;
+            transition: fill 0.2s;
+        }
+        .hero-visual svg rect:hover {
+            fill: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Title overlay on top of the image */
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: 5%;
+            pointer-events: none;
+        }
+        .hero-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 6vw;
+            font-weight: 700;
+            color: #1a0e08;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 8px rgba(248, 245, 239, 0.6);
+            line-height: 1;
+            margin-bottom: 0.2em;
+        }
+        .hero-subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.6vw;
+            font-weight: 400;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #2c1810;
+            text-shadow: 1px 1px 4px rgba(248, 245, 239, 0.7);
+        }
+
+        /* ─── Quote ─── */
+        .quote-section {
+            text-align: center;
+            padding: 2.5rem 2rem 1.5rem;
+            background-color: #f8f5ef;
+        }
+        .quote-text {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.6rem;
+            font-style: italic;
+            line-height: 1.5;
+            color: #2c1810;
+            max-width: 700px;
+            margin: 0 auto 0.75rem;
+        }
+        .quote-attribution {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #8b5a2b;
+        }
+
+        /* ─── Enter link ─── */
+        .enter-section {
+            text-align: center;
+            padding: 1.5rem 2rem 2.5rem;
+        }
+        .enter-link {
+            display: inline-block;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #2c1810;
+            text-decoration: none;
+            border: 1.5px solid #2c1810;
+            padding: 0.75rem 2.5rem;
+            transition: all 0.25s;
+        }
+        .enter-link:hover {
+            background-color: #2c1810;
+            color: #f8f5ef;
+        }
+
+        /* ─── Document cards ─── */
+        .docs-row {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            max-width: 900px;
+            margin: 0 auto 3rem;
+            padding: 0 1rem;
+        }
+        .doc-card {
+            flex: 1;
+            min-width: 180px;
+            max-width: 200px;
+            text-align: center;
+            padding: 1.2rem 1rem;
+            border: 1px solid #c4a57b;
+            background: rgba(255,255,255,0.4);
+            transition: all 0.2s;
+        }
+        .doc-card:hover {
+            background: rgba(255,255,255,0.8);
+            border-color: #8b5a2b;
+        }
+        .doc-card a {
+            text-decoration: none;
+            color: #2c1810;
+        }
+        .doc-card-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        .doc-card-desc {
+            font-size: 0.75rem;
+            color: #5c3a21;
+            line-height: 1.4;
+        }
+
+        /* ─── Footer ─── */
+        .splash-footer {
+            text-align: center;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #c4a57b;
+            font-size: 0.75rem;
+            color: #8b5a2b;
+            line-height: 1.6;
+        }
+        .splash-footer a {
+            color: #5c3a21;
+            text-decoration: none;
+        }
+        .splash-footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 10vw; }
+            .hero-subtitle { font-size: 2.5vw; }
+            .quote-text { font-size: 1.2rem; }
+            .docs-row { flex-direction: column; align-items: center; }
+            .top-bar { flex-direction: column; gap: 0.5rem; }
+            .top-bar nav { flex-wrap: wrap; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <span class="site-name">Land Allotment Research</span>
+        <nav>
+            <a href="{{ url_for('home') }}">Research</a>
+            <a href="{{ url_for('claims_search') }}">Claims</a>
+            <a href="{{ url_for('patents_index') }}">Patents</a>
+            <a href="{{ url_for('about') }}">About</a>
+            <a href="https://land-sales.iath.virginia.edu/" target="_blank">Main Site</a>
+        </nav>
+    </div>
+
+    <!-- Hero: full-width document images with title overlay -->
+    <div class="hero-visual">
+        <svg viewBox="0 0 1174 689" xmlns="http://www.w3.org/2000/svg">
+            <image href="https://land-sales.iath.virginia.edu/images/homepage/documents.png"
+                   width="1174" height="689" />
+            <!-- Clickable hotspots over each document -->
+            <a href="https://land-sales.iath.virginia.edu/images/homepage/document_1.jpg" target="_blank">
+                <rect x="0" y="0" width="294" height="689" />
+            </a>
+            <a href="https://land-sales.iath.virginia.edu/images/homepage/document_2.jpg" target="_blank">
+                <rect x="294" y="0" width="293" height="689" />
+            </a>
+            <a href="https://land-sales.iath.virginia.edu/images/homepage/document_3.jpg" target="_blank">
+                <rect x="587" y="0" width="294" height="689" />
+            </a>
+            <a href="https://land-sales.iath.virginia.edu/images/homepage/document_4.jpg" target="_blank">
+                <rect x="881" y="0" width="293" height="689" />
+            </a>
+        </svg>
+        <div class="hero-overlay">
+            <h1 class="hero-title">Land Sales</h1>
+            <p class="hero-subtitle">and the Loss of American Indian Property in the 20th Century</p>
+        </div>
+    </div>
+
+    <!-- Quote -->
+    <div class="quote-section">
+        <p class="quote-text">"I never asked for a patent fee. I never wanted a patent fee. I do not now want a patent fee."</p>
+        <p class="quote-attribution">Neda Laura Parker, Comanche, 1925</p>
+    </div>
+
+    <!-- Enter + document cards -->
+    <div class="enter-section">
+        <a href="{{ url_for('home') }}" class="enter-link">Enter</a>
+    </div>
+
+    <div class="docs-row">
+        <div class="doc-card">
+            <a href="{{ url_for('patents_index') }}">
+                <div class="doc-card-title">BLM Patents</div>
+                <div class="doc-card-desc">239,845 allotment patent records, 1854-1960s</div>
+            </a>
+        </div>
+        <div class="doc-card">
+            <a href="{{ url_for('claims_search') }}">
+                <div class="doc-card-title">Federal Register</div>
+                <div class="doc-card-desc">10,976 forced fee and secretarial transfer claims, 1983</div>
+            </a>
+        </div>
+        <div class="doc-card">
+            <a href="{{ url_for('wilson') }}">
+                <div class="doc-card-title">Wilson Report</div>
+                <div class="doc-card-desc">212 reservations surveyed, 23.2M acres alienated by 1934</div>
+            </a>
+        </div>
+        <div class="doc-card">
+            <a href="{{ url_for('murray') }}">
+                <div class="doc-card-title">Murray Memorandum</div>
+                <div class="doc-card-desc">3.3M more acres lost during termination, 1947-1957</div>
+            </a>
+        </div>
+    </div>
+
+    <footer class="splash-footer">
+        <a href="https://land-sales.iath.virginia.edu/">Indian Land Allotment Research</a>
+        &middot;
+        <a href="https://www.iath.virginia.edu/">Institute for Advanced Technology in the Humanities</a>
+        &middot;
+        University of Virginia
+        <br>
+        Directed by Christian W. McMillen, Corcoran Department of History
+    </footer>
+</body>
+</html>

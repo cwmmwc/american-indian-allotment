@@ -12,7 +12,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">
+            <a class="navbar-brand" href="{{ url_for('splash') }}">
                 Land Allotment Research
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -38,6 +38,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('sankey') }}">Trust-to-Fee Conversion</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('claims_rate') }}">Claims by Reservation</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('wilson') }}">1934 Reservation Baseline</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('murray') }}">Murray Memorandum</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('dubois') }}">Du Bois Data Portraits</a></li>
                         </ul>

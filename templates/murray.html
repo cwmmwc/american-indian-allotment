@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% block title %}Murray Memorandum (1947–1957){% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Murray Memorandum (1947–1957)</h1>
+    <p class="lead">Senator James Murray's 1958 report documenting the removal of individual Indian trust land during the termination era. Across 52 BIA agencies, 18,546 transactions removed 2.6 million acres from trust status in a single decade.</p>
+</div>
+
+<!-- Summary stat cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ '{:,.0f}'.format(summary.individual_1947) }}</div>
+            <div class="stat-card-label">Individual trust acres, 1947</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ '{:,.0f}'.format(summary.individual_1957) }}</div>
+            <div class="stat-card-label">Individual trust acres, 1957</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" style="color: #b22222;">{{ '{:,.0f}'.format(summary.individual_loss) }}</div>
+            <div class="stat-card-label">Net acres lost (individual)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ '{:,}'.format(summary.total_transactions) }}</div>
+            <div class="stat-card-label">Trust removal transactions</div>
+        </div>
+    </div>
+</div>
+
+<!-- Full document link -->
+<div class="card mb-4">
+    <div class="card-body d-flex align-items-center gap-3">
+        <div>
+            <h2 class="h5 mb-1">Full Document</h2>
+            <p class="mb-0 text-muted">Senator James E. Murray, <em>Indian Land Transactions</em> (1958). Committee on Interior and Insular Affairs, United States Senate. Nearly 900 pages.</p>
+        </div>
+        <a href="https://land-sales.iath.virginia.edu/documents/murray/murray-1958-ilt.pdf" target="_blank" class="btn btn-outline-dark btn-sm ms-auto" style="white-space: nowrap;">View PDF</a>
+    </div>
+</div>
+
+<!-- Charts: Trust removal over time -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Acres Removed from Trust by Year (1948–1957)</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Individual Indian trust land removed from trust status each year, across all area offices. Source: Tables V–XIII (pp. 41–45).</p>
+        <canvas id="removalByYearChart" height="80"></canvas>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Transactions by year -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Transactions by Year (1948–1957)</h2>
+            </div>
+            <div class="card-body">
+                <p class="text-muted" style="font-size: 0.85rem;">Number of individual trust land disposal transactions per year across all agencies. Source: Tables II–X (pp. 78–80).</p>
+                <canvas id="txnByYearChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- Lands acquired -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Federal Lands Acquired Since 1930</h2>
+            </div>
+            <div class="card-body">
+                <p class="text-muted" style="font-size: 0.85rem;">Acreage acquired for Indian use by area office. {{ '{:,.0f}'.format(summary.lands_acquired) }} total acres. Source: pp. 96–98.</p>
+                <canvas id="acquiredChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparative: 1947 vs 1957 by agency -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Individual Trust Land: 1947 vs. 1957 by Agency</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Comparison of individual Indian trust acreage at the start and end of the termination decade, ranked by net loss. Source: pp. 104–112.</p>
+        <canvas id="comparativeChart" height="220"></canvas>
+    </div>
+</div>
+
+<!-- Agency removal table -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Lands Removed from Trust by Agency</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Total acreage removed from individual Indian trust status, by BIA agency. Source: Table XXVII (p. 49).</p>
+        <div class="table-responsive">
+            <table class="table table-sm" id="agencyTable">
+                <thead>
+                    <tr>
+                        <th>Agency</th>
+                        <th class="text-end">Acres Removed</th>
+                        <th class="text-end">Transactions</th>
+                        <th>BLM Tribe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for a in agency_removal %}
+                    <tr>
+                        <td>{{ a.agency }}</td>
+                        <td class="text-end">{{ '{:,.0f}'.format(a.acres_removed) if a.acres_removed else '—' }}</td>
+                        <td class="text-end">{{ '{:,}'.format(a.transactions) if a.transactions else '—' }}</td>
+                        <td>{% if a.blm_tribe_name %}<a href="{{ url_for('patents_index') }}?tribe={{ a.blm_tribe_name }}">{{ a.blm_tribe_name }}</a>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Source tables directory -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Source Tables and Charts</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">All tables and charts from the Murray Memorandum, digitized by the <a href="https://land-sales.iath.virginia.edu/">Indian Land Allotment Research Project</a> at UVA/IATH.</p>
+        <div class="row">
+            <div class="col-md-6">
+                <h3 class="h6" style="color: var(--brand-medium);">Land Taken for Public Purposes</h3>
+                <dl style="font-size: 0.9rem;">
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p039_t01.php" target="_blank">Table I (p. 39)</a></dt>
+                    <dd class="text-muted">Individual trust land taken for public purposes, by agency</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p039_t02.php" target="_blank">Table II (p. 39)</a></dt>
+                    <dd class="text-muted">Total acreage taken, by area office</dd>
+                </dl>
+
+                <h3 class="h6" style="color: var(--brand-medium);">Land Sold to Tribes</h3>
+                <dl style="font-size: 0.9rem;">
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p040_t03.php" target="_blank">Table III (p. 40)</a></dt>
+                    <dd class="text-muted">Individual trust land sold to tribes through Dec. 1957</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p040_t04.php" target="_blank">Table IV (p. 40)</a></dt>
+                    <dd class="text-muted">Total acreage sold to tribes, by area office</dd>
+                </dl>
+
+                <h3 class="h6" style="color: var(--brand-medium);">Lands Removed from Trust Status</h3>
+                <dl style="font-size: 0.9rem;">
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p041-45_t05-13.php" target="_blank">Tables V–XIII (pp. 41–45)</a></dt>
+                    <dd class="text-muted">Individual lands removed, by area office, 1948–1957</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p045_t14.php" target="_blank">Table XIV (p. 45)</a></dt>
+                    <dd class="text-muted">Lands removed by area office, 1948–1957</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p046_t15.php" target="_blank">Table XV (p. 46)</a></dt>
+                    <dd class="text-muted">Total acreage removed, by area office</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p046_t16.php" target="_blank">Table XVI (p. 46)</a></dt>
+                    <dd class="text-muted">Acreage removed excluding takings, by area office</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p046-48_t17-25.php" target="_blank">Tables XVII–XXV (pp. 46–48)</a></dt>
+                    <dd class="text-muted">Individual trust land transactions, by area office</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p048_t26.php" target="_blank">Table XXVI (p. 48)</a></dt>
+                    <dd class="text-muted">All transactions across area offices</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p049_t27.php" target="_blank">Table XXVII (p. 49)</a></dt>
+                    <dd class="text-muted">Lands removed by agency (41 agencies)</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p049_t28.php" target="_blank">Table XXVIII (p. 49)</a></dt>
+                    <dd class="text-muted">Area offices ranked by categories of removal</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <h3 class="h6" style="color: var(--brand-medium);">Charts: Lands Removed by Area Office</h3>
+                <dl style="font-size: 0.9rem;">
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p050-59_c01-10.php" target="_blank">Charts 1–10 (pp. 50–59)</a></dt>
+                    <dd class="text-muted">Individual lands removed, by area office, 1948–1957</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p060_c11.php" target="_blank">Chart 11 (p. 60)</a></dt>
+                    <dd class="text-muted">Total lands removed for 10-year period, by area office</dd>
+                </dl>
+
+                <h3 class="h6" style="color: var(--brand-medium);">BIA Disposal Transactions</h3>
+                <dl style="font-size: 0.9rem;">
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p078_t01.php" target="_blank">Table I (p. 78)</a></dt>
+                    <dd class="text-muted">Area totals for individual land disposal transactions</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p078-80_t02-10.php" target="_blank">Tables II–X (pp. 78–80)</a></dt>
+                    <dd class="text-muted">Area-specific disposal transactions by year</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p081_t11.php" target="_blank">Table XI (p. 81)</a></dt>
+                    <dd class="text-muted">Agencies ranked by transaction volume</dd>
+                </dl>
+
+                <h3 class="h6" style="color: var(--brand-medium);">Federal Lands Acquired</h3>
+                <dl style="font-size: 0.9rem;">
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p096_t01.php" target="_blank">Table I (p. 96)</a></dt>
+                    <dd class="text-muted">Federal lands acquired since 1930, by area office</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p096-98_t02-10.php" target="_blank">Tables II–X (pp. 96–98)</a></dt>
+                    <dd class="text-muted">Detailed breakdown by area office</dd>
+                </dl>
+
+                <h3 class="h6" style="color: var(--brand-medium);">Comparative Statistics, 1947–1957</h3>
+                <dl style="font-size: 0.9rem;">
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p102_area_offices.php" target="_blank">Area Office Comparison (p. 102)</a></dt>
+                    <dd class="text-muted">Indian trust lands by area office</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p103_area_office_totals.php" target="_blank">Grand Totals (p. 103)</a></dt>
+                    <dd class="text-muted">All Indian land, by area office</dd>
+                    <dt><a href="https://land-sales.iath.virginia.edu/murray_p104-112_agencies.php" target="_blank">Agency Detail (pp. 104–112)</a></dt>
+                    <dd class="text-muted">1947 vs. 1957 comparison for 52 agencies</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Context -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">About the Murray Memorandum</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p>In 1958, Senator James E. Murray of Montana published <em>Indian Land Transactions</em> through the Senate Committee on Interior and Insular Affairs. The nearly 900-page report documented how individual Indian trust land was disposed of during the decade following World War II — the height of the federal termination era.</p>
+                <p>During this period (1947–1957), Congress pursued the termination of federal trust responsibilities for Indian tribes. House Concurrent Resolution 108 (1953) declared it congressional policy to end federal supervision over selected tribes "at the earliest possible time."</p>
+            </div>
+            <div class="col-md-6">
+                <p>The Murray data shows that individual Indian trust land fell from <strong>15.9 million acres in 1947 to 12.6 million in 1957</strong> — a net loss of 3.3 million acres in a single decade. Meanwhile, tribal trust land actually increased from 33.6 million to 39.9 million acres, partly through federal land acquisitions.</p>
+                <p>The memorandum records 18,546 trust removal transactions across 52 BIA agencies, with the largest losses concentrated at agencies in Montana, the Dakotas, and the Pacific Northwest — many of the same reservations that had experienced the heaviest forced fee patenting a generation earlier.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    // ─── Acres removed by year (bar chart) ───
+    var removalByYear = {{ removal_by_year|tojson }};
+    new Chart(document.getElementById('removalByYearChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: removalByYear.map(function(d) { return d.year; }),
+            datasets: [{
+                label: 'Acres removed from trust',
+                data: removalByYear.map(function(d) { return d.acres; }),
+                backgroundColor: 'rgba(139, 0, 0, 0.75)',
+                borderColor: 'rgba(139, 0, 0, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return Math.round(ctx.parsed.y).toLocaleString() + ' acres';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Acres' },
+                    ticks: { callback: function(v) { return (v/1000).toFixed(0) + 'K'; } }
+                }
+            }
+        }
+    });
+
+    // ─── Transactions by year ───
+    var txnByYear = {{ txn_by_year|tojson }};
+    new Chart(document.getElementById('txnByYearChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: txnByYear.map(function(d) { return d.year; }),
+            datasets: [{
+                label: 'Transactions',
+                data: txnByYear.map(function(d) { return d.count; }),
+                backgroundColor: 'rgba(70, 130, 180, 0.75)',
+                borderColor: 'rgba(70, 130, 180, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Transactions' } }
+            }
+        }
+    });
+
+    // ─── Lands acquired ───
+    var acquired = {{ lands_acquired|tojson }};
+    new Chart(document.getElementById('acquiredChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: acquired.map(function(d) { return d.agency; }),
+            datasets: [{
+                label: 'Acres acquired',
+                data: acquired.map(function(d) { return d.acreage; }),
+                backgroundColor: 'rgba(46, 106, 46, 0.75)',
+                borderColor: 'rgba(46, 106, 46, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false },
+                tooltip: { callbacks: { label: function(ctx) { return Math.round(ctx.parsed.x).toLocaleString() + ' acres'; } } }
+            },
+            scales: {
+                x: { beginAtZero: true, ticks: { callback: function(v) { return (v/1000).toFixed(0) + 'K'; } } }
+            }
+        }
+    });
+
+    // ─── Comparative 1947 vs 1957 ───
+    var comparative = {{ comparative|tojson }};
+    // Sort by net loss (largest loss first), take top 25
+    comparative.sort(function(a, b) { return b.loss - a.loss; });
+    comparative = comparative.filter(function(d) { return d.loss > 0; }).slice(0, 25);
+
+    new Chart(document.getElementById('comparativeChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: comparative.map(function(d) { return d.agency; }),
+            datasets: [
+                {
+                    label: '1947 individual acres',
+                    data: comparative.map(function(d) { return d.acres_1947; }),
+                    backgroundColor: 'rgba(70, 130, 180, 0.7)',
+                    borderColor: 'rgba(70, 130, 180, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: '1957 individual acres',
+                    data: comparative.map(function(d) { return d.acres_1957; }),
+                    backgroundColor: 'rgba(139, 0, 0, 0.7)',
+                    borderColor: 'rgba(139, 0, 0, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        afterBody: function(items) {
+                            var idx = items[0].dataIndex;
+                            var d = comparative[idx];
+                            return 'Net loss: ' + Math.round(d.loss).toLocaleString() + ' acres';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Acres' },
+                    ticks: { callback: function(v) { return (v/1000).toFixed(0) + 'K'; } }
+                }
+            }
+        }
+    });
+
+    // DataTables on agency table
+    $('#agencyTable').DataTable({
+        pageLength: 50,
+        order: [[1, 'desc']],
+        language: { search: 'Filter:' }
+    });
+});
+</script>
+{% endblock %}
