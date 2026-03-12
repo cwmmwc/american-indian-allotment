@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.DS_Store
+.Rhistory
+*.sql
+CLAUDE.md
+DATABASE.md
