@@ -1,12 +1,16 @@
 steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-east1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/federal-register-app:$COMMIT_SHA', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-east1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/federal-register-app:$COMMIT_SHA']
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
       - 'deploy'
       - 'federal-register-app'
-      - '--source'
-      - '.'
+      - '--image'
+      - 'us-east1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/federal-register-app:$COMMIT_SHA'
       - '--region'
       - 'us-east1'
       - '--allow-unauthenticated'
