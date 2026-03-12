@@ -3,10 +3,23 @@ import re
 import psycopg2
 import psycopg2.extras
 from flask import Flask, render_template, request, jsonify, Response, abort
+from functools import wraps
 import csv
 import io
 
 app = Flask(__name__)
+
+AUTH_USERNAME = os.environ.get("AUTH_USERNAME", "allotment")
+AUTH_PASSWORD = os.environ.get("AUTH_PASSWORD", "fee_simple")
+
+@app.before_request
+def require_basic_auth():
+    auth = request.authorization
+    if not auth or auth.username != AUTH_USERNAME or auth.password != AUTH_PASSWORD:
+        return Response(
+            "Login required.", 401,
+            {"WWW-Authenticate": 'Basic realm="Login Required"'}
+        )
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
