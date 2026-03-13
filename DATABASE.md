@@ -4,7 +4,7 @@
 
 PostgreSQL database containing forced fee patent claims from the 1983 Federal Register, BLM patent records, trust-to-fee linkages, PLSS land descriptions, and a full ArcGIS patent mirror. Built to support research on Indian allotment land dispossession.
 
-**Total: 9 tables, 8 views, ~960,000 rows.**
+**Total: 10 tables, 9 views, ~1,250,000 rows.**
 
 ## Data Sources
 
@@ -182,10 +182,32 @@ Tribe name lookup table.
 | state | text | Primary state |
 | notes | text | |
 
+### `rails_patents` (285,870 rows)
+
+Full patent catalog loaded from the Rails admin CSV export. Covers all 285,870 allotment patents — including 46,025 that are not in `blm_allotment_patents` because they lack mappable PLSS geometry. The `has_plss_geometry` boolean flag distinguishes mappable (239,845) from non-mappable (46,025) patents.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | integer PK | Auto-increment |
+| accession_number | text UNIQUE | GLO accession number |
+| document_class | text | e.g., "Serial Land Patent", "Trust Patent" |
+| document_code | text | e.g., "SER", "TRP" |
+| state | text | Two-letter state code |
+| glo_tribe_name | text | Tribe name from GLO |
+| indian_allotment_number | text | Allotment number |
+| signature_date | date | Patent signature date |
+| total_acres | real | Acreage |
+| land_office | text | Issuing land office |
+| remarks | text | GLO remarks |
+| has_plss_geometry | boolean | True if patent has mappable PLSS parcel in `blm_allotment_patents` |
+
+**Indexes:** accession_number, has_plss_geometry, state.
+
 ## Views
 
 | View | Purpose |
 |------|---------|
+| `all_patents` | Unified view of all 285,870 patents — joins `rails_patents` with `blm_allotment_patents` for enriched data |
 | `conversion_rates_by_tribe` | Trust-to-fee conversion statistics per tribe |
 | `dispossession_chain` | Joins trust_fee_linkages with federal_register_claims to show full allotment history |
 | `fee_patents_by_decade` | Fee patents grouped by decade |

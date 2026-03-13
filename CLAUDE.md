@@ -12,8 +12,10 @@ python3 app.py  # runs on http://localhost:5001
 
 ## Stack
 - **Backend:** Flask + psycopg2, Python 3
-- **Database:** PostgreSQL `allotment_research` (local, user=cwm6W)
+- **Database:** PostgreSQL `allotment_research` (local, user=cwm6W; Cloud SQL in production)
 - **Frontend:** Bootstrap 5, jQuery, DataTables (server-side), Chart.js
+- **Map:** Leaflet.js, leaflet.heat, Esri ArcGIS Feature Service (standalone SPA at `/map`)
+- **Deployment:** Google Cloud Run, Cloud Build (auto-deploy on push to main)
 - **Virtualenv:** `./venv/`
 
 ## Architecture
@@ -27,7 +29,7 @@ Single-file Flask app (`app.py`) with Jinja2 templates. No ORM — raw SQL with 
 - `/api/search` — JSON API for claims DataTables
 - `/api/search/csv` — CSV download
 
-**Patents section** (added March 2026) — 239,845 BLM allotment patents:
+**Patents section** (added March 2026) — 285,870 BLM allotment patents:
 - `/patents` — Patent search (DataTables + filters for name/tribe/state/type/date)
 - `/patent/<objectid>` — Patent detail with PLSS land description
 - `/api/patents` — JSON API for patents DataTables
@@ -53,7 +55,9 @@ See `DATABASE.md` for full schemas.
 
 - `federal_register_claims` (10,976 rows) — FR claims. PK: id
 - `forced_fee_patents_rails` (17,560 rows) — hand-verified claim-to-patent linkages from Rails admin
-- `blm_allotment_patents` (239,845 rows) — full BLM patent mirror from ArcGIS. PK: objectid
+- `rails_patents` (285,870 rows) — full patent catalog with `has_plss_geometry` flag. PK: id
+- `blm_allotment_patents` (239,845 rows) — BLM patent mirror from ArcGIS (mappable patents only). PK: objectid
+- `all_patents` (view, 285,870 rows) — unified view joining rails_patents + blm_allotment_patents
 - `fee_patents` (88,537) / `trust_patents` (95,353) — older BLM patent tables (still used for claim detail fallback)
 - `trust_fee_linkages` (29,229) — trust→fee conversion records
 - `parcels_patents_by_tribe` (401,811) — PLSS legal descriptions
