@@ -71,6 +71,7 @@
             <th>Allotment #</th>
             <th>Claim Type</th>
             <th>Patent Date</th>
+            <th>Map</th>
         </tr>
     </thead>
 </table>
@@ -150,6 +151,13 @@ $(function() {
                     var label = data;
                     if (row.patent_count > 1) label += ' <span class="badge bg-info">' + row.patent_count + ' patents</span>';
                     return label;
+                }
+            },
+            {
+                data: 'on_map',
+                render: function(data) {
+                    if (data) return '<span class="badge bg-success">Yes</span>';
+                    return '<span class="badge bg-secondary">No</span>';
                 }
             }
         ],

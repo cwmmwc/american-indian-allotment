@@ -168,7 +168,7 @@ def api_search():
 
         # Order (support multi-column sort from DataTables)
         order_cols = ["fr.bia_agency_code", "fr.case_number", "fr.allottee_name", "fr.tribe_identified",
-                      "fr.allotment_number", "fr.claim_type", "min_date"]
+                      "fr.allotment_number", "fr.claim_type", "min_date", "on_map"]
         order_parts = []
         for i in range(len(order_cols)):
             col_idx = request.args.get(f"order[{i}][column]", type=int)
@@ -239,11 +239,14 @@ def api_search():
                 fr.allotment_number,
                 fr.claim_type,
                 MIN(ffp.patents_signature_date) as min_date,
-                COUNT(ffp.id) as patent_count
+                COUNT(ffp.id) as patent_count,
+                BOOL_OR(bap.objectid IS NOT NULL) as on_map
             FROM federal_register_claims fr
             LEFT JOIN forced_fee_patents_rails ffp
                 ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
                 AND fr.allottee_name = ffp.fedreg_allottee
+            LEFT JOIN blm_allotment_patents bap
+                ON ffp.patents_accession_number = bap.accession_number
             {where}
             GROUP BY fr.id, fr.bia_agency_code, fr.case_number, fr.allottee_name, fr.tribe_identified,
                      fr.allotment_number, fr.claim_type
@@ -270,6 +273,7 @@ def api_search():
                 "claim_type": r["claim_type"],
                 "patent_date": sig_date,
                 "patent_count": r["patent_count"],
+                "on_map": bool(r["on_map"]),
             })
 
         return jsonify({
