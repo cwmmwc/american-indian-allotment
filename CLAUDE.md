@@ -23,9 +23,9 @@ Single-file Flask app (`app.py`) with Jinja2 templates. No ORM — raw SQL with 
 
 ### Two parallel sections
 
-**Claims section** (original) — 10,976 Federal Register claims from two 1983 publications:
-- `/` — Claims search (DataTables + filters)
-- `/claim/<id>` — Claim detail with linked patents
+**Claims section** (original) — 10,976 Federal Register claims from two 1983 publications ([March 31](https://land-sales.iath.virginia.edu/documents/federal_register/fedreg-1983_03_31.pdf) and [November 7](https://land-sales.iath.virginia.edu/documents/federal_register/fedreg-1983_11_07.pdf)):
+- `/` — Claims search (DataTables + filters). Columns: BIA Agency Code, Case #, Allottee Name, Tribe, Allotment #, Claim Type, Patent Date, Map (yes/no badge). Default sort: agency code, then case number.
+- `/claim/<id>` — Claim detail with linked patents. Document Source links to original FR PDF.
 - `/api/search` — JSON API for claims DataTables
 - `/api/search/csv` — CSV download
 
@@ -41,10 +41,11 @@ Single-file Flask app (`app.py`) with Jinja2 templates. No ORM — raw SQL with 
 - `/map` — Interactive allotment patent map (Leaflet + Esri Feature Service, standalone template)
 
 **Other pages:**
-- `/tribes` — Tribe list with claim counts
-- `/tribe/<slug>` — Individual tribe page with timeline
+- `/tribes` — Tribe list with claim counts and BIA agency codes
+- `/tribe/<slug>` — Individual tribe page with timeline, agency codes in header
 - `/timeline` — Forced fee claims timeline (original)
-- `/about` — About page
+- `/about` — About page (includes BIA agency code reference table, FR PDF links)
+- `/research` — Research overview (home.html) with dataset cards and FR PDF links
 
 ### Cross-links
 - Claim detail → BLM patent: "View full BLM record" link (via accession_number lookup in blm_allotment_patents)
