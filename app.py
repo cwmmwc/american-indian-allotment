@@ -54,21 +54,12 @@ def unslugify_tribe(slug):
         conn.close()
 
 
-DOC_CLASS_CODES = {
-    "Serial Land Patent": "SER",
-    "Miscellaneous Volume Patent": "MV",
-    "Indian Fee Patent": "IF",
-    "State Land Patent": "STA",
-    "Indian Allotment Patent": "IA",
-}
-
-
-def glo_url(accession, doc_class):
-    """Build a GLO record URL from accession number and document class."""
+def glo_url(accession, doc_class=None):
+    """Build a GLO record URL from accession number.
+    BLM GLO files all Indian allotment patents under docClass=SER (Serial Patent)."""
     if not accession:
         return None
-    code = DOC_CLASS_CODES.get(doc_class, "SER")
-    return f"https://glorecords.blm.gov/details/patent/default.aspx?accession={accession}&docClass={code}"
+    return f"https://glorecords.blm.gov/details/patent/default.aspx?accession={accession}&docClass=SER"
 
 
 def linkify_remarks(text):
