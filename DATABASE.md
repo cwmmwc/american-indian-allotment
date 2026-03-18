@@ -184,30 +184,56 @@ Tribe name lookup table.
 
 ### `rails_patents` (285,870 rows)
 
-Full patent catalog loaded from the Rails admin CSV export. Covers all 285,870 allotment patents — including 46,025 that are not in `blm_allotment_patents` because they lack mappable PLSS geometry. The `has_plss_geometry` boolean flag distinguishes mappable (239,845) from non-mappable (46,025) patents.
+Full patent catalog exported from the Rails admin application (land-sales.iath.virginia.edu/db/admin/patents). Covers all 285,870 allotment patents. Of these, 239,845 also appear in `blm_allotment_patents` (matched by accession_number) and have PLSS geometry; the remaining 46,025 are searchable but not mappable.
+
+**Source CSV:** `patents-2026-03-18.csv` exported from the Rails admin.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| id | integer PK | Auto-increment |
-| accession_number | text UNIQUE | GLO accession number |
-| document_class | text | e.g., "Serial Land Patent", "Trust Patent" |
-| document_code | text | e.g., "SER", "TRP" |
+| id | integer PK | Rails record ID |
+| accession_number | text | GLO accession number (various formats: numeric, state-prefixed like "KS4580__.311", hyphenated like "04-2000-0042") |
+| document_class | text | e.g., "Serial Land Patent", "State Land Patent", "Indian Allotment Patent", "Indian Fee Patent", "Miscellaneous Volume Patent" |
+| document_code | text | e.g., "SER", "STA", "IA", "IF", "MV" |
 | state | text | Two-letter state code |
-| glo_tribe_name | text | Tribe name from GLO |
+| glo_tribe_name | text | Tribe name as recorded in GLO (raw, not normalized — many variant spellings) |
 | indian_allotment_number | text | Allotment number |
 | signature_date | date | Patent signature date |
-| total_acres | real | Acreage |
+| total_acres | numeric | Acreage |
 | land_office | text | Issuing land office |
-| remarks | text | GLO remarks |
-| has_plss_geometry | boolean | True if patent has mappable PLSS parcel in `blm_allotment_patents` |
+| remarks | text | GLO remarks (often references other patent serial numbers) |
+| cancelled_doc | boolean | True if document was cancelled |
+| blm_serial_number | text | BLM serial number |
+| document_number | text | Document number |
+| misc_document_number | text | Miscellaneous document number |
 
-**Indexes:** accession_number, has_plss_geometry, state.
+**Indexes:** accession_number, glo_tribe_name, state, signature_date.
+
+**Non-mappable patents (46,025) by document class:**
+
+| Category | Count | Reason |
+|----------|-------|--------|
+| Serial Land Patent | ~27,000 | Legal descriptions that did not match PLSS parcels |
+| State Land Patent | ~14,000 | Many in AL/MS (Chickasaw/Choctaw removal-era), pre-rectangular surveys |
+| Indian Allotment Patent | ~3,100 | Non-standard allotment types |
+| Miscellaneous Volume Patent | ~1,000 | Various |
+| Other (Sioux Scrip, Chippewa Treaty, etc.) | ~325 | Specialized document types |
+
+### `tribe_name_map` (1,286 rows)
+
+Lookup table mapping raw `glo_tribe_name` values to normalized `preferred_name` values. Built by extracting the known mappings from records that appear in both `rails_patents` and `blm_allotment_patents`. Used by the `all_patents` view to normalize tribe names for the 46,025 non-BLM patents.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| glo_tribe_name | text | Raw tribe name from GLO (e.g., "CITIZEN POTAWATOMIE", "0NEIDA") |
+| preferred_name | text | Normalized tribe name from BLM (e.g., "Citizen Potawatomi", "Oneida") |
+
+No ambiguous mappings: each glo_tribe_name maps to exactly one preferred_name.
 
 ## Views
 
 | View | Purpose |
 |------|---------|
-| `all_patents` | Unified view of all 285,870 patents — joins `rails_patents` with `blm_allotment_patents` for enriched data |
+| `all_patents` | Unified view of all 285,870 patents — UNION of (rails_patents JOIN blm_allotment_patents) for 239,845 mappable + rails_patents-only for 46,025 non-mappable. Uses tribe_name_map for tribe normalization. See `sql/create_all_patents_view.sql` |
 | `conversion_rates_by_tribe` | Trust-to-fee conversion statistics per tribe |
 | `dispossession_chain` | Joins trust_fee_linkages with federal_register_claims to show full allotment history |
 | `fee_patents_by_decade` | Fee patents grouped by decade |
@@ -245,6 +271,9 @@ trust_fee_linkages links trust_patents.accession_number to fee_patents.accession
 - The `parcels_patents_by_tribe` table was imported from BLM's PLSS-based patent search, providing geographic coordinates for allotments.
 - **No ETL scripts survive** for the original tables — the database was constructed iteratively and the construction process is preserved only in this documentation and the SQL dump file (`allotment_research.sql`).
 - The `blm_allotment_patents` table was imported via `import_blm_patents.py`, which pages through the BLM ArcGIS Feature Service REST API.
+- The `rails_patents` table was imported from a CSV export of the Rails admin app (`patents-2026-03-18.csv`, 285,870 rows). The Rails app is at `land-sales.iath.virginia.edu/db/admin/patents`.
+- The `tribe_name_map` table was derived by extracting distinct `glo_tribe_name → preferred_name` mappings from records that exist in both `rails_patents` and `blm_allotment_patents` (1,286 mappings, no ambiguities).
+- The `all_patents` view was created via `sql/create_all_patents_view.sql`.
 
 ### `blm_allotment_patents` (239,845 rows)
 
