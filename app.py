@@ -140,6 +140,14 @@ def claims_search():
         """)
         tribes = cur.fetchall()
 
+        # Get claim counts by agency code for the TOC
+        cur.execute("""
+            SELECT bia_agency_code, COUNT(*) as cnt
+            FROM federal_register_claims
+            GROUP BY bia_agency_code
+        """)
+        agency_counts = dict(cur.fetchall())
+
         # Grouped claim type categories
         claim_types = [
             ("ALL FORCED FEE", "Forced Fee Patent (all variants)"),
@@ -157,7 +165,244 @@ def claims_search():
             ("RECOVERY", "Claim for Recovery of Trust Land"),
         ]
 
-        return render_template("index.html", tribes=tribes, claim_types=claim_types, slugify=slugify)
+        # Federal Register Table of Contents — area offices, agencies, codes
+        # Source: https://land-sales.iath.virginia.edu/federal_register-toc.php
+        fr_toc = [
+            ("Aberdeen", [
+                ("Flandreau", "Santee Sioux", "A00007"),
+                ("Cheyenne River", "Cheyenne River Sioux Indians", "A01304"),
+                ("Cheyenne River", "Cheyenne River Sioux Indians", "A01340"),
+                ("Fort Berthold", "Fort Berthold Indians", "A04301"),
+                ("Fort Totten", "Devils Lake Indians", "A05303"),
+                ("Pine Ridge", "Pine Ridge Sioux Indians", "A06344"),
+                ("Rosebud", "Rosebud Sioux Indians", "A07345"),
+                ("Yankton", "Yankton Sioux Indians", "A08346"),
+                ("Sisseton", "Sisseton-Wahpeton Tribe of Sioux", "A09347"),
+                ("Standing Rock", "Standing Rock Sioux Indians", "A10302"),
+                ("Turtle Mountain", "Turtle Mountain Band of Chippewa Indians", "A11304"),
+                ("Winnebago", "Omaha Indians of Nebraska", "A13380"),
+                ("Winnebago", "Santee Sioux Indians of Nebraska", "A13382"),
+                ("Winnebago", "Winnebago Indians of Nebraska", "A13383"),
+                ("Crow Creek", "Crow Creek", "A14342"),
+                ("Lower Brule", "Lower Brule", "A15343"),
+            ]),
+            ("Anadarko", [
+                ("Horton", "Potawatomi (Wisconsin)", "B04434"),
+                ("Horton", "Iowa Indians (Kansas and Nebraska)", "B04860"),
+                ("Horton", "Kickapoo Indians (Kansas)", "B04861"),
+                ("Horton", "Potawatomi Indians (Kansas)", "B04862"),
+                ("Horton", "Sac and Fox Indians (Kansas and Nebraska)", "B04863"),
+                ("Horton", "Shawnee Public Domain", "B04864"),
+                ("Horton", "Wyandotte", "B04924"),
+                ("Horton", "Peoria", "B04926"),
+                ("Concho", "Cheyenne and Arapaho Indians", "B05801"),
+                ("Anadarko", "Kiowa-Comanche and Apache Indians", "B06802"),
+                ("Anadarko", "Fort Sill Apache Indians", "B06803"),
+                ("Anadarko", "Wichita Indians", "B06804"),
+                ("Anadarko", "Caddo-Wichita Indians", "B06806"),
+                ("Anadarko", "Comanche Indians", "B06808"),
+                ("Anadarko", "Apache Indians", "B06809"),
+                ("Pawnee", "Otoe and Missouri Indians", "B07811"),
+                ("Pawnee", "Pawnee Indians", "B07812"),
+                ("Pawnee", "Ponca Indians", "B07813"),
+                ("Pawnee", "Tonkawa Indians", "B07814"),
+                ("Shawnee", "Absentee Shawnee Indians", "B08820"),
+                ("Shawnee", "Citizen Band Potawatomi Indians (Oklahoma)", "B08821"),
+                ("Shawnee", "Iowa Indians (Oklahoma)", "B08822"),
+                ("Shawnee", "Mexican Kickapoo Indians (Oklahoma)", "B08823"),
+                ("Shawnee", "Sac and Fox Indians (Oklahoma)", "B08824"),
+                ("Shawnee", "Eastern Shawnee", "B08921"),
+            ]),
+            ("Billings", [
+                ("Blackfeet", "Blackfeet Indians", "C51201"),
+                ("Crow", "Crow Indians", "C52202"),
+                ("Flathead", "Flathead Indians", "C53203"),
+                ("Fort Belknap", "Fort Belknap Indians", "C55204"),
+                ("Fort Belknap", "Turtle Mountain", "C55224"),
+                ("Fort Peck", "Fort Peck Indians", "C56206"),
+                ("Fort Peck", "Turtle Mountain", "C56226"),
+                ("Northern Cheyenne", "Northern Cheyenne Indians", "C57207"),
+                ("Northern Cheyenne", "Turtle Mountain", "C57277"),
+                ("Wind River", "Arapaho Indians", "C58281"),
+                ("Rocky Boys", "Rocky Boy Indians", "C59205"),
+            ]),
+            ("Eastern", [
+                ("Eastern Area Office", "Catawba", "S50002"),
+                ("Eastern Area Office", "Seneca (Allegany)", "S50004"),
+                ("Eastern Area Office", "St. Regis", "S50007"),
+                ("Eastern Area Office", "Seneca (Oil Springs)", "S50010"),
+                ("Eastern Area Office", "Oneida", "S50011"),
+                ("Eastern Area Office", "Cayuga", "S50013"),
+                ("Eastern Area Office", "Gay Head Band of Wampanoag", "S50030"),
+                ("Eastern Area Office", "Western Pequot", "S50031"),
+                ("Eastern Area Office", "Schaghticoke", "S50032"),
+                ("Eastern Area Office", "Mohegan", "S50033"),
+                ("Eastern Area Office", "Shinnecock", "S50034"),
+                ("Eastern Area Office", "Seminole", "S50035"),
+                ("Eastern Area Office", "Chitimacha", "S50036"),
+                ("Eastern Area Office", "Tunica Biloxi", "S50037"),
+                ("Eastern Area Office", "Stockbridge Munsee", "S50038"),
+            ]),
+            ("Juneau", [
+                ("Juneau Area Headquarters", "Juneau Area", "E00000"),
+            ]),
+            ("Minneapolis", [
+                ("Great Lakes", "Menominee", "F50440"),
+                ("Red Lake", "Red Lake Band of Chippewa", "F52409"),
+                ("Minnesota", "Mille Lacs Indians\u2014Mississippi Band of Chippewa", "F53404"),
+                ("Minnesota", "White Earth Indians", "F53405"),
+                ("Minnesota", "Grand Portage Indians\u2014Lake Superior Bands of Chippewa", "F53406"),
+                ("Minnesota", "Leech Lake Indians", "F53407"),
+                ("Minnesota", "White Earth", "F53408"),
+                ("Minnesota", "Mille Lacs", "F53410"),
+                ("Minnesota", "Public Domain", "F53420"),
+                ("Great Lakes", "Bad River Band of the Lake Superior Tribe of Chippewa", "F55430"),
+                ("Great Lakes", "Lac Courte Oreilles Band of Lake Superior Chippewa", "F55431"),
+                ("Great Lakes", "Lac du Flambeau Band of Lake Superior Chippewa", "F55432"),
+                ("Great Lakes", "Oneida Tribe of Indians", "F55433"),
+                ("Great Lakes", "Forest County Potawatomi Indians of Wisconsin", "F55434"),
+                ("Great Lakes", "Red Cliff Band of Lake Superior Chippewa Indians", "F55435"),
+                ("Great Lakes", "St. Croix Chippewa Indians of Wisconsin", "F55436"),
+                ("Great Lakes", "Stockbridge Munsee Band of Mohican Indians", "F55438"),
+                ("Great Lakes", "Wisconsin Winnebago Indians", "F55439"),
+                ("Great Lakes", "Public Domain (Wisconsin)", "F55441"),
+                ("Minneapolis", "Upper Sioux", "F57401"),
+                ("Minneapolis", "Lower Sioux", "F57402"),
+                ("Minneapolis", "Prairie Island", "F57403"),
+                ("Minneapolis", "Prior Lake", "F57411"),
+                ("Michigan", "Sault Ste. Marie", "F60469"),
+                ("Michigan", "Bay Mills", "F60470"),
+                ("Michigan", "Hannahville", "F60471"),
+                ("Michigan", "Saginaw Chippewa", "F60472"),
+                ("Michigan", "Keweenaw Bay", "F60473"),
+                ("Michigan", "Ottawa & Chippewa", "F60474"),
+                ("Michigan", "Ontonagon", "F60476"),
+                ("Michigan", "Public Domain (Michigan)", "F60477"),
+                ("Michigan", "Lac Vieux", "F60478"),
+            ]),
+            ("Muskogee", [
+                ("Ardmore", "Chickasaw Indians", "G03906"),
+                ("Miami", "Quapaw Indians", "G04920"),
+                ("Miami", "Ottawa Bands of Blanchards Fork and Roche Deboeuf", "G04922"),
+                ("Miami", "Seneca and Shawnee Indians", "G04923"),
+                ("Miami", "Wyandotte Indians (Oklahoma and Kansas)", "G04924"),
+                ("Miami", "Miami Tribe of Indians", "G04925"),
+                ("Miami", "Peoria Tribe of Oklahoma", "G04926"),
+                ("Osage", "Osage Indians", "G06930"),
+                ("Okmulgee", "Creek Indians", "G07908"),
+                ("Tahlequah", "Cherokee Indians", "G08905"),
+                ("Talihina", "Choctaw Indians", "G09907"),
+                ("Wewoka", "Seminole Indians", "G10909"),
+            ]),
+            ("Navajo", [
+                ("Gallup Headquarters", "Navajo Indians", "N00780"),
+            ]),
+            ("Phoenix", [
+                ("Colorado River", "Colorado River Indians", "H51603"),
+                ("Colorado River", "Fort Mojave Indians", "H51604"),
+                ("Fort Apache", "Fort Apache Indians", "H52607"),
+                ("Nevada", "Duck Valley", "H53642"),
+                ("Nevada", "Duck Valley", "H53662"),
+                ("Papago", "Papago Indians", "H54610"),
+                ("Salt River", "Salt River Indians", "H55615"),
+                ("Pima", "Pima Indians (Gila River)", "H57614"),
+                ("San Carlos", "San Carlos Apache Indians", "H58616"),
+                ("Nevada", "Pyramid Lake Indians", "H61651"),
+                ("Uintah/Ouray", "Summit Lake & Public Domain", "H62655"),
+                ("Eastern Nevada", "Ruby Valley & Public Domain", "H64654"),
+            ]),
+            ("Portland", [
+                ("Portland Headquarters", "Klamath Indians", "P00140"),
+                ("Portland Area Office", "Celilo Village", "P00148"),
+                ("Colville", "Colville Indians", "P03101"),
+                ("Fort Hall", "Fort Hall Indians", "P04180"),
+                ("Northern Idaho", "Coeur d\u2019Alene Indians", "P05181"),
+                ("Northern Idaho", "Nez Perce Indians", "P05182"),
+                ("Northern Idaho", "Kootenai Indians", "P05183"),
+                ("Olympic Peninsula", "Hoh", "P06106"),
+                ("Olympic Peninsula", "Makah", "P06108"),
+                ("Olympic Peninsula", "Quileute", "P06116"),
+                ("Olympic Peninsula", "Quinault", "P06117"),
+                ("Olympic Peninsula", "Shoalwater", "P06118"),
+                ("Olympic Peninsula", "Skokomish", "P06120"),
+                ("Olympic Peninsula", "Lower Elwha", "P06125"),
+                ("Olympic Peninsula", "Public Domain", "P06130"),
+                ("Umatilla", "Umatilla Indians", "P07143"),
+                ("Warm Springs", "Snake or Paiute Indians", "P09144"),
+                ("Warm Springs", "Warm Springs Indians", "P09145"),
+                ("Warm Springs", "Dalles Public Domain", "P09147"),
+                ("Warm Springs", "Oregon Miscellaneous", "P09149"),
+                ("Puget Sound", "Lummi", "P10107"),
+                ("Puget Sound", "Muckleshoot Indians", "P10109"),
+                ("Puget Sound", "Nisqually", "P10110"),
+                ("Puget Sound", "Nooksack Indians", "P10111"),
+                ("Puget Sound", "Ozette", "P10112"),
+                ("Puget Sound", "Port Gamble Indians", "P10113"),
+                ("Puget Sound", "Port Madison Indians", "P10114"),
+                ("Puget Sound", "Skagit Indians", "P10119"),
+                ("Puget Sound", "Swinomish Indians", "P10122"),
+                ("Puget Sound", "Tulalip Indians", "P10123"),
+                ("Puget Sound", "Snohomish Indians", "P10130"),
+                ("Yakima", "Yakima Indians", "P11124"),
+                ("Spokane", "Spokane Indians", "P12102"),
+                ("Spokane", "Kalispel Indians", "P12103"),
+            ]),
+            ("Sacramento", [
+                ("Sacramento Area", "California Indians", "J50500"),
+                ("California", "Ft. Independence Indians", "J51525"),
+                ("California", "Round Valley Indians", "J51540"),
+                ("California", "Sulphur Bank Indians", "J51632"),
+                ("Hoopa", "Rohnerville", "J52056"),
+                ("Hoopa Area Field Office", "Hoopa Valley Indians", "J52561"),
+                ("Hoopa Area Field Office", "Hoopa Extension Indians", "J52562"),
+                ("Hoopa Area Field Office", "Hoopa Extension Indians", "J52652"),
+                ("Southern California", "Sacramento Miscellaneous", "J54500"),
+                ("Southern California", "Augustine Indians", "J54567"),
+                ("Southern California", "Cabazon Indians", "J54568"),
+                ("Southern California", "Cahuilla Indians", "J54569"),
+                ("Southern California", "Campo Indians", "J54570"),
+                ("Southern California", "Capitan Grande Indians", "J54571"),
+                ("Southern California", "La Jolla Indians", "J54576"),
+                ("Southern California", "La Posta Indians", "J54577"),
+                ("Southern California", "Manzanita", "J54579"),
+                ("Southern California", "Mesa Grande", "J54580"),
+                ("Southern California", "Morongo Indians", "J54582"),
+                ("Southern California", "Pala Indians", "J54583"),
+                ("Southern California", "Pauma & Yuima", "J54585"),
+                ("Southern California", "Pechanga Indians", "J54586"),
+                ("Southern California", "Rincon Indians", "J54587"),
+                ("Southern California", "Santa Ysabel Indians", "J54592"),
+                ("Southern California", "Soboba Indians", "J54593"),
+                ("Southern California", "Torres-Martinez Indians", "J54595"),
+                ("Southern California", "Viejas (Baron Long) Indians", "J54599"),
+            ]),
+            ("Albuquerque", [
+                ("Southern Pueblos", "Acoma Pueblo Indians", "M20703"),
+                ("Southern Pueblos", "Cochiti Pueblo Indians", "M20704"),
+                ("Southern Pueblos", "Isleta Pueblo Indians", "M20705"),
+                ("Southern Pueblos", "Jemez Pueblo Indians", "M20706"),
+                ("Southern Pueblos", "Laguna Pueblo Indians", "M20707"),
+                ("Southern Pueblos", "Sandia Pueblo Indians", "M20711"),
+                ("Southern Pueblos", "San Felipe Pueblo Indians", "M20712"),
+                ("Southern Pueblos", "Santa Ana Pueblo Indians", "M20715"),
+                ("Southern Pueblos", "Santo Domingo Pueblo Indians", "M20717"),
+                ("Southern Pueblos", "Zia Pueblo Indians", "M20720"),
+                ("Northern Pueblos", "Nambe Pueblo Indians", "M25708"),
+                ("Northern Pueblos", "Picuris Pueblo Indians", "M25709"),
+                ("Northern Pueblos", "Pojoaque Pueblo Indians", "M25710"),
+                ("Northern Pueblos", "San Felipe", "M25712"),
+                ("Northern Pueblos", "San Ildefonso Pueblo Indians", "M25713"),
+                ("Northern Pueblos", "San Juan Pueblo Indians", "M25714"),
+                ("Northern Pueblos", "Santa Clara Pueblo Indians", "M25716"),
+                ("Northern Pueblos", "Taos Pueblo Indians", "M25718"),
+                ("Northern Pueblos", "Tesuque Pueblo Indians", "M25719"),
+                ("Ute Mountain", "Ute Mountain Indians", "M45751"),
+                ("Mescalero", "Mescalero Apache Indians", "M60702"),
+            ]),
+        ]
+
+        return render_template("index.html", tribes=tribes, claim_types=claim_types,
+                               fr_toc=fr_toc, agency_counts=agency_counts, slugify=slugify)
     finally:
         conn.close()
 
@@ -178,6 +423,7 @@ def api_search():
         # Custom filters
         tribe = request.args.get("tribe", "").strip()
         claim_type = request.args.get("claim_type", "").strip()
+        agency_code = request.args.get("agency_code", "").strip()
         name_search = request.args.get("name", "").strip()
         allotment_search = request.args.get("allotment", "").strip()
         date_from = request.args.get("date_from", "").strip()
@@ -204,6 +450,9 @@ def api_search():
         if tribe:
             conditions.append("fr.tribe_identified = %s")
             params.append(tribe)
+        if agency_code:
+            conditions.append("fr.bia_agency_code = %s")
+            params.append(agency_code)
         add_claim_type_filter(claim_type, conditions, params)
         if name_search:
             conditions.append("fr.allottee_name ILIKE %s")
@@ -312,6 +561,7 @@ def api_search_csv():
 
         tribe = request.args.get("tribe", "").strip()
         claim_type = request.args.get("claim_type", "").strip()
+        agency_code = request.args.get("agency_code", "").strip()
         name_search = request.args.get("name", "").strip()
         allotment_search = request.args.get("allotment", "").strip()
         date_from = request.args.get("date_from", "").strip()
@@ -323,6 +573,9 @@ def api_search_csv():
         if tribe:
             conditions.append("fr.tribe_identified = %s")
             params.append(tribe)
+        if agency_code:
+            conditions.append("fr.bia_agency_code = %s")
+            params.append(agency_code)
         add_claim_type_filter(claim_type, conditions, params)
         if name_search:
             conditions.append("fr.allottee_name ILIKE %s")
