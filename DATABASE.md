@@ -14,10 +14,10 @@ The Bureau of Indian Affairs published two Federal Register notices listing Indi
 - **March 31, 1983** (48 FR 13698)
 - **November 7, 1983** (48 FR 51204)
 
-These listed allotments where fee patents were issued without the allottee's consent ("forced fee patents") and secretarial transfers. The data was originally digitized and managed through a Rails admin application at the Institute for Advanced Technology in the Humanities (IATH), University of Virginia.
+These listed allotments where fee patents were issued without the allottee's consent ("forced fee patents"), secretarial transfers, unapproved land sales, tax forfeitures, trespass, and other claim types. The data was originally digitized and managed through a Rails admin application at the Institute for Advanced Technology in the Humanities (IATH), University of Virginia.
 
 **Tables built from this source:**
-- `federal_register_claims` — 10,976 claims parsed from the Federal Register notices
+- `federal_register_claims` — 35,686 claims parsed from the Federal Register notices (all claim types)
 - `forced_fee_patents_rails` — 17,560 rows of denormalized patent-to-claim linkages, exported from the Rails admin interface as CSV
 
 ### 2. BLM General Land Office Records
@@ -37,9 +37,9 @@ Patent records downloaded from the Bureau of Land Management's General Land Offi
 
 ## Table Schemas
 
-### `federal_register_claims` (10,976 rows)
+### `federal_register_claims` (35,686 rows)
 
-Primary claims from the 1983 Federal Register notices. Contains 9,649 forced fee patent claims and 1,327 secretarial transfers.
+All claims from the 1983 Federal Register notices across 259 BIA agency codes. Includes forced fee patents, secretarial transfers, unapproved land sales, tax forfeitures, trespass, timber claims, and other claim types.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -49,11 +49,11 @@ Primary claims from the 1983 Federal Register notices. Contains 9,649 forced fee
 | case_number | text | BIA case number (may have leading zeros) |
 | allottee_name | text | Name of the allottee |
 | allotment_number | text | Allotment number |
-| claim_type | text | All 30 variants start with "FORCED FEE PATENT" |
+| claim_type | text | Claim type (forced fee patent, secretarial transfer, unapproved land sale, tax forfeiture, trespass, etc.) |
 | document_source | text | Federal Register citation |
 | publication_date | text | Date of Federal Register publication |
 
-**80 tribes** represented (after 2026-03-17 corrections). Largest: Blackfeet (860), Flathead (859), Rosebud Sioux (766), Cheyenne River Sioux (763), Crow (619).
+**259 BIA agency codes** across all tribes (expanded from 89 in the original forced-fee-only import). Largest tribes by claim count: Blackfeet, Flathead, Rosebud Sioux, Cheyenne River Sioux, Crow.
 
 **Data quality note (2026-03-17/18):** The original import assigned `tribe_identified` by sequential position in the Federal Register PDF rather than by BIA agency code lookup. This caused 38 agency codes (1,818 records, 16.6% of total) to be labeled with the wrong tribe — typically the tribe that appeared nearby in the document. Corrected by validating all 89 codes against the authoritative mapping at `land-sales.iath.virginia.edu/federal_register-search.php`. See `sql/tribe_identification_fixes.sql` for the full list of corrections.
 

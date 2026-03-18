@@ -80,6 +80,24 @@ def add_claim_type_filter(claim_type, conditions, params):
         if claim_type == "ALL FORCED FEE":
             conditions.append("fr.claim_type ILIKE %s")
             params.append("%FORCED FEE%")
+        elif claim_type == "TRESPASS":
+            conditions.append("(fr.claim_type ILIKE %s OR fr.claim_type ILIKE %s OR fr.claim_type ILIKE %s)")
+            params.extend(["%TRESPASS%", "%IN TRESPASS%", "%ENCROACHMENT%"])
+        elif claim_type == "UNAPPROVED":
+            conditions.append("(fr.claim_type ILIKE %s OR fr.claim_type ILIKE %s)")
+            params.extend(["%UNAPPROVED%", "%WITHOUT APPROVAL%"])
+        elif claim_type == "WELFARE":
+            conditions.append("(fr.claim_type ILIKE %s AND fr.claim_type NOT ILIKE %s)")
+            params.extend(["%WELFARE%", "%FORCED FEE%"])
+        elif claim_type == "TIMBER":
+            conditions.append("fr.claim_type ILIKE %s")
+            params.append("%TIMBER%")
+        elif claim_type == "RECOVERY":
+            conditions.append("fr.claim_type ILIKE %s")
+            params.append("%RECOVERY%")
+        elif claim_type == "ALLOTMENT NEVER ISSUED":
+            conditions.append("fr.claim_type ILIKE %s")
+            params.append("%ALLOTMENT NEVER ISSUED%")
         else:
             conditions.append("fr.claim_type ILIKE %s")
             params.append(f"%{claim_type}%")
@@ -126,9 +144,17 @@ def claims_search():
         claim_types = [
             ("ALL FORCED FEE", "Forced Fee Patent (all variants)"),
             ("SECRETARIAL TRANSFER", "Secretarial Transfer (all variants)"),
-            ("HEIRSHIP FORCED FEE", "Heirship Forced Fee"),
-            ("WELFARE FORCED FEE", "Welfare Forced Fee"),
-            ("RECOVER TITLE", "Recover Title"),
+            ("UNAPPROVED", "Unapproved Land Sale"),
+            ("TAX FORFEITURE", "Tax Forfeiture"),
+            ("TAXATION", "Taxation"),
+            ("QUESTIONABLE CANCELLATION", "Questionable Cancellation of Patent"),
+            ("TRESPASS", "Trespass (all types)"),
+            ("LAND SOLD WITHOUT APPROVAL", "Land Sold Without Approval"),
+            ("OLD AGE ASSISTANCE", "Old Age Assistance"),
+            ("WELFARE", "Welfare Payments"),
+            ("TIMBER", "Timber (wrongfully removed, trespass)"),
+            ("ALLOTMENT NEVER ISSUED", "Allotment Never Issued"),
+            ("RECOVERY", "Claim for Recovery of Trust Land"),
         ]
 
         return render_template("index.html", tribes=tribes, claim_types=claim_types, slugify=slugify)

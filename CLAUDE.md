@@ -23,7 +23,7 @@ Single-file Flask app (`app.py`) with Jinja2 templates. No ORM — raw SQL with 
 
 ### Two parallel sections
 
-**Claims section** (original) — 10,976 Federal Register claims from two 1983 publications ([March 31](https://land-sales.iath.virginia.edu/documents/federal_register/fedreg-1983_03_31.pdf) and [November 7](https://land-sales.iath.virginia.edu/documents/federal_register/fedreg-1983_11_07.pdf)):
+**Claims section** (original) — 35,686 Federal Register claims from two 1983 publications ([March 31](https://land-sales.iath.virginia.edu/documents/federal_register/fedreg-1983_03_31.pdf) and [November 7](https://land-sales.iath.virginia.edu/documents/federal_register/fedreg-1983_11_07.pdf)):
 - `/` — Claims search (DataTables + filters). Columns: BIA Agency Code, Case #, Allottee Name, Tribe, Allotment #, Claim Type, Patent Date, Map (yes/no badge). Default sort: agency code, then case number.
 - `/claim/<id>` — Claim detail with linked patents. Document Source links to original FR PDF.
 - `/api/search` — JSON API for claims DataTables
@@ -54,7 +54,7 @@ Single-file Flask app (`app.py`) with Jinja2 templates. No ORM — raw SQL with 
 ## Key Database Tables
 See `DATABASE.md` for full schemas.
 
-- `federal_register_claims` (10,976 rows) — FR claims. PK: id
+- `federal_register_claims` (35,686 rows) — FR claims (all types). PK: id
 - `forced_fee_patents_rails` (17,560 rows) — hand-verified claim-to-patent linkages from Rails admin
 - `rails_patents` (285,870 rows) — full patent catalog with `has_plss_geometry` flag. PK: id
 - `blm_allotment_patents` (239,845 rows) — BLM patent mirror from ArcGIS (mappable patents only). PK: objectid
@@ -75,7 +75,7 @@ AND fr.allottee_name = ffp.fedreg_allottee
 - **Forced fee:** See rule below — always use Federal Register claims, never BLM flag.
 
 ## RULE: Forced Fee Numbers Must Come From the Federal Register
-The sole authoritative source for forced fee counts is the `federal_register_claims` table (9,649 forced fee claims, 1,327 secretarial transfers). NEVER use the BLM `forced_fee` flag (`WHERE forced_fee = 'True'`) to count or label forced fee patents. The BLM flag is inflated because the one-to-many join between FR claims and BLM patents marks BOTH trust and fee patents for the same allotment, roughly doubling the count. For example, Blackfeet: FR says 1,241 forced fee claims; BLM flag yields 2,886 — the latter is wrong.
+The sole authoritative source for forced fee counts is the `federal_register_claims` table (35,686 total claims; forced fee claims are those WHERE `claim_type ILIKE '%FORCED FEE%'`). NEVER use the BLM `forced_fee` flag (`WHERE forced_fee = 'True'`) to count or label forced fee patents. The BLM flag is inflated because the one-to-many join between FR claims and BLM patents marks BOTH trust and fee patents for the same allotment, roughly doubling the count. For example, Blackfeet: FR says 1,241 forced fee claims; BLM flag yields 2,886 — the latter is wrong.
 
 When showing forced fee data:
 - Count from `federal_register_claims` WHERE `claim_type ILIKE '%FORCED FEE%'`
