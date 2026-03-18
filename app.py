@@ -708,7 +708,7 @@ def claim_detail(claim_id):
                     parcels.extend(cur.fetchall())
 
         # If no patent linkages found (e.g. secretarial transfers),
-        # search fee_patents and trust_patents by allotment number + tribe
+        # search rails_patents by allotment number + tribe
         allotment_patents = []
         if not patents and claim.get("allotment_number"):
             tribe = claim["tribe_identified"]
@@ -716,19 +716,16 @@ def claim_detail(claim_id):
             cur.execute("""
                 SELECT accession_number, signature_date, document_class,
                        indian_allotment_number, tribe_normalized, state,
-                       acres, remarks, glo_url, 'fee' as patent_type
-                FROM fee_patents
-                WHERE indian_allotment_number = %s
-                  AND tribe_normalized = %s
-                UNION ALL
-                SELECT accession_number, signature_date, document_class,
-                       indian_allotment_number, tribe_normalized, state,
-                       acres, remarks, glo_url, 'trust' as patent_type
-                FROM trust_patents
+                       total_acres as acres, remarks, NULL as glo_url,
+                       CASE WHEN document_class IN (
+                           'Indian Fee Patent', 'Indian Homestead Fee Patent',
+                           'Serial Land Patent', 'State Land Patent'
+                       ) THEN 'fee' ELSE 'trust' END as patent_type
+                FROM rails_patents
                 WHERE indian_allotment_number = %s
                   AND tribe_normalized = %s
                 ORDER BY signature_date
-            """, (allotment, tribe, allotment, tribe))
+            """, (allotment, tribe))
             allotment_patents = cur.fetchall()
 
         # Get trust-to-fee linkages if we have fee accession numbers
