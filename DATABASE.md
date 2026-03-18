@@ -45,7 +45,7 @@ Primary claims from the 1983 Federal Register notices. Contains 9,649 forced fee
 |--------|------|-------------|
 | id | integer PK | Auto-increment |
 | bia_agency_code | text | BIA agency identifier |
-| tribe_identified | text | Tribe name as identified in the Federal Register |
+| tribe_identified | text | Tribe name (corrected 2026-03-17; see `sql/tribe_identification_fixes.sql`) |
 | case_number | text | BIA case number (may have leading zeros) |
 | allottee_name | text | Name of the allottee |
 | allotment_number | text | Allotment number |
@@ -53,7 +53,9 @@ Primary claims from the 1983 Federal Register notices. Contains 9,649 forced fee
 | document_source | text | Federal Register citation |
 | publication_date | text | Date of Federal Register publication |
 
-**56 tribes** represented. Largest: Cheyenne River Sioux (1,382), Standing Rock Sioux (830), Yakama (693), Winnebago (687), Potawatomi (638).
+**80 tribes** represented (after 2026-03-17 corrections). Largest: Blackfeet (860), Flathead (859), Rosebud Sioux (766), Cheyenne River Sioux (763), Crow (619).
+
+**Data quality note (2026-03-17):** The original import assigned `tribe_identified` by sequential position in the Federal Register PDF rather than by BIA agency code lookup. This caused 36 agency codes (1,690 records, 15.4% of total) to be labeled with the wrong tribe — typically the tribe that appeared nearby in the document. Corrected by validating all 89 codes against the authoritative mapping at `land-sales.iath.virginia.edu/federal_register-search.php`. See `sql/tribe_identification_fixes.sql` for the full list of corrections.
 
 ### `forced_fee_patents_rails` (17,560 rows)
 
@@ -270,6 +272,8 @@ trust_fee_linkages links trust_patents.accession_number to fee_patents.accession
 - The `trust_fee_linkages` table was computed by matching trust patents to fee patents using allotment numbers, tribe, and cross-references in the `remarks` field.
 - The `parcels_patents_by_tribe` table was imported from BLM's PLSS-based patent search, providing geographic coordinates for allotments.
 - **No ETL scripts survive** for the original tables — the database was constructed iteratively and the construction process is preserved only in this documentation and the SQL dump file (`allotment_research.sql`).
+- **`tribe_identified` corrections (2026-03-17):** 36 of 89 BIA agency codes had the wrong `tribe_identified` value, affecting 1,690 of 10,976 records. The error originated in the initial data import, which assigned tribe names by position in the Federal Register PDF rather than by BIA agency code. Validated against the legacy PHP site and corrected in both local and Cloud SQL. Script: `sql/tribe_identification_fixes.sql`.
+- **`tribe_name_map` additions (2026-03-17):** 18 double-T Pottawatomie spelling variants added (e.g., PRAIRIE BAND POTTAWATOMIE → Prairie Band Of Potawatami Nation, CITIZEN POTTAWATOMIE → Citizen Potawatomi). These variants existed in `rails_patents.glo_tribe_name` but were missing from `tribe_name_map`, causing ~1,600 patents to show raw GLO tribe names instead of normalized preferred names in the `all_patents` view.
 - The `blm_allotment_patents` table was imported via `import_blm_patents.py`, which pages through the BLM ArcGIS Feature Service REST API.
 - The `rails_patents` table was imported from a CSV export of the Rails admin app (`patents-2026-03-18.csv`, 285,870 rows). The Rails app is at `land-sales.iath.virginia.edu/db/admin/patents`.
 - The `tribe_name_map` table was derived by extracting distinct `glo_tribe_name → preferred_name` mappings from records that exist in both `rails_patents` and `blm_allotment_patents` (1,286 mappings, no ambiguities).
