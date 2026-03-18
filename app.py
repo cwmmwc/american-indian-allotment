@@ -618,16 +618,18 @@ def api_search_csv():
                 fr.allotment_number,
                 fr.claim_type,
                 fr.document_source,
-                ffp.glo_patentees,
-                ffp.patents_accession_number,
-                ffp.patents_signature_date,
-                ffp.patents_document_class,
-                ffp.patent_state
+                fr.state,
+                STRING_AGG(DISTINCT ffp.glo_patentees, '; ') as glo_patentees,
+                STRING_AGG(DISTINCT ffp.patents_accession_number, '; ') as patents_accession_number,
+                MIN(ffp.patents_signature_date)::text as patents_signature_date,
+                STRING_AGG(DISTINCT ffp.patents_document_class, '; ') as patents_document_class
             FROM federal_register_claims fr
             LEFT JOIN forced_fee_patents_rails ffp
                 ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
                 AND fr.allottee_name = ffp.fedreg_allottee
             {where}
+            GROUP BY fr.id, fr.bia_agency_code, fr.case_number, fr.allottee_name, fr.tribe_identified,
+                     fr.allotment_number, fr.claim_type, fr.document_source, fr.state
             ORDER BY fr.bia_agency_code, fr.case_number
         """
         cur.execute(sql, params)
@@ -646,7 +648,7 @@ def api_search_csv():
                 r["allotment_number"], r["claim_type"], r["document_source"],
                 r["glo_patentees"], r["patents_accession_number"],
                 r["patents_signature_date"], r["patents_document_class"],
-                r["patent_state"],
+                r["state"],
             ])
 
         return Response(
