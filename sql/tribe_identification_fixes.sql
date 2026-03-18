@@ -58,3 +58,9 @@ UPDATE federal_register_claims SET tribe_identified = 'Port Gamble' WHERE bia_ag
 UPDATE federal_register_claims SET tribe_identified = 'Port Madison' WHERE bia_agency_code = 'P10114';  -- was: Unidentified (2 rows)
 UPDATE federal_register_claims SET tribe_identified = 'Swinomish' WHERE bia_agency_code = 'P10122';  -- was: Unidentified (1 row)
 UPDATE federal_register_claims SET tribe_identified = 'Spokane' WHERE bia_agency_code = 'P12102';  -- was: Mission Indians (CA) (42 rows)
+
+-- Additional fixes (2026-03-18)
+-- Portland Area Statute Claims from western Oregon. Legacy site has no tribe name for either code.
+-- Allottee names include Chetco, Alsea, and other Oregon coast tribal names (likely Confederated Tribes of Siletz).
+UPDATE federal_register_claims SET tribe_identified = 'Portland Area (unidentified)' WHERE bia_agency_code = 'P00141';  -- was: Potawatomi (1 row)
+UPDATE federal_register_claims SET tribe_identified = 'Portland Area (unidentified)' WHERE bia_agency_code = 'P01142';  -- was: Potawatomi (127 rows)
