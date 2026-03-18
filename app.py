@@ -140,6 +140,15 @@ def claims_search():
         """)
         tribes = cur.fetchall()
 
+        # Get states for filter dropdown (from linked patents)
+        cur.execute("""
+            SELECT DISTINCT patent_state
+            FROM forced_fee_patents_rails
+            WHERE patent_state IS NOT NULL AND patent_state != ''
+            ORDER BY patent_state
+        """)
+        states = [row[0] for row in cur.fetchall()]
+
         # Get claim counts by agency code for the TOC
         cur.execute("""
             SELECT bia_agency_code, COUNT(*) as cnt
@@ -402,7 +411,7 @@ def claims_search():
         ]
 
         return render_template("index.html", tribes=tribes, claim_types=claim_types,
-                               fr_toc=fr_toc, agency_counts=agency_counts, slugify=slugify)
+                               states=states, fr_toc=fr_toc, agency_counts=agency_counts, slugify=slugify)
     finally:
         conn.close()
 
@@ -424,6 +433,7 @@ def api_search():
         tribe = request.args.get("tribe", "").strip()
         claim_type = request.args.get("claim_type", "").strip()
         agency_code = request.args.get("agency_code", "").strip()
+        state = request.args.get("state", "").strip()
         name_search = request.args.get("name", "").strip()
         allotment_search = request.args.get("allotment", "").strip()
         date_from = request.args.get("date_from", "").strip()
@@ -453,6 +463,9 @@ def api_search():
         if agency_code:
             conditions.append("fr.bia_agency_code = %s")
             params.append(agency_code)
+        if state:
+            conditions.append("ffp.patent_state = %s")
+            params.append(state)
         add_claim_type_filter(claim_type, conditions, params)
         if name_search:
             conditions.append("fr.allottee_name ILIKE %s")
@@ -562,6 +575,7 @@ def api_search_csv():
         tribe = request.args.get("tribe", "").strip()
         claim_type = request.args.get("claim_type", "").strip()
         agency_code = request.args.get("agency_code", "").strip()
+        state = request.args.get("state", "").strip()
         name_search = request.args.get("name", "").strip()
         allotment_search = request.args.get("allotment", "").strip()
         date_from = request.args.get("date_from", "").strip()
@@ -576,6 +590,9 @@ def api_search_csv():
         if agency_code:
             conditions.append("fr.bia_agency_code = %s")
             params.append(agency_code)
+        if state:
+            conditions.append("ffp.patent_state = %s")
+            params.append(state)
         add_claim_type_filter(claim_type, conditions, params)
         if name_search:
             conditions.append("fr.allottee_name ILIKE %s")
