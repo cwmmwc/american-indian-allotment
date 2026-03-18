@@ -18,8 +18,11 @@
                 "forced fee patents."
             </p>
             <p>
-                The notices listed <strong>9,649 claims</strong> organized by BIA agency code,
+                The notices listed <strong>35,686 claims</strong> organized by BIA agency code,
                 identifying the allottee, allotment number, and case number for each claim.
+                Of these, 9,649 are forced fee patent claims. The remainder include
+                trespass, tax forfeiture, secretarial transfers, unapproved land sales,
+                and dozens of other claim types.
             </p>
         </section>
 
@@ -55,7 +58,7 @@
         <section class="mb-5">
             <h2>What This Dataset Shows — and What It Doesn't</h2>
             <p>
-                The 9,649 claims in this dataset represent a <strong>floor, not a ceiling</strong>.
+                The 9,649 forced fee claims in this dataset represent a <strong>floor, not a ceiling</strong>.
                 The allottees or their dependents who appear in this dataset are those who:
             </p>
            <ul>
@@ -67,12 +70,92 @@
             <p>
                 The actual number of forced fee patents is certainly higher.
             </p>
+        </section>
+
+        <section class="mb-5" id="linkage-coverage">
+            <h2>Claim-to-Patent Linkage</h2>
             <p>
-                Of the 9,649 claims, approximately <strong>7,110</strong> have been linked to
-                at least one BLM patent record in the <a href="https://glorecords.blm.gov/" target="_blank">General Land Office database</a>. The remaining
-                ~2,539 claims exist in the Federal Register but have not yet been matched to a
-                patent record, often due to inconsistent names, missing allotment numbers, or
-                other data quality issues.
+                Of the 35,686 Federal Register claims, <strong>7,225</strong> have been
+                hand-verified and linked to at least one BLM patent record in the
+                <a href="https://glorecords.blm.gov/" target="_blank">General Land Office database</a>.
+                The remaining <strong>28,461 claims</strong> exist in the Federal Register
+                but have not been matched to a patent record. On individual claim pages,
+                a fallback search by allotment number and tribe sometimes locates a likely
+                patent match, but these have not been verified.
+            </p>
+            <p>
+                The linkage gap is not evenly distributed. Some tribes were fully processed
+                through the hand-verification workflow; others were never started. The table
+                below shows the largest gaps — tribes with 100 or more unlinked claims:
+            </p>
+            <table class="table table-sm table-hover" style="max-width: 700px;">
+                <thead><tr><th>Tribe</th><th>Claims</th><th>Linked</th><th>Unlinked</th><th>%&nbsp;Linked</th></tr></thead>
+                <tbody>
+                    <tr><td>Cheyenne River Sioux</td><td>3,339</td><td>558</td><td>2,781</td><td>16.7%</td></tr>
+                    <tr><td>White Earth Chippewa</td><td>1,998</td><td>11</td><td>1,987</td><td>0.6%</td></tr>
+                    <tr><td>Fort Peck (Assiniboine-Sioux)</td><td>1,635</td><td>0</td><td>1,635</td><td>0%</td></tr>
+                    <tr><td>Rosebud Sioux</td><td>2,255</td><td>673</td><td>1,582</td><td>29.8%</td></tr>
+                    <tr><td>Turtle Mountain Chippewa</td><td>1,217</td><td>0</td><td>1,217</td><td>0%</td></tr>
+                    <tr><td>Northern Cheyenne</td><td>1,222</td><td>23</td><td>1,199</td><td>1.9%</td></tr>
+                    <tr><td>Blackfeet</td><td>1,830</td><td>820</td><td>1,010</td><td>44.8%</td></tr>
+                    <tr><td>Cherokee</td><td>909</td><td>0</td><td>909</td><td>0%</td></tr>
+                    <tr><td>Leech Lake Band of Ojibwe</td><td>929</td><td>31</td><td>898</td><td>3.3%</td></tr>
+                    <tr><td>Public Domain (Minnesota)</td><td>865</td><td>0</td><td>865</td><td>0%</td></tr>
+                    <tr><td>Standing Rock Sioux</td><td>1,312</td><td>465</td><td>847</td><td>35.4%</td></tr>
+                    <tr><td>Pine Ridge (Oglala Sioux)</td><td>1,335</td><td>622</td><td>713</td><td>46.6%</td></tr>
+                    <tr><td>Crow</td><td>1,286</td><td>583</td><td>703</td><td>45.3%</td></tr>
+                    <tr><td>Omaha</td><td>889</td><td>291</td><td>598</td><td>32.7%</td></tr>
+                    <tr><td>California Indians</td><td>561</td><td>0</td><td>561</td><td>0%</td></tr>
+                    <tr><td>Winnebago</td><td>581</td><td>117</td><td>464</td><td>20.1%</td></tr>
+                    <tr><td>Flathead (Salish-Kootenai)</td><td>1,242</td><td>778</td><td>464</td><td>62.6%</td></tr>
+                    <tr><td>Arapaho</td><td>481</td><td>35</td><td>446</td><td>7.3%</td></tr>
+                    <tr><td>Choctaw</td><td>432</td><td>0</td><td>432</td><td>0%</td></tr>
+                    <tr><td>Sisseton-Wahpeton</td><td>393</td><td>0</td><td>393</td><td>0%</td></tr>
+                    <tr><td>Umatilla</td><td>373</td><td>11</td><td>362</td><td>2.9%</td></tr>
+                    <tr><td>Fort Hall</td><td>358</td><td>0</td><td>358</td><td>0%</td></tr>
+                    <tr><td>Creek</td><td>354</td><td>0</td><td>354</td><td>0%</td></tr>
+                    <tr><td>Navajo</td><td>343</td><td>0</td><td>343</td><td>0%</td></tr>
+                    <tr><td>Nez Perce</td><td>306</td><td>51</td><td>255</td><td>16.7%</td></tr>
+                    <tr><td>Devil's Lake / Spirit Lake</td><td>277</td><td>41</td><td>236</td><td>14.8%</td></tr>
+                    <tr><td>Fort Berthold (Three Affiliated)</td><td>197</td><td>63</td><td>134</td><td>32.0%</td></tr>
+                    <tr><td>Fort Belknap (Gros Ventre-Assiniboine)</td><td>131</td><td>0</td><td>131</td><td>0%</td></tr>
+                    <tr><td>Santee Sioux</td><td>121</td><td>0</td><td>121</td><td>0%</td></tr>
+                    <tr><td>Lac Courte Oreilles Chippewa</td><td>119</td><td>0</td><td>119</td><td>0%</td></tr>
+                    <tr><td>Wisconsin Winnebago</td><td>115</td><td>0</td><td>115</td><td>0%</td></tr>
+                    <tr><td>Crow Creek Sioux</td><td>166</td><td>52</td><td>114</td><td>31.3%</td></tr>
+                    <tr><td>Colville</td><td>347</td><td>236</td><td>111</td><td>68.0%</td></tr>
+                    <tr><td>Mille Lacs</td><td>110</td><td>0</td><td>110</td><td>0%</td></tr>
+                </tbody>
+            </table>
+            <p>
+                An additional 130 tribes and agency groupings with fewer than 100 claims
+                account for about 3,300 more unlinked claims — most of these have zero
+                linkages. In total, <strong>181 tribes have no verified patent linkages at all</strong>,
+                representing 10,380 claims.
+            </p>
+            <p>
+                <strong>Why the gap exists:</strong> The linkage process required manually
+                matching each Federal Register claim to a BLM patent record by name,
+                allotment number, and tribe — a labor-intensive process done through
+                a <a href="https://land-sales.iath.virginia.edu/">Rails administrative interface</a>.
+                Some tribes (Round Valley, Klamath, Cheyenne-Arapaho, Yankton Sioux) were
+                nearly fully processed. Others — including large groups like Fort Peck,
+                Turtle Mountain Chippewa, Cherokee, and the California Indians — were
+                never started. The partially linked tribes (Cheyenne River, Rosebud,
+                Blackfeet, Pine Ridge) reflect work that was begun but not completed.
+            </p>
+            <p>
+                The "Patent Date" column on the <a href="{{ url_for('claims_search') }}">claims search page</a>
+                shows "No match" for claims that lack a verified linkage. Individual claim
+                pages may still display a probable patent match found by allotment number
+                and tribe, but these automatic matches have not been hand-verified.
+            </p>
+            <p>
+                <strong>Download:</strong>
+                <a href="{{ url_for('static', filename='data/unlinked_claims_fallback_matches.csv') }}">Unlinked claims with fallback matches</a> (CSV) —
+                all 28,461 unlinked claims with the best available fee patent match by allotment number and tribe.
+                Of these, 5,271 matched at least one fee patent; 23,189 had no match. Claims with
+                <code>match_count</code> &gt; 1 may be ambiguous.
             </p>
         </section>
 
