@@ -885,7 +885,13 @@ def api_patents():
             conditions.append("authority IN %s")
             params.append(TRUST_AUTHORITIES)
         elif patent_type == "forced":
-            conditions.append("forced_fee = 'True'")
+            conditions.append("""accession_number IN (
+                SELECT ffp.patents_accession_number FROM forced_fee_patents_rails ffp
+                JOIN federal_register_claims fr
+                  ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
+                  AND fr.allottee_name = ffp.fedreg_allottee
+                WHERE fr.claim_type ILIKE '%%FORCED FEE%%'
+            )""")
         if date_from:
             conditions.append("signature_date >= %s")
             params.append(date_from)
@@ -908,7 +914,14 @@ def api_patents():
         cur.execute(f"""
             SELECT id, objectid, full_name, preferred_name, state,
                    indian_allotment_number, authority, signature_date,
-                   forced_fee, has_plss_geometry
+                   has_plss_geometry,
+                   accession_number IN (
+                       SELECT ffp.patents_accession_number FROM forced_fee_patents_rails ffp
+                       JOIN federal_register_claims fr
+                         ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
+                         AND fr.allottee_name = ffp.fedreg_allottee
+                       WHERE fr.claim_type ILIKE '%%FORCED FEE%%'
+                   ) as is_forced_fee
             FROM all_patents
             {where}
             ORDER BY {order_col} {order_dir} NULLS LAST
@@ -930,7 +943,7 @@ def api_patents():
                 "allotment_number": r["indian_allotment_number"] or "",
                 "authority": r["authority"] or "",
                 "signature_date": sig_date,
-                "forced_fee": r["forced_fee"] == "True",
+                "forced_fee": r["is_forced_fee"],
                 "has_plss_geometry": r["has_plss_geometry"],
             })
 
@@ -982,7 +995,13 @@ def api_patents_csv():
             conditions.append("authority IN %s")
             params.append(TRUST_AUTHORITIES)
         elif patent_type == "forced":
-            conditions.append("forced_fee = 'True'")
+            conditions.append("""accession_number IN (
+                SELECT ffp.patents_accession_number FROM forced_fee_patents_rails ffp
+                JOIN federal_register_claims fr
+                  ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
+                  AND fr.allottee_name = ffp.fedreg_allottee
+                WHERE fr.claim_type ILIKE '%%FORCED FEE%%'
+            )""")
         if date_from:
             conditions.append("signature_date >= %s")
             params.append(date_from)

@@ -9,7 +9,7 @@
         <a href="{{ url_for('allotment_map') }}">View on Map</a>
     </p>
     <p class="text-muted small">Of these, 239,845 patents are <strong>mappable</strong> — matched to Public Land Survey System parcels and visible on the <a href="{{ url_for('allotment_map') }}">allotment map</a>. The remaining 46,025 patents could not be geocoded, primarily because they are on reservations that use non-rectangular surveys (Navajo, Gila River, Colorado River in Arizona/New Mexico) or predate the PLSS (Chickasaw/Choctaw in Alabama/Mississippi). These patents are searchable here but do not appear on the map. <a href="{{ url_for('about') }}#data-coverage">Read more</a></p>
-    <p class="text-muted small">Note: The "Forced Fee Only" filter shows 15,045 patents flagged by BLM as forced fee. This is larger than the 9,649 forced fee claims in the <a href="{{ url_for('claims_search') }}">Federal Register dataset</a>, which comes from two specific 1983 publications. BLM's forced fee flag covers additional patents not listed in those Federal Register notices.</p>
+    <p class="text-muted small">Note: The "Forced Fee" filter shows patents linked to forced fee claims in the <a href="{{ url_for('claims_search') }}">Federal Register dataset</a> (9,649 claims from two 1983 publications). Linkage between FR claims and BLM patent records is ongoing — not all claims have been matched to patents yet, so some tribes may show fewer forced fee patents than expected.</p>
 </div>
 
 <div class="card filter-card mb-4">
