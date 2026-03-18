@@ -45,10 +45,11 @@
             <div class="row g-3 mt-1">
                 <div class="col-md-2">
                     <label for="stateFilter" class="form-label">State</label>
+                    {% set state_names = {'AK':'Alaska','AZ':'Arizona','CA':'California','CO':'Colorado','CT':'Connecticut','FL':'Florida','ID':'Idaho','KS':'Kansas','LA':'Louisiana','MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MT':'Montana','ND':'North Dakota','NE':'Nebraska','NM':'New Mexico','NV':'Nevada','NY':'New York','OK':'Oklahoma','OR':'Oregon','SC':'South Carolina','SD':'South Dakota','UT':'Utah','WA':'Washington','WI':'Wisconsin','WY':'Wyoming'} %}
                     <select class="form-select" id="stateFilter">
                         <option value="">All States</option>
                         {% for st in states %}
-                        <option value="{{ st }}">{{ st }}</option>
+                        <option value="{{ st }}">{{ state_names.get(st, st) }}</option>
                         {% endfor %}
                     </select>
                 </div>

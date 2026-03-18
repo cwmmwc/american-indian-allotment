@@ -140,12 +140,12 @@ def claims_search():
         """)
         tribes = cur.fetchall()
 
-        # Get states for filter dropdown (from linked patents)
+        # Get states for filter dropdown
         cur.execute("""
-            SELECT DISTINCT patent_state
-            FROM forced_fee_patents_rails
-            WHERE patent_state IS NOT NULL AND patent_state != ''
-            ORDER BY patent_state
+            SELECT DISTINCT state
+            FROM federal_register_claims
+            WHERE state IS NOT NULL
+            ORDER BY state
         """)
         states = [row[0] for row in cur.fetchall()]
 
@@ -464,7 +464,7 @@ def api_search():
             conditions.append("fr.bia_agency_code = %s")
             params.append(agency_code)
         if state:
-            conditions.append("ffp.patent_state = %s")
+            conditions.append("fr.state = %s")
             params.append(state)
         add_claim_type_filter(claim_type, conditions, params)
         if name_search:
@@ -591,7 +591,7 @@ def api_search_csv():
             conditions.append("fr.bia_agency_code = %s")
             params.append(agency_code)
         if state:
-            conditions.append("ffp.patent_state = %s")
+            conditions.append("fr.state = %s")
             params.append(state)
         add_claim_type_filter(claim_type, conditions, params)
         if name_search:
