@@ -157,7 +157,15 @@
                 <p class="text-muted mb-3">
                     No hand-verified patent linkage exists for this claim. The following patent records
                     were found by matching allotment number {{ claim.allotment_number }} within
-                    {{ claim.tribe_identified }}.
+                    {{ claim.tribe_identified }}. These matches have not been verified.
+                </p>
+                <p class="text-muted small mb-3">
+                    <strong>Note:</strong> Additional patents for this allotment may exist under a
+                    different tribe name in the BLM records. The Federal Register organized claims by
+                    BIA agency (e.g., "White Earth Chippewa"), but BLM patents often use the original
+                    allotting reservation (e.g., "Fond du Lac Chippewa"). Try searching the
+                    <a href="{{ url_for('patents_index') }}?allotment={{ claim.allotment_number }}">patents page</a>
+                    by allotment number to find records filed under related tribe names.
                 </p>
                 <div class="table-responsive">
                     <table class="table table-sm">
@@ -206,6 +214,16 @@
                     Federal Register but has not been matched to a General Land Office patent record
                     in the current dataset.
                 </p>
+                {% if claim.allotment_number %}
+                <p class="text-muted small">
+                    A patent may still exist under a different tribe name. The Federal Register used
+                    BIA agency names (e.g., "White Earth Chippewa"), while BLM patents use the
+                    original allotting reservation (e.g., "Fond du Lac Chippewa" for the same land).
+                    Try searching the
+                    <a href="{{ url_for('patents_index') }}?allotment={{ claim.allotment_number }}">patents page</a>
+                    by allotment number {{ claim.allotment_number }}.
+                </p>
+                {% endif %}
                 {% endif %}
             </div>
         </div>

@@ -35,6 +35,16 @@
         {{ linked_claim.allottee_name }}, Case {{ linked_claim.case_number }} ({{ linked_claim.tribe_identified }})
     </a>
 </div>
+{% elif patent.indian_allotment_number %}
+<div class="alert alert-light border mb-4">
+    <small class="text-muted">
+        <strong>No verified Federal Register linkage.</strong>
+        A related claim may exist under a different tribe name — the Federal Register
+        used BIA agency names (e.g., "White Earth Chippewa"), while BLM patents use
+        the original allotting reservation (e.g., "Fond du Lac Chippewa").
+        <a href="{{ url_for('claims_search') }}?allotment={{ patent.indian_allotment_number }}">Search claims by allotment {{ patent.indian_allotment_number }}</a>.
+    </small>
+</div>
 {% endif %}
 
 <div class="row">
