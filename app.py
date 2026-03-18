@@ -2327,8 +2327,14 @@ def dubois():
 
 @app.route("/about")
 def about():
-    """About This Data page."""
+    """About the Data page."""
     return render_template("about.html")
+
+
+@app.route("/about/project")
+def about_project():
+    """About This Project page."""
+    return render_template("about_project.html")
 
 
 # ──────────────────────────────────────────────
