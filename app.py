@@ -471,7 +471,7 @@ def api_search():
             conditions.append("fr.allottee_name ILIKE %s")
             params.append(f"%{name_search}%")
         if allotment_search:
-            conditions.append("fr.allotment_number = %s")
+            conditions.append("fr.allotment_number ILIKE %s")
             params.append(allotment_search)
         if search_value:
             conditions.append("""(
@@ -598,7 +598,7 @@ def api_search_csv():
             conditions.append("fr.allottee_name ILIKE %s")
             params.append(f"%{name_search}%")
         if allotment_search:
-            conditions.append("fr.allotment_number = %s")
+            conditions.append("fr.allotment_number ILIKE %s")
             params.append(allotment_search)
         if date_from:
             conditions.append("ffp.patents_signature_date >= %s")
@@ -1165,7 +1165,7 @@ def api_patents():
             conditions.append("full_name ILIKE %s")
             params.append(f"%{name_search}%")
         if allotment:
-            conditions.append("indian_allotment_number = %s")
+            conditions.append("indian_allotment_number ILIKE %s")
             params.append(allotment)
         if tribe:
             conditions.append("preferred_name = %s")
@@ -1275,7 +1275,7 @@ def api_patents_csv():
             conditions.append("full_name ILIKE %s")
             params.append(f"%{name_search}%")
         if allotment:
-            conditions.append("indian_allotment_number = %s")
+            conditions.append("indian_allotment_number ILIKE %s")
             params.append(allotment)
         if tribe:
             conditions.append("preferred_name = %s")
