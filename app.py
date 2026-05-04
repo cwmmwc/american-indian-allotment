@@ -1362,13 +1362,21 @@ def patent_detail(objectid):
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT * FROM blm_allotment_patents WHERE objectid = %s", (objectid,))
-        patent = cur.fetchone()
+        # Check if caller specified this is a rails-only patent (no BLM record)
+        source = request.args.get("src", "")
 
-        # If not found in BLM table, try as a rails_patents id
-        if not patent:
-            cur.execute("SELECT * FROM all_patents WHERE id = %s", (objectid,))
+        if source == "rails":
+            # Go directly to all_patents by rails id — skip BLM lookup
+            cur.execute("SELECT * FROM all_patents WHERE id = %s AND has_plss_geometry = false LIMIT 1", (objectid,))
             patent = cur.fetchone()
+        else:
+            cur.execute("SELECT * FROM blm_allotment_patents WHERE objectid = %s", (objectid,))
+            patent = cur.fetchone()
+
+            # If not found in BLM table, try as a rails_patents id
+            if not patent:
+                cur.execute("SELECT * FROM all_patents WHERE id = %s LIMIT 1", (objectid,))
+                patent = cur.fetchone()
             if not patent:
                 abort(404)
 

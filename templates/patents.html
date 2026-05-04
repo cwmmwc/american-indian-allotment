@@ -151,7 +151,8 @@ $(function() {
                 data: 'full_name',
                 render: function(data, type, row) {
                     var linkId = row.objectid || row.id;
-                    return '<a href="/patent/' + linkId + '">' + (data || '—') + '</a>';
+                    var suffix = row.objectid ? '' : '?src=rails';
+                    return '<a href="/patent/' + linkId + suffix + '">' + (data || '—') + '</a>';
                 }
             },
             { data: 'preferred_name' },
