@@ -73,7 +73,7 @@
                     <dt>Accession Number</dt>
                     <dd>
                         {% if patent.accession_number %}
-                        {% set url = glo_url(patent.accession_number, patent.authority) %}
+                        {% set url = glo_url(patent.accession_number, patent.document_code or patent.authority) %}
                         {% if url %}
                         <a href="{{ url }}" target="_blank" class="glo-link">{{ patent.accession_number }}</a>
                         {% else %}

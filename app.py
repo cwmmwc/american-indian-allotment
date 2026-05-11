@@ -54,16 +54,32 @@ def unslugify_tribe(slug):
         conn.close()
 
 
+DOC_CLASS_MAP = {
+    "Serial Land Patent": "SER",
+    "State Land Patent": "STA",
+    "Indian Allotment Patent": "IA",
+    "Indian Allotment - General": "IA",
+    "Indian Fee Patent": "IF",
+    "Indian Trust Patent": "SER",
+    "Indian Trust to Fee": "SER",
+    "Indian Homestead Fee Patent": "SER",
+    "Miscellaneous Volume Patent": "MV",
+    "Sioux Scrip Patent": "SS",
+    "Chippewas Treaty Patent": "CT",
+}
+
 def glo_url(accession, doc_class=None):
-    """Build a GLO record URL from accession number.
-    BLM GLO files all Indian allotment patents under docClass=SER (Serial Patent).
-    Returns None for non-numeric accession numbers (e.g. 'KS4490__.015', 'SD2460__.306')
-    which are internal Rails/IATH identifiers that don't resolve on glorecords.blm.gov."""
+    """Build a GLO record URL from accession number and document class.
+    doc_class can be a BLM code (SER, STA, IA) or an authority name
+    (Serial Land Patent, State Land Patent, etc.) — both are mapped."""
     if not accession:
         return None
-    if not accession.isdigit():
-        return None
-    return f"https://glorecords.blm.gov/details/patent/default.aspx?accession={accession}&docClass=SER"
+    # If doc_class is an authority name, map to code
+    dc = DOC_CLASS_MAP.get(doc_class, doc_class) if doc_class else None
+    # If still None or unrecognized, try the document_code directly or default to SER
+    if not dc or len(dc) > 5:
+        dc = "SER"
+    return f"https://glorecords.blm.gov/details/patent/default.aspx?accession={accession}&docClass={dc}"
 
 
 def linkify_remarks(text):
