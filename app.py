@@ -1393,6 +1393,15 @@ def patent_detail(objectid):
             cur.execute("SELECT * FROM blm_allotment_patents WHERE objectid = %s", (objectid,))
             patent = cur.fetchone()
 
+            # BLM table lacks document_code; look it up from rails_patents for GLO link
+            if patent and patent.get("accession_number"):
+                cur.execute("SELECT document_code FROM rails_patents WHERE accession_number = %s LIMIT 1",
+                            (patent["accession_number"],))
+                dc_row = cur.fetchone()
+                if dc_row and dc_row.get("document_code"):
+                    patent = dict(patent)
+                    patent["document_code"] = dc_row["document_code"]
+
             # If not found in BLM table, try as a rails_patents id
             if not patent:
                 cur.execute("SELECT * FROM all_patents WHERE id = %s LIMIT 1", (objectid,))
