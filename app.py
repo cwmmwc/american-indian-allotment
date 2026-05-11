@@ -56,8 +56,12 @@ def unslugify_tribe(slug):
 
 def glo_url(accession, doc_class=None):
     """Build a GLO record URL from accession number.
-    BLM GLO files all Indian allotment patents under docClass=SER (Serial Patent)."""
+    BLM GLO files all Indian allotment patents under docClass=SER (Serial Patent).
+    Returns None for non-numeric accession numbers (e.g. 'KS4490__.015', 'SD2460__.306')
+    which are internal Rails/IATH identifiers that don't resolve on glorecords.blm.gov."""
     if not accession:
+        return None
+    if not accession.isdigit():
         return None
     return f"https://glorecords.blm.gov/details/patent/default.aspx?accession={accession}&docClass=SER"
 
