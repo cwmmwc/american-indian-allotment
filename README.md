@@ -162,6 +162,25 @@ The app is deployed on Google Cloud Run with auto-deploy via Cloud Build. Pushin
 
 See `CLOUD_RUN.md` for deployment commands, database access, log viewing, and rollback procedures.
 
+## Data Fixes (May 2026)
+
+Three fixes to the patent search and detail pages, resolving issues that affected tens of thousands of records:
+
+### Patentee Names for 46,025 Non-BLM Patents
+The `rails_patents` table (285,870 records imported from the IATH Rails admin) had no patentee name column — names lived in a separate `people` table in the Rails database that was not included in the original CSV export. This meant 46,025 patents that exist only in `rails_patents` (not in the BLM ArcGIS mirror) were unsearchable by name. The `all_patents` view returned `NULL` for their `full_name`.
+
+**Fix:** Scraped all 285,736 patent records with patentee names from the IATH search at `land-sales.iath.virginia.edu` (286 paginated requests, ~10 minutes). Added a `full_name` column to `rails_patents`, populated 267,093 rows. Updated the `all_patents` view to use `COALESCE(bap.full_name, rp.full_name)` so non-BLM patents show the scraped name. Scraped data at `iath_patents_with_names.csv`.
+
+### Patent Detail Routing for 15,432 ID Collisions
+The patent detail route (`/patent/<id>`) checks `blm_allotment_patents.objectid` first, then falls back to `rails_patents.id`. Both are integers in overlapping ranges. For 15,432 non-BLM patents, `rails_patents.id` collides with a different person's `blm_allotment_patents.objectid` — clicking the link shows the wrong person's record.
+
+**Fix:** Patent search results now append `?src=rails` to links for non-BLM patents (where `objectid` is null). The detail route checks this parameter and queries `all_patents` directly by `id` when present, skipping the BLM lookup. BLM-backed patents continue to use the normal route.
+
+### GLO Links for 91,957 Non-Numeric Accession Numbers
+The `glo_url()` function hardcoded `docClass=SER` (Serial Land Patent) for all GLO links. But 91,957 patents have non-Serial document classes — State Land Patents (`STA`), Indian Allotment Patents (`IA`), Miscellaneous Volume Patents (`MV`), etc. Links for these patents pointed to BLM with the wrong document class and failed to resolve.
+
+**Fix:** `glo_url()` now accepts the patent's `document_code` (or maps `authority` names like "State Land Patent" to codes like "STA") and generates links with the correct `docClass` parameter. All 285,870 patents now produce valid GLO links.
+
 ## GitHub
 
 https://github.com/cwmmwc/federal-register-forced-fee
