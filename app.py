@@ -859,6 +859,15 @@ def tribe_detail(tribe_slug):
         """, (tribe_name, tribe_name))
         timeline_data = cur.fetchall()
 
+        # Tribe-specific data notes
+        tribe_notes = {}
+        if tribe_name == "Omaha":
+            tribe_notes["unlinked"] = """Of 889 Federal Register claims for the Omaha tribe, 358 are linked to BLM patent records and 531 are not.
+
+<strong>Most unlinked claims are taxation cases, not forced fee patents.</strong> Of the 531 unlinked claims, 498 are TAXATION claims — cases where the allottee's land was seized or encumbered for unpaid property taxes. Only 22 are forced fee patents. The IATH hand-verification process that built the patent linkages focused on forced fee patent claims; taxation claims were largely not linked. Of 561 total Omaha taxation claims, only 63 (11%) have patent linkages.
+
+<strong>The FR used Omaha-internal allotment suffixes the GLO did not.</strong> 514 of the 531 unlinked claims carry -N or -O suffixes on their allotment numbers (e.g., 103-O, 76-N). BLM patent records use the number without the suffix. The suffix convention was used by the FR publishers to distinguish multiple claims at the same allotment number — the Omaha Reservation had cases where different allottees held patents at the same numbered allotment for different parcels of land. The IATH reconciliation project has corrected 195 of these suffix mismatches; the remaining ~300 have not been crosswalked to GLO allotment numbers."""
+
         return render_template(
             "tribe.html",
             tribe_name=tribe_name,
@@ -867,6 +876,7 @@ def tribe_detail(tribe_slug):
             stats=stats,
             date_info=date_info,
             timeline_data=timeline_data,
+            tribe_notes=tribe_notes,
             slugify=slugify,
         )
     finally:

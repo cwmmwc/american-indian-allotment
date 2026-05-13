@@ -58,6 +58,18 @@
     </div>
 </div>
 
+<!-- Tribe-specific data notes -->
+{% if tribe_notes and tribe_notes.unlinked %}
+<div class="card mb-4 border-warning">
+    <div class="card-header bg-warning bg-opacity-10">
+        <h2 class="h6 mb-0">Why {{ stats.total_claims - (date_info.linked_count or 0) }} claims have no linked patent record</h2>
+    </div>
+    <div class="card-body small">
+        {{ tribe_notes.unlinked | safe }}
+    </div>
+</div>
+{% endif %}
+
 <!-- Timeline Chart -->
 {% if timeline_data %}
 <div class="card mb-4">
