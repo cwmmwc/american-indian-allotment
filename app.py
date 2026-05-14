@@ -1457,10 +1457,27 @@ def patent_detail(objectid):
             """, (patent["accession_number"],))
             linked_claim = cur.fetchone()
 
+        # Name-based claim search: when no verified linkage exists,
+        # search federal_register_claims by the patentee's name.
+        name_matched_claims = []
+        if not linked_claim and patent.get("full_name"):
+            pat_name = patent["full_name"].strip()
+            if pat_name and len(pat_name) > 2:
+                cur.execute("""
+                    SELECT id, allottee_name, tribe_identified, allotment_number,
+                           claim_type, case_number
+                    FROM federal_register_claims
+                    WHERE allottee_name ILIKE %s
+                    ORDER BY allottee_name, allotment_number
+                    LIMIT 10
+                """, (f"%{pat_name}%",))
+                name_matched_claims = cur.fetchall()
+
         return render_template(
             "patent.html",
             patent=patent,
             linked_claim=linked_claim,
+            name_matched_claims=name_matched_claims,
             glo_url=glo_url,
             slugify=slugify,
         )

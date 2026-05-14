@@ -35,6 +35,31 @@
         {{ linked_claim.allottee_name }}, Case {{ linked_claim.case_number }} ({{ linked_claim.tribe_identified }})
     </a>
 </div>
+{% elif name_matched_claims %}
+<div class="alert alert-light border mb-4">
+    <small class="text-muted">
+        <strong>No verified Federal Register linkage.</strong>
+    </small>
+    <div class="mt-2">
+        <strong class="small">Possible Federal Register claim matches by name</strong>
+        <p class="text-muted small mb-2">These claims match the patentee's name but have not been verified as the same person.</p>
+        <table class="table table-sm table-hover small mb-0">
+            <thead>
+                <tr><th>Allottee</th><th>Tribe</th><th>Allotment</th><th>Claim Type</th></tr>
+            </thead>
+            <tbody>
+                {% for c in name_matched_claims %}
+                <tr>
+                    <td><a href="{{ url_for('claim_detail', claim_id=c.id) }}">{{ c.allottee_name }}</a></td>
+                    <td>{{ c.tribe_identified }}</td>
+                    <td>{{ c.allotment_number or '—' }}</td>
+                    <td>{{ c.claim_type }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% elif patent.indian_allotment_number %}
 <div class="alert alert-light border mb-4">
     <small class="text-muted">
