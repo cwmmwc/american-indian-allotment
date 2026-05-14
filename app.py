@@ -771,11 +771,35 @@ def claim_detail(claim_id):
                 if row:
                     blm_patent_ids[acc] = row["objectid"]
 
+        # Name-based patent search: when no verified linkage and no allotment match,
+        # search all_patents by the allottee's name to surface possible matches.
+        name_matched_patents = []
+        if not patents and not allotment_patents and claim.get("allottee_name"):
+            fr_name = claim["allottee_name"].strip()
+            if fr_name and len(fr_name) > 2 and fr_name not in ("TRIBAL", "NA", "N/A"):
+                cur.execute("""
+                    SELECT id, objectid, full_name, preferred_name,
+                           indian_allotment_number, authority, accession_number,
+                           signature_date, document_code, has_plss_geometry
+                    FROM all_patents
+                    WHERE full_name ILIKE %s
+                    ORDER BY signature_date
+                    LIMIT 20
+                """, (f"%{fr_name}%",))
+                name_matched_patents = cur.fetchall()
+                # Add BLM objectids for name-matched patents
+                for p in name_matched_patents:
+                    acc = p.get("accession_number")
+                    if acc and acc not in blm_patent_ids:
+                        if p.get("objectid"):
+                            blm_patent_ids[acc] = p["objectid"]
+
         return render_template(
             "claim.html",
             claim=claim,
             patents=patents,
             allotment_patents=allotment_patents,
+            name_matched_patents=name_matched_patents,
             parcels=parcels,
             trust_links=trust_links,
             blm_patent_ids=blm_patent_ids,
