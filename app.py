@@ -1488,14 +1488,133 @@ def patent_detail(objectid):
             """, (patent["accession_number"],))
             cancelled_research = cur.fetchone()
 
+        # BIA file references on this patent (from transcribed remarks). For each
+        # ref also count how many OTHER patents share it -- that's the cluster size
+        # users click through to.
+        file_refs = []
+        if patent.get("accession_number"):
+            cur.execute("""
+                SELECT
+                    pfr.id            AS ref_id,
+                    pfr.letter_number,
+                    pfr.year,
+                    pfr.year_raw,
+                    pfr.nara_verified,
+                    pfr.nara_url,
+                    pfr.decimal_class,
+                    pfr.agency,
+                    pfrl.context_label,
+                    pfrl.matched_text,
+                    pfrl.source_table,
+                    (
+                        SELECT COUNT(DISTINCT patent_accession) - 1
+                        FROM patent_file_ref_links
+                        WHERE file_ref_id = pfr.id
+                    ) AS other_patent_count
+                FROM patent_file_ref_links pfrl
+                JOIN patent_file_references pfr ON pfr.id = pfrl.file_ref_id
+                WHERE pfrl.patent_accession = %s
+                ORDER BY pfr.year, pfr.letter_number
+            """, (patent["accession_number"],))
+            file_refs = cur.fetchall()
+
         return render_template(
             "patent.html",
             patent=patent,
             linked_claim=linked_claim,
             name_matched_claims=name_matched_claims,
             cancelled_research=cancelled_research,
+            file_refs=file_refs,
             glo_url=glo_url,
             slugify=slugify,
+        )
+    finally:
+        conn.close()
+
+
+@app.route("/file_ref/<spec>")
+def file_ref_detail(spec):
+    """Cluster view: all patents that share a single BIA file reference (NNNNN-YY).
+
+    URL form: /file_ref/6744-49  (letter-year, matching how refs appear in remarks).
+    Accepts an integer alone too (the patent_file_references.id) as a fallback.
+    """
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # Parse spec
+        if "-" in spec:
+            letter, _, year_raw = spec.partition("-")
+            cur.execute("""
+                SELECT * FROM patent_file_references
+                WHERE letter_number = %s AND year_raw = %s
+                LIMIT 1
+            """, (letter, year_raw))
+        else:
+            cur.execute("SELECT * FROM patent_file_references WHERE id = %s LIMIT 1", (spec,))
+        ref = cur.fetchone()
+        if not ref:
+            abort(404)
+
+        # Pull all patents linked to this ref, with BLM metadata where available.
+        cur.execute("""
+            SELECT
+                pfrl.patent_accession,
+                pfrl.context_label,
+                pfrl.source_table,
+                pfrl.matched_text,
+                bap.objectid,
+                bap.full_name,
+                bap.preferred_name,
+                bap.signature_date,
+                bap.authority,
+                bap.state,
+                bap.county,
+                bap.cancelled_doc,
+                bap.forced_fee
+            FROM patent_file_ref_links pfrl
+            LEFT JOIN blm_allotment_patents bap
+                ON bap.accession_number = pfrl.patent_accession
+            WHERE pfrl.file_ref_id = %s
+            ORDER BY bap.signature_date NULLS LAST, pfrl.patent_accession
+        """, (ref["id"],))
+        links = cur.fetchall()
+
+        # Deduplicate by accession_number (one accession can have multiple labels)
+        seen = set()
+        patents = []
+        label_counts = {}
+        for r in links:
+            label_counts[r["context_label"]] = label_counts.get(r["context_label"], 0) + 1
+            if r["patent_accession"] in seen:
+                continue
+            seen.add(r["patent_accession"])
+            patents.append(r)
+
+        # Cohort aggregates
+        from collections import Counter
+        state_counts     = Counter((p["state"] or "—") for p in patents)
+        tribe_counts     = Counter((p["preferred_name"] or "—") for p in patents)
+        authority_counts = Counter((p["authority"] or "—") for p in patents)
+        cancelled_count  = sum(1 for p in patents if p["cancelled_doc"] == "True")
+        forced_count     = sum(1 for p in patents if p["forced_fee"] == "True")
+        dates = [p["signature_date"] for p in patents if p["signature_date"]]
+        date_range = (min(dates), max(dates)) if dates else (None, None)
+
+        return render_template(
+            "file_ref.html",
+            ref=ref,
+            patents=patents,
+            n_patents=len(patents),
+            label_counts=sorted(label_counts.items(), key=lambda kv: -kv[1]),
+            state_counts=state_counts.most_common(),
+            tribe_counts=tribe_counts.most_common(),
+            authority_counts=authority_counts.most_common(),
+            cancelled_count=cancelled_count,
+            forced_count=forced_count,
+            date_range=date_range,
+            glo_url=glo_url,
         )
     finally:
         conn.close()

@@ -212,4 +212,60 @@
         </div>
     </div>
 </div>
+
+{% if file_refs %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Related BIA File References</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            File-number references parsed from this patent's transcribed BLM remarks.
+            Each ref points to a BIA archival file that touched this patent's processing.
+            The label (IO / BIA / DOCUMENT) is the BLM transcriber's wording, not the
+            filing system's own categorization — see
+            <a href="{{ url_for('about_project') }}">the project notes</a> for caveats.
+        </p>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>File Ref</th>
+                    <th>Year</th>
+                    <th>Label (as transcribed)</th>
+                    <th>Cluster</th>
+                    <th>NARA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in file_refs %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('file_ref_detail', spec=r.letter_number ~ '-' ~ r.year_raw) }}">
+                            <code>{{ r.letter_number }}-{{ r.year_raw }}</code>
+                        </a>
+                    </td>
+                    <td>{{ r.year or '—' }}</td>
+                    <td><span class="badge bg-secondary">{{ r.context_label }}</span></td>
+                    <td>
+                        {% if r.other_patent_count > 0 %}
+                            shared with {{ r.other_patent_count }} other patent{% if r.other_patent_count != 1 %}s{% endif %}
+                        {% else %}
+                            only this patent
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.nara_verified %}
+                            <span class="text-success">✓ verified</span>
+                            {% if r.nara_url %} — <a href="{{ r.nara_url }}" target="_blank">NARA</a>{% endif %}
+                        {% else %}
+                            <span class="text-muted">not checked</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

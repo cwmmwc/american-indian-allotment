@@ -4,7 +4,26 @@
 
 PostgreSQL database containing forced fee patent claims from the 1983 Federal Register, BLM patent records, trust-to-fee linkages, PLSS land descriptions, and a full ArcGIS patent mirror. Built to support research on Indian allotment land dispossession.
 
-**Total: 10 tables, 9 views, ~1,250,000 rows.**
+**Total: 12 tables, 9 views, ~1,250,000 rows.**
+
+## Data Quality Caveats
+
+### `remarks` field — transcriber-applied labels are not document truth
+
+The `remarks` column on `fee_patents`, `trust_patents`, `rails_patents`, and related tables was hand-transcribed by BLM/GLO operators from the patent images. Several conventions used in transcription do NOT correspond to what is actually printed on the document:
+
+- **`IO` / `BIA` / `DOCUMENT` labels are interchangeable transcriber conventions, not provenance.** BLM transcribers wrote `IO #`, `BIA #`, or `DOCUMENT #` (with or without `ADDITIONAL` prefix) in front of NNNNN-YY archival file numbers, applying whichever label the operator preferred. Empirical evidence (2026-05-19): the single 1949 BIA file `6744-49` appears in BLM remarks across 171 California Indian fee patents as `ADDITIONAL IO #6744-49` (77 patents), `ADDITIONAL BIA #6744-49` (49 patents), `BIA# 6744-49` and variants (19 patents), `DOCUMENT #6744-49` (3 patents), and `ADDTIONAL BIA` (typo, 1 patent). Same file, same number, three different label families used interchangeably.
+
+- **Many `IO #`-labeled refs do not verify as CCFs.** The Indian Office / Central Classified Files labeling on actual patent documents is selective — only some refs carry an explicit `I.O.` mark on the document image, while transcribers added `IO #` (or `BIA #` / `DOCUMENT #`) liberally to any NNNNN-YY number from the patent's top-left form-number block. Cross-referencing transcribed `IO #` refs against NARA's CCF index will therefore produce false negatives.
+  - Example: Fred Nason's 1900 trust patent (MN2880__.253) header shows two numbers — `60798-08` (unlabeled on document) and `14329-08 I.O.` (labeled). The five 1908 fee patents for that allotment all carry remarks `ADDITIONAL IO #60798-08` — but `60798-08` was never labeled IO on the source document. `14329-08`, which *was* labeled IO and *is* findable in NARA's CCF index (CCF 14329, Leech Lake Agency, Feb 1908), does not appear in any of those fee patents' remarks at all.
+  - Example: `96976-08` appears in 35 fee patents' remarks labeled `ADDITIONAL IO #96976-08`, but NARA has no 1908 file unit in the 96900-96999 letter range (both 1907 and 1909 have one).
+  - **Implication for queries:** treat remarks file-ref labels as transcriber claims to be verified, not as ground truth. Confirm category against NARA's CCF index (https://www.archives.gov/research/native-americans/central-classified-files) before asserting that any given NNNNN-YY remark is a true CCF reference.
+
+- **Regex to capture all three label families:** `(?:ADDITIONAL\s+|ADDTIONAL\s+)?(I\.?\s*O\.?|B\.?\s*I\.?\s*A\.?|DOCUMENT)\s*#?\s*[0-9]{4,6}-[0-9]{2}`. See `scripts/extract_file_refs_from_remarks.py`. Missing any one of the three families undercounts a cluster by 5-50%.
+
+- **`DOCUMENT` label is also used for non-NNNNN-YY refs.** `ADDITIONAL DOCUMENT #2145738` (7-digit patent serial number) and `ADDITIONAL DOCUMENT #62850-10` (NNNNN-YY file ref) both occur — distinguish by number format before downstream processing.
+
+- **MISCELLANEOUS VOLUME NR XXXX-YY** matches the NNNNN-YY format but is a patent-volume locator (volume-page within GLO records), not a BIA file reference. Do not treat it as a file-ref candidate.
 
 ## Data Sources
 
@@ -230,6 +249,43 @@ Lookup table mapping raw `glo_tribe_name` values to normalized `preferred_name` 
 | preferred_name | text | Normalized tribe name from BLM (e.g., "Citizen Potawatomi", "Oneida") |
 
 No ambiguous mappings: each glo_tribe_name maps to exactly one preferred_name.
+
+### `patent_file_references` (1,300 rows as of 2026-05-19)
+
+Distinct NNNNN-YY archival file references parsed from patent `remarks`. One row per (letter_number, year_raw) pair. See `sql/create_patent_file_references.sql` and the "Data Quality Caveats" section above on why these are NOT all confirmed CCF references.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | serial PK | |
+| letter_number | text | 4-6 digit BIA letter number (e.g. "14329") |
+| year | integer | 4-digit year (e.g. 1908) |
+| year_raw | text | 2-digit suffix as it appears in source (e.g. "08") |
+| decimal_class | text | NARA CCF decimal classification (null until verified) |
+| agency | text | BIA agency/jurisdiction (null until verified) |
+| nara_verified | boolean | True only when the (letter, year) pair has been confirmed in NARA's CCF index |
+| nara_url | text | Direct link to NARA catalog entry when verified |
+| notes | text | |
+| created_at | timestamp | |
+
+**Unique on (letter_number, year_raw).** CCF letter numbers are reused across years — same range (e.g. 96900-96999) can have a 1907 file unit AND a 1909 file unit with different NAIDs.
+
+### `patent_file_ref_links` (2,373 rows as of 2026-05-19)
+
+Many-to-many join between patents (by accession_number) and `patent_file_references`. One BIA file can reference many patents (1949 file `6744-49` → 171 California Indian fee patents); one patent can reference multiple files.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | serial PK | |
+| patent_accession | text | accession_number (universal key in this DB) |
+| file_ref_id | integer | FK → patent_file_references.id |
+| context_label | text | As transcribed: "IO", "ADDITIONAL IO", "BIA", "ADDITIONAL BIA", "DOCUMENT", "ADDITIONAL DOCUMENT" (transcriber claim, not document truth) |
+| source_location | text | 'remarks' (initial pass) or future: 'top_left_header' (vision pipeline), 'manual' |
+| source_table | text | rails_patents, trust_patents, or fee_patents — whichever was scanned first |
+| matched_text | text | Literal substring from remarks |
+| notes | text | |
+| created_at | timestamp | |
+
+**Unique on (patent_accession, file_ref_id, context_label, source_location).** Built by `scripts/extract_file_refs_from_remarks.py`.
 
 ## Views
 

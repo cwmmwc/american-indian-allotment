@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}BIA File Ref {{ ref.letter_number }}-{{ ref.year_raw }} — {{ n_patents }} patents{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('patents_index') }}">Patents</a></li>
+        <li class="breadcrumb-item active">BIA File Ref {{ ref.letter_number }}-{{ ref.year_raw }}</li>
+    </ol>
+</nav>
+
+<div class="page-header">
+    <h1>BIA File Ref <code>{{ ref.letter_number }}-{{ ref.year_raw }}</code></h1>
+    <p class="lead">
+        Year {{ ref.year or '—' }} &middot;
+        {{ n_patents }} patent{% if n_patents != 1 %}s{% endif %} share this reference
+    </p>
+</div>
+
+{% if not ref.nara_verified %}
+<div class="alert alert-light border mb-4">
+    <strong>NARA verification: not yet checked.</strong>
+    This reference was parsed from BLM transcribed remarks. The label used in
+    remarks ({% for lab, n in label_counts %}<code>{{ lab }}</code>{% if not loop.last %}, {% endif %}{% endfor %})
+    is the transcriber's wording and does not by itself establish whether
+    <code>{{ ref.letter_number }}-{{ ref.year_raw }}</code> is a verified
+    Central Classified Files reference. To check, search NARA's catalog at
+    <a href="https://www.archives.gov/research/native-americans/central-classified-files" target="_blank">archives.gov</a>.
+</div>
+{% else %}
+<div class="alert alert-success border mb-4">
+    <strong>NARA verified.</strong>
+    {% if ref.decimal_class %}Decimal classification: <code>{{ ref.decimal_class }}</code>{% endif %}
+    {% if ref.agency %} &middot; Agency / jurisdiction: <code>{{ ref.agency }}</code>{% endif %}
+    {% if ref.nara_url %}<br><a href="{{ ref.nara_url }}" target="_blank">View at NARA Catalog →</a>{% endif %}
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h6 mb-0">Cohort Summary</h2></div>
+            <div class="card-body">
+                <dl class="claim-details mb-0">
+                    <dt>Total patents</dt>
+                    <dd>{{ n_patents }}</dd>
+
+                    <dt>Date range</dt>
+                    <dd>
+                        {% if date_range[0] %}
+                            {{ date_range[0].strftime('%Y-%m-%d') if date_range[0].strftime else date_range[0] }}
+                            {% if date_range[0] != date_range[1] %}
+                                &nbsp;to&nbsp;
+                                {{ date_range[1].strftime('%Y-%m-%d') if date_range[1].strftime else date_range[1] }}
+                            {% endif %}
+                        {% else %}—{% endif %}
+                    </dd>
+
+                    <dt>Cancelled documents</dt>
+                    <dd>{{ cancelled_count }} of {{ n_patents }}</dd>
+
+                    <dt>BLM forced-fee flag</dt>
+                    <dd>{{ forced_count }} of {{ n_patents }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h6 mb-0">Label Variants in Remarks</h2></div>
+            <div class="card-body">
+                <p class="text-muted small mb-2">
+                    BLM transcribers used these labels for this same file. The interchangeability
+                    is itself evidence that the label is not a reliable category indicator.
+                </p>
+                <ul class="mb-0">
+                    {% for lab, n in label_counts %}
+                    <li><code>{{ lab }}</code> &middot; {{ n }} occurrence{% if n != 1 %}s{% endif %}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h6 mb-0">State</h2></div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0 small">
+                    {% for s, n in state_counts %}
+                    <li>{{ s }} &middot; {{ n }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h6 mb-0">Tribe</h2></div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0 small">
+                    {% for t, n in tribe_counts %}
+                    <li>{{ t }} &middot; {{ n }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h6 mb-0">Authority</h2></div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0 small">
+                    {% for a, n in authority_counts %}
+                    <li>{{ a }} &middot; {{ n }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h2 class="h5 mb-0">All Patents in Cohort</h2></div>
+    <div class="card-body table-responsive">
+        <table class="table table-sm table-hover small">
+            <thead>
+                <tr>
+                    <th>Accession</th>
+                    <th>Date</th>
+                    <th>State</th>
+                    <th>Tribe</th>
+                    <th>Patentee</th>
+                    <th>Authority</th>
+                    <th>Label</th>
+                    <th>Flags</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in patents %}
+                <tr>
+                    <td>
+                        {% if p.objectid %}
+                        <a href="{{ url_for('patent_detail', objectid=p.objectid) }}"><code>{{ p.patent_accession }}</code></a>
+                        {% else %}
+                        <code>{{ p.patent_accession }}</code>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.signature_date %}
+                            {{ p.signature_date.strftime('%Y-%m-%d') if p.signature_date.strftime else p.signature_date }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ p.state or '—' }}</td>
+                    <td>{{ p.preferred_name or '—' }}</td>
+                    <td>{{ p.full_name or '—' }}</td>
+                    <td class="text-muted">{{ p.authority or '—' }}</td>
+                    <td><span class="badge bg-secondary">{{ p.context_label }}</span></td>
+                    <td>
+                        {% if p.cancelled_doc == 'True' %}<span class="badge bg-danger">cancelled</span>{% endif %}
+                        {% if p.forced_fee == 'True' %}<span class="badge bg-warning text-dark">forced fee</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
