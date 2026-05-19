@@ -1532,6 +1532,56 @@ def patent_detail(objectid):
         conn.close()
 
 
+@app.route("/file_refs")
+def file_refs_index():
+    """Index of every BIA file reference parsed from patent remarks.
+    Sorted by cluster size descending so the most administratively significant
+    files (the ones that touched the most patents) are at the top.
+    """
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            WITH agg AS (
+                SELECT
+                    pfrl.file_ref_id,
+                    COUNT(DISTINCT pfrl.patent_accession)              AS n_patents,
+                    COUNT(DISTINCT bap.state) FILTER (WHERE bap.state IS NOT NULL)             AS n_states,
+                    string_agg(DISTINCT bap.state, ', ' ORDER BY bap.state)                     AS states,
+                    mode() WITHIN GROUP (ORDER BY bap.preferred_name)   AS top_tribe,
+                    MIN(bap.signature_date)                             AS min_date,
+                    MAX(bap.signature_date)                             AS max_date,
+                    mode() WITHIN GROUP (ORDER BY pfrl.context_label)   AS top_label
+                FROM patent_file_ref_links pfrl
+                LEFT JOIN blm_allotment_patents bap
+                    ON bap.accession_number = pfrl.patent_accession
+                GROUP BY pfrl.file_ref_id
+            )
+            SELECT
+                pfr.id, pfr.letter_number, pfr.year, pfr.year_raw,
+                pfr.nara_verified, pfr.decimal_class, pfr.agency,
+                agg.n_patents, agg.n_states, agg.states,
+                agg.top_tribe, agg.top_label, agg.min_date, agg.max_date
+            FROM patent_file_references pfr
+            JOIN agg ON agg.file_ref_id = pfr.id
+            ORDER BY agg.n_patents DESC, pfr.year DESC, pfr.letter_number
+        """)
+        refs = cur.fetchall()
+
+        cur.execute("""
+            SELECT
+                COUNT(*) AS total_refs,
+                COUNT(*) FILTER (WHERE nara_verified) AS verified_refs,
+                (SELECT COUNT(DISTINCT patent_accession) FROM patent_file_ref_links) AS distinct_patents
+            FROM patent_file_references
+        """)
+        totals = cur.fetchone()
+
+        return render_template("file_refs.html", refs=refs, totals=totals)
+    finally:
+        conn.close()
+
+
 @app.route("/file_ref/<spec>")
 def file_ref_detail(spec):
     """Cluster view: all patents that share a single BIA file reference (NNNNN-YY).

@@ -69,6 +69,32 @@
     </div>
 </div>
 
+<!-- BIA file reference clusters -->
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-light">
+        <h2 class="h5 mb-0">BIA Administrative File Clusters <span class="badge bg-primary ms-2">New</span></h2>
+    </div>
+    <div class="card-body">
+        <p>
+            Beneath every individual patent record, there is a thread back to a BIA
+            correspondence file &mdash; a number written into the patent's transcribed
+            remarks pointing into the Bureau of Indian Affairs's archival system.
+            Many of these files cluster patents together into single administrative
+            episodes: a 1949 file that ran a 171-patent California Indian fee-conversion
+            batch; a 1908 file that reissued 35 Ponca patents to correct patentee names;
+            a Leech Lake Agency file from February 1908 that transmitted three applications
+            for patents, Fred Nason among them.
+        </p>
+        <p>
+            We have parsed <strong>1,300 distinct file references</strong> covering
+            <strong>2,311 patents</strong>. Each reference is a research lead.
+        </p>
+        <a href="{{ url_for('file_refs_index') }}" class="btn btn-outline-dark btn-sm">Browse all file references</a>
+        <a href="{{ url_for('file_ref_detail', spec='6744-49') }}" class="btn btn-outline-dark btn-sm">Example: 1949 California batch (171 patents)</a>
+        <a href="{{ url_for('file_ref_detail', spec='96976-08') }}" class="btn btn-outline-dark btn-sm">Example: 1908 Ponca reissuance (35 patents)</a>
+    </div>
+</div>
+
 <!-- The arc -->
 <div class="card mb-4">
     <div class="card-body">

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}BIA File References — Administrative Clusters{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>BIA File References</h1>
+    <p class="lead">
+        Archival file numbers (NNNNN-YY) parsed from BLM patent remarks.
+        Each reference points to a BIA correspondence file that touched the
+        processing of one or more allotment patents. Clicking a reference
+        opens the cluster of patents that share it &mdash; a single
+        administrative episode rendered as data.
+    </p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ totals.total_refs }}</div>
+            <div class="stat-card-label">Distinct file references</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ totals.distinct_patents }}</div>
+            <div class="stat-card-label">Patents with a file reference</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ totals.verified_refs }}</div>
+            <div class="stat-card-label">NARA-verified so far</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ refs[0].n_patents if refs else 0 }}</div>
+            <div class="stat-card-label">Largest cluster</div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-light border mb-4 small">
+    <strong>How to read this table.</strong>
+    Each row is one archival file. <em>Patents</em> shows how many BLM records
+    cite that file in their remarks &mdash; the larger the number, the larger
+    the administrative episode. The <em>Label</em> column shows the wording BLM
+    transcribers used (<code>IO</code>, <code>BIA</code>, or <code>DOCUMENT</code>);
+    these labels are interchangeable in the transcribed remarks and do not by
+    themselves establish whether the file is a verified CCF reference. See the
+    <a href="{{ url_for('about_project') }}">project notes</a> for caveats.
+</div>
+
+<div class="card mb-4">
+    <div class="card-body table-responsive">
+        <table id="filerefs-table" class="table table-sm table-hover small">
+            <thead>
+                <tr>
+                    <th>File Ref</th>
+                    <th>Year</th>
+                    <th class="text-end">Patents</th>
+                    <th>Date Range</th>
+                    <th>States</th>
+                    <th>Top Tribe</th>
+                    <th>Top Label</th>
+                    <th>NARA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in refs %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('file_ref_detail', spec=r.letter_number ~ '-' ~ r.year_raw) }}">
+                            <code>{{ r.letter_number }}-{{ r.year_raw }}</code>
+                        </a>
+                    </td>
+                    <td>{{ r.year or '—' }}</td>
+                    <td class="text-end"><strong>{{ r.n_patents }}</strong></td>
+                    <td class="text-muted">
+                        {% if r.min_date %}
+                            {{ r.min_date.strftime('%Y-%m-%d') }}
+                            {% if r.max_date and r.max_date != r.min_date %}
+                                &nbsp;–&nbsp; {{ r.max_date.strftime('%Y-%m-%d') }}
+                            {% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ r.states or '—' }}</td>
+                    <td>{{ r.top_tribe or '—' }}</td>
+                    <td><span class="badge bg-secondary">{{ r.top_label or '—' }}</span></td>
+                    <td>
+                        {% if r.nara_verified %}
+                        <span class="text-success">✓</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    $('#filerefs-table').DataTable({
+        pageLength: 50,
+        lengthMenu: [[25, 50, 100, 200, -1], [25, 50, 100, 200, "All"]],
+        order: [[2, 'desc']],
+        columnDefs: [
+            { targets: [1, 2], type: 'num' }
+        ]
+    });
+});
+</script>
+{% endblock %}
