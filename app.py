@@ -1473,11 +1473,27 @@ def patent_detail(objectid):
                 """, (f"%{pat_name}%",))
                 name_matched_claims = cur.fetchall()
 
+        # Cancelled-patent research metadata (legal authority, CCF, dates) from
+        # the hand-curated cancelled_patent_research table.
+        cancelled_research = None
+        if patent.get("accession_number"):
+            cur.execute("""
+                SELECT name, allotment_number, tribe_reservation, state,
+                       reason_for_cancellation, reason_normalized,
+                       cancellation_date, fee_patent_date, ccf_number,
+                       gender, carlisle_yn, comments
+                FROM cancelled_patent_research
+                WHERE patent_number = %s
+                LIMIT 1
+            """, (patent["accession_number"],))
+            cancelled_research = cur.fetchone()
+
         return render_template(
             "patent.html",
             patent=patent,
             linked_claim=linked_claim,
             name_matched_claims=name_matched_claims,
+            cancelled_research=cancelled_research,
             glo_url=glo_url,
             slugify=slugify,
         )

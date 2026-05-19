@@ -9,6 +9,25 @@
     <p class="text-muted small">Claims are organized by <strong>BIA agency code</strong> — an alphanumeric identifier from the Federal Register that encodes the BIA area office and local agency. The first letter indicates the area office (A&nbsp;=&nbsp;Aberdeen, B&nbsp;=&nbsp;Anadarko, C&nbsp;=&nbsp;Billings, F&nbsp;=&nbsp;Minneapolis, G&nbsp;=&nbsp;Muskogee, H&nbsp;=&nbsp;Phoenix, J&nbsp;=&nbsp;Sacramento, N&nbsp;=&nbsp;Navajo, P&nbsp;=&nbsp;Portland). Case numbers are sequential within each agency code, so case #001 under A00007 (Flandreau) is a different claim from #001 under C51201 (Blackfeet). <a href="{{ url_for('about') }}#agency-codes">Read more</a></p>
 </div>
 
+<div class="alert alert-light border mb-4">
+    <h5 class="mb-2">Cancelled Patents</h5>
+    <p class="small mb-2">
+        Some fee patents issued during the Dawes era &mdash; many of them <strong>forced fee patents</strong> issued without the allottee's application or consent &mdash; were later <strong>cancelled</strong> by federal action, restoring the land to restricted trust status. The principal pathways:
+    </p>
+    <ul class="small mb-2">
+        <li><strong>The 1927 Act</strong> (44 Stat. 1247) authorized the Secretary of the Interior to cancel fee patents issued without application or consent, on petition from the original allottee or heirs. The largest single category of cancellations.</li>
+        <li><strong>The 1931 Act</strong> (46 Stat. 1471) extended cancellation authority to additional cases.</li>
+        <li><strong>Acceptance refused</strong> &mdash; when an allottee refused to accept the fee patent on issuance, the patent could be cancelled administratively without legislation.</li>
+        <li><strong>Individual orders, court decrees, and case-specific letters</strong> &mdash; including the May 22, 1916 "Caster Patent" letter (BIA letter #610929), the January 6, 1921 cancellation order, and individual court decrees.</li>
+    </ul>
+    <p class="small mb-2">
+        A cancelled fee patent meant the land returned to restricted trust status. This was a partial, often delayed remedy for forced-fee dispossession &mdash; the cancellation typically came years or decades after the original conversion, and only for allottees (or heirs) who knew to petition.
+    </p>
+    <p class="small text-muted mb-0">
+        This site documents <strong>421 cancelled fee patents</strong> with hand-curated metadata on the cancellation reason, dates, and BIA Central Classified File references &mdash; research data not present in BLM's digital metadata. When a patent in this dataset appears on its <a href="{{ url_for('patents_search') }}">patent detail page</a>, the cancellation information is shown above the patent record. For an example, see <a href="{{ url_for('patent_detail', objectid=119118) }}">Fred Laplant (1927 Act)</a> or <a href="{{ url_for('patent_detail', objectid=121226) }}">Abraham Generation (Caster Patent letter)</a>.
+    </p>
+</div>
+
 <div class="card filter-card mb-4">
     <div class="card-body">
         <form id="searchForm">

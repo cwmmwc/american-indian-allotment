@@ -27,6 +27,56 @@
     </p>
 </div>
 
+{% if cancelled_research %}
+<div class="alert alert-warning border mb-4">
+    <div class="d-flex align-items-center mb-2">
+        <strong class="me-2">Patent Cancelled</strong>
+        <span class="text-muted small">
+            ({% if cancelled_research.reason_normalized == '1927_act' %}1927 Act
+            {% elif cancelled_research.reason_normalized == '1931_act' %}1931 Act
+            {% elif cancelled_research.reason_normalized == '1927_and_1931_acts' %}1927 + 1931 Acts
+            {% elif cancelled_research.reason_normalized == 'acceptance_refused' %}Acceptance refused
+            {% elif cancelled_research.reason_normalized == 'issued_without_application' %}Issued without application
+            {% elif cancelled_research.reason_normalized == 'issued_without_application_and_acceptance_refused' %}Issued w/o application; acceptance refused
+            {% elif cancelled_research.reason_normalized == 'caster_patent_letter' %}Caster letter (May 22, 1916)
+            {% elif cancelled_research.reason_normalized == 'court_decree' %}Court decree
+            {% elif cancelled_research.reason_normalized == 'incompetency_determination' %}"Incompetency" determination
+            {% elif cancelled_research.reason_normalized == 'individual_order' %}Individual order
+            {% else %}{{ cancelled_research.reason_for_cancellation }}{% endif %})
+        </span>
+    </div>
+    <table class="table table-sm table-borderless mb-0 small">
+        <tbody>
+            {% if cancelled_research.reason_for_cancellation %}
+            <tr><th class="w-25">Reason (as recorded)</th><td>{{ cancelled_research.reason_for_cancellation }}</td></tr>
+            {% endif %}
+            {% if cancelled_research.cancellation_date %}
+            <tr><th>Cancellation Date</th><td>{{ cancelled_research.cancellation_date }}</td></tr>
+            {% endif %}
+            {% if cancelled_research.fee_patent_date %}
+            <tr><th>Fee Patent Date</th><td>{{ cancelled_research.fee_patent_date }}</td></tr>
+            {% endif %}
+            {% if cancelled_research.ccf_number %}
+            <tr><th>CCF Number</th><td><code>{{ cancelled_research.ccf_number }}</code></td></tr>
+            {% endif %}
+            {% if cancelled_research.allotment_number %}
+            <tr><th>Allotment Number</th><td>{{ cancelled_research.allotment_number }}</td></tr>
+            {% endif %}
+            {% if cancelled_research.tribe_reservation %}
+            <tr><th>Tribe / Reservation</th><td>{{ cancelled_research.tribe_reservation }}</td></tr>
+            {% endif %}
+            {% if cancelled_research.comments %}
+            <tr><th>Comments</th><td>{{ cancelled_research.comments }}</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+    <div class="text-muted small mt-2">
+        Source: McMillen cancelled-patents research dataset. Reasons and case-file
+        references hand-curated from BIA records; not present in BLM's digital metadata.
+    </div>
+</div>
+{% endif %}
+
 {% if linked_claim %}
 <div class="alert alert-info d-flex align-items-center mb-4">
     <strong class="me-2">Federal Register Claim:</strong>
