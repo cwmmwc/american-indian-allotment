@@ -1474,7 +1474,7 @@ def patent_detail(objectid):
                 name_matched_claims = cur.fetchall()
 
         # Cancelled-patent research metadata (legal authority, CCF, dates) from
-        # the hand-curated cancelled_patent_research table.
+        # the cancelled_patent_research table.
         cancelled_research = None
         if patent.get("accession_number"):
             cur.execute("""
