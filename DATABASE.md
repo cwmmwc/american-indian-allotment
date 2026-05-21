@@ -337,7 +337,7 @@ trust_fee_linkages links trust_patents.accession_number to fee_patents.accession
 
 ### `blm_allotment_patents` (239,845 rows)
 
-Full mirror of the BLM ArcGIS tribal land patents aliquot feature service. Includes all patent types (trust, fee, allotment, etc.) with polygon geometry and PLSS descriptions. Imported via `import_blm_patents.py`.
+Local mirror of a tribal-land-patents-aliquot feature service hosted on **UVA Library's ArcGIS Online account** and built by UVA Library's **Scholars' Lab**. Includes all patent types (trust, fee, allotment, etc.) with polygon geometry and PLSS descriptions. The underlying geographic data derives from BLM cadastral survey records (per the layer's own description: "the primary source for the data is cadastral survey records housed by the BLM, supplemented with local records and geographic control coordinates from states, counties, and other federal sources"); the Scholars' Lab polygonized those records, joined them to the BLM patent metadata, and published the result. Imported into our PostgreSQL via `import_blm_patents.py`, which walks the feature service REST API anonymously.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -367,7 +367,15 @@ Full mirror of the BLM ArcGIS tribal land patents aliquot feature service. Inclu
 
 **Indexes:** accession_number, preferred_name, state, forced_fee, authority, signature_date, indian_allotment_number.
 
-**Source:** `https://services2.arcgis.com/8k2PygHqghVevhzy/arcgis/rest/services/tribal_land_patents_aliquot_20240304/FeatureServer/0`
+**Source — feature service (public-shared, no authentication required):**
+`https://services2.arcgis.com/8k2PygHqghVevhzy/arcgis/rest/services/tribal_land_patents_aliquot_20240304/FeatureServer/0`
+
+- **Hosting organization:** UVA Library (ArcGIS Online org ID `8k2PygHqghVevhzy`).
+- **Service item ID:** `c1979fffc6e348bf9823ebf841dbcd35`. Layer name on the service: `parcels_and_patents_20240702_dissolve_accnum_Sort` (note the layer was rebuilt 2024-07-02 even though the older 2024-03-04 date persists in the service URL).
+- **Sharing:** the feature service itself is configured for public read access on UVA Library's ArcGIS Online account, which is what allows `import_blm_patents.py` and the live `/map` page's JavaScript to fetch from it anonymously over plain HTTPS.
+- **Companion web map (UVA-restricted, NetBadge required):** `https://uvalibrary.maps.arcgis.com/home/item.html?id=d6744cdc17b84098b3077c41f3ae4b27`. This is Scholars' Lab's curated presentation layer of the same underlying data; the project does not consume it directly.
+
+**Builders:** Scholars' Lab, University of Virginia Library.
 
 **Top tribes by patent count:** Rosebud Sioux (12,970), Oglala Lakota (12,634), Crow (11,643), Blackfeet (10,333), Standing Rock Sioux (10,139).
 

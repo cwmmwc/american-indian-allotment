@@ -13,7 +13,7 @@ A splash page modeled after the [IATH main site](https://land-sales.iath.virgini
 Overview of the project's four datasets — BLM Patents, Federal Register Claims, the Wilson Report, and the Murray Memorandum — with summary statistics and navigation to all sections of the site.
 
 ### Allotment Map (`/map`)
-Interactive Leaflet map displaying 239,845 allotment patents matched to Public Land Survey System (PLSS) parcels. Built on the Esri ArcGIS Feature Service. Features include:
+Interactive Leaflet map displaying 239,845 allotment patents matched to Public Land Survey System (PLSS) parcels. The polygon layer was built by **UVA Library's [Scholars' Lab](https://scholarslab.lib.virginia.edu/)** from BLM cadastral survey records joined to allotment patent data, and published as a public-shared feature service on UVA Library's ArcGIS Online account. Both the project's one-time ingest (`import_blm_patents.py`) and the live map's JavaScript fetch directly from that public layer. Features include:
 - Filter by tribe, state, patent category, and time range
 - Name search with zoom-to-parcel
 - Cumulative timeline mode showing trust-to-fee conversion over time
@@ -104,7 +104,7 @@ The Murray Memorandum documented a second wave of land loss during the terminati
 - **Backend**: Python 3, Flask, psycopg2
 - **Database**: PostgreSQL (`allotment_research`)
 - **Frontend**: Bootstrap 5, jQuery, DataTables
-- **Map**: Leaflet.js, leaflet.heat, Esri ArcGIS Feature Service
+- **Map**: Leaflet.js, leaflet.heat, Esri ArcGIS Feature Service (UVA Library's Scholars' Lab polygon layer; basemap tiles from Esri's public ArcGIS Online; reservation boundary overlays from Census TIGERweb)
 - **Charts**: Chart.js (bar/line charts), D3.js v7 (Sankey, radial/spiral, Du Bois plates)
 - **Templates**: Jinja2
 - **Deployment**: Google Cloud Run, Cloud SQL (PostgreSQL), Cloud Build (auto-deploy on push)
