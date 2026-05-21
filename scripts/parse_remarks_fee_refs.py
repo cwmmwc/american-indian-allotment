@@ -42,26 +42,49 @@ EXTRACTION_FILES = [
 OUT_CSV = "data/remarks_fee_refs.csv"
 
 # Regex patterns for fee-patent references in remarks text.
-# Order matters: try more specific patterns first. When a remarks string
-# carries both a SERIAL PATENT and a MISCELLANEOUS VOLUME reference for
-# the same fee event, Serial wins (modern format, easier to look up).
-FEE_PATTERNS = [
-    # "SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT"
-    r"SEE\s+SERIAL\s+PATENT\s+(?:NR|NO|NUMBER)?\.?\s*([A-Z0-9\-]+)\s+FOR\s+FEE\s+PATENT",
-    # "SEE MISCELLANEOUS VOLUME NR 0581-106 FOR FEE PATENT"
-    r"SEE\s+MISCELLANEOUS\s+VOLUME\s+(?:NR|NO|NUMBER)?\.?\s*([A-Z0-9\-]+)\s+FOR\s+FEE\s+PATENT",
-    # "SEE ACCESSION NR 25-69-0005 FOR FEE PATENT"
-    r"SEE\s+ACCESSION\s+(?:NR|NO|NUMBER)?\.?\s*([A-Z0-9\-\.]+)\s+FOR\s+FEE\s+PATENT",
-    # "SEE FEE PATENT NR 527838"
-    r"SEE\s+FEE\s+PATENT\s+(?:NR|NO|NUMBER)?\.?\s*([A-Z0-9\-]+)",
-    # "FEE PATENT NR 527838 ISSUED"
-    r"FEE\s+PATENT\s+(?:NR|NO|NUMBER)?\.?\s*([A-Z0-9\-]+)\s+(?:ISSUED|GRANTED)",
-    # "SERIAL PATENT NR 75921-09 ... FEE PATENT"
-    r"SERIAL\s+PATENT\s+(?:NR|NO|NUMBER)?\.?\s*([A-Z0-9\-]+).*?FEE\s+PATENT",
-    # bare "FEE PATENT 527838" near the start
-    r"^FEE\s+PATENT\s+(?:NR|NO|NUMBER)?\.?\s*([A-Z0-9\-]+)",
-    # short form: "PATENT #706068" (often the whole remarks)
-    r"\bPATENT\s*#\s*([A-Z0-9\-]+)",
+#
+# Two layers:
+#  - CLUSTER_PATTERNS capture the ENTIRE numeric cluster between an introducer
+#    (e.g. "SEE SERIAL PATENT NR") and "FOR FEE PATENT". The cluster may
+#    contain multiple accession numbers connected by AND or whitespace, e.g.
+#    "NR 942795 AND 1196898" or "NR 957685 957686 AND 957687". We tokenize
+#    the cluster and emit every digit-bearing token as a separate fee_ref.
+#    Multiple clauses in one remarks string ("NR X FOR FEE PATENT ... AND
+#    SERIAL PATENT NR Y FOR FEE PATENT") are handled by finditer.
+#  - FALLBACK_PATTERNS catch single-accession forms like "PATENT #706068"
+#    that don't fit the introducer/cluster shape. Only consulted when no
+#    cluster pattern matched.
+#
+# The earlier single-match logic captured only the first accession and
+# silently dropped any sibling refs — costing ~3,970 real linkages corpus-wide.
+
+# Tokens that show up inside a cluster but are NOT accession numbers.
+_NON_ACC_TOKENS = {
+    "AND", "OR", "&", "NR", "NO", "NUMBER", "NOS",
+    "SERIAL", "PATENT", "PATENTS", "MISCELLANEOUS", "VOLUME", "FEE",
+    "TO", "FOR", "OF", "ALSO", "SEE",
+}
+
+CLUSTER_PATTERNS = [
+    # SEE SERIAL PATENT NR <numbers> FOR FEE PATENT(S)
+    re.compile(r"SEE\s+SERIAL\s+PATENT\s+(?:NR\.?|NO\.?|NUMBER)?\s*([0-9][0-9A-Z\-\s]*?)\s+FOR\s+FEE\s+PATENT"),
+    # SEE MISCELLANEOUS VOLUME NR <numbers> FOR FEE PATENT(S)
+    re.compile(r"SEE\s+MISCELLANEOUS\s+VOLUME\s+(?:NR\.?|NO\.?|NUMBER)?\s*([0-9][0-9A-Z\-\s]*?)\s+FOR\s+FEE\s+PATENT"),
+    # SEE ACCESSION NR <numbers> FOR FEE PATENT(S)
+    re.compile(r"SEE\s+ACCESSION\s+(?:NR\.?|NO\.?|NUMBER)?\s*([0-9][0-9A-Z\-\.\s]*?)\s+FOR\s+FEE\s+PATENT"),
+    # bare "SERIAL PATENT NR <numbers> ... FEE PATENT" (no SEE prefix; rare)
+    re.compile(r"SERIAL\s+PATENT\s+(?:NR\.?|NO\.?|NUMBER)?\s*([0-9][0-9A-Z\-\s]*?)\s+FOR\s+FEE\s+PATENT"),
+]
+
+FALLBACK_PATTERNS = [
+    # SEE FEE PATENT NR 527838
+    re.compile(r"SEE\s+FEE\s+PATENT\s+(?:NR\.?|NO\.?|NUMBER)?\s*([A-Z0-9\-]+)"),
+    # FEE PATENT NR 527838 ISSUED
+    re.compile(r"FEE\s+PATENT\s+(?:NR\.?|NO\.?|NUMBER)?\s*([A-Z0-9\-]+)\s+(?:ISSUED|GRANTED)"),
+    # leading "FEE PATENT 527838"
+    re.compile(r"^FEE\s+PATENT\s+(?:NR\.?|NO\.?|NUMBER)?\s*([A-Z0-9\-]+)"),
+    # "PATENT #706068"
+    re.compile(r"\bPATENT\s*#\s*([A-Z0-9\-]+)"),
 ]
 
 CANCEL_PATTERNS = [
@@ -72,21 +95,55 @@ CANCEL_PATTERNS = [
 ]
 
 
+def _cluster_tokens(cluster_text):
+    """Pull digit-bearing tokens out of a captured cluster, dropping AND/NR/etc."""
+    out = []
+    for raw in cluster_text.split():
+        tok = raw.strip(",.;:")
+        if not tok:
+            continue
+        if tok.upper() in _NON_ACC_TOKENS:
+            continue
+        # must contain at least one digit
+        if any(c.isdigit() for c in tok):
+            if tok not in out:
+                out.append(tok)
+    return out
+
+
 def parse_remarks(remarks):
-    """Return (fee_ref, cancellation_flag, matched_pattern_index, normalized_remarks)."""
+    """Return (list_of_fee_refs, cancellation_flag, pattern_indices, normalized_remarks).
+
+    list_of_fee_refs may be empty, length 1, or longer. Each entry is one
+    accession-shaped token recovered from the remarks. Downstream validator
+    treats each entry as an independent candidate linkage.
+    """
     if not remarks:
-        return None, False, None, ""
+        return [], False, [], ""
     s = re.sub(r"\s+", " ", str(remarks).upper()).strip()
-    fee_ref = None
-    pat_idx = None
-    for i, pat in enumerate(FEE_PATTERNS):
-        m = re.search(pat, s)
-        if m:
-            fee_ref = m.group(1)
-            pat_idx = i
-            break
+
+    fee_refs = []
+    pat_idxs = []
+
+    # Layer 1: cluster patterns (handle "AND" + multi-number cases).
+    for i, pat in enumerate(CLUSTER_PATTERNS):
+        for m in pat.finditer(s):
+            for tok in _cluster_tokens(m.group(1)):
+                if tok not in fee_refs:
+                    fee_refs.append(tok)
+                    pat_idxs.append(i)
+
+    # Layer 2: fallbacks for single-accession forms — only if cluster found nothing.
+    if not fee_refs:
+        for i, pat in enumerate(FALLBACK_PATTERNS):
+            for m in pat.finditer(s):
+                ref = m.group(1)
+                if any(c.isdigit() for c in ref) and ref not in fee_refs:
+                    fee_refs.append(ref)
+                    pat_idxs.append(len(CLUSTER_PATTERNS) + i)
+
     cancelled = any(re.search(p, s) for p in CANCEL_PATTERNS)
-    return fee_ref, cancelled, pat_idx, s
+    return fee_refs, cancelled, pat_idxs, s
 
 
 def normalize_acc_for_compare(s):
@@ -143,10 +200,14 @@ def run_test():
         vision_pn = (ext.get("fee_patent_number") or ext.get("patent_number") or "").strip()
 
         remarks_raw = remarks_map.get(acc, "")
-        fee_ref, cancelled, pat_idx, norm = parse_remarks(remarks_raw)
+        fee_refs, cancelled, pat_idxs, norm = parse_remarks(remarks_raw)
+        # Test-mode classification compares against the vision model's single
+        # fee_patent_number, so collapse multiple refs into the first one for
+        # this report. The full-run pipeline preserves all refs.
+        fee_ref = fee_refs[0] if fee_refs else None
 
-        if pat_idx is not None:
-            pattern_use[pat_idx] += 1
+        for pi in pat_idxs:
+            pattern_use[pi] += 1
         if cancelled:
             sample_rows["cancellation_in_remarks"].append((acc, vrow.get("full_name"), norm[:100]))
 
@@ -209,8 +270,10 @@ def run_test():
 
     print()
     print("Regex pattern usage:")
+    all_patterns = [*CLUSTER_PATTERNS, *FALLBACK_PATTERNS]
     for i, n in sorted(pattern_use.items()):
-        print(f"  [{i}] {FEE_PATTERNS[i][:60]:60s}  {n}")
+        label = all_patterns[i].pattern[:60] if i < len(all_patterns) else f"pat#{i}"
+        print(f"  [{i}] {label:60s}  {n}")
 
     print()
     print("Sample: both yes AND numbers match (regex is working):")
@@ -280,28 +343,44 @@ def run_full():
     rows = cur.fetchall()
     print(f"Scanning {len(rows)} trust-class patents with non-empty remarks...")
 
-    n_fee = n_cancel = n_neither = 0
+    # Emit ONE ROW PER (trust_accession, fee_ref) pair. A trust patent whose
+    # remarks reference two fee patents produces two rows in the output CSV.
+    # Patents with no fee_refs still get a single row with empty fee_ref so
+    # downstream counts of "scanned" stay accurate.
+    n_patents_with_fee = n_total_refs = n_cancel = n_neither = 0
+    n_multi_ref_patents = 0
     out = []
     for r in rows:
-        fee_ref, cancelled, _, norm = parse_remarks(r["remarks"])
-        out.append({
+        fee_refs, cancelled, _, _ = parse_remarks(r["remarks"])
+        base = {
             "trust_accession": r["accession_number"],
             "allottee":        r["full_name"],
             "signature_date":  r["signature_date"],
             "state":           r["state"],
             "authority":       r["authority"],
             "allotment_number": r["indian_allotment_number"],
-            "fee_ref_extracted": fee_ref or "",
             "remarks_cancellation": cancelled,
             "remarks_raw": r["remarks"],
-        })
-        if fee_ref: n_fee += 1
-        if cancelled: n_cancel += 1
-        if not fee_ref and not cancelled: n_neither += 1
+        }
+        if fee_refs:
+            n_patents_with_fee += 1
+            n_total_refs += len(fee_refs)
+            if len(fee_refs) > 1:
+                n_multi_ref_patents += 1
+            for ref in fee_refs:
+                out.append({**base, "fee_ref_extracted": ref})
+        else:
+            out.append({**base, "fee_ref_extracted": ""})
+            if not cancelled:
+                n_neither += 1
+        if cancelled:
+            n_cancel += 1
 
-    print(f"  with fee-patent reference extracted: {n_fee}")
+    print(f"  patents with at least one fee_ref:   {n_patents_with_fee}")
+    print(f"  total fee_refs extracted:            {n_total_refs}")
+    print(f"  patents with multiple fee_refs:      {n_multi_ref_patents}")
     print(f"  with cancellation phrase:            {n_cancel}")
-    print(f"  with neither:                        {n_neither}")
+    print(f"  with neither fee_ref nor cancel:     {n_neither}")
 
     with open(OUT_CSV, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=[
@@ -311,7 +390,7 @@ def run_full():
         w.writeheader()
         for row in out:
             w.writerow(row)
-    print(f"Wrote {OUT_CSV}")
+    print(f"Wrote {OUT_CSV}  ({len(out)} rows)")
 
     cur.close()
     conn.close()

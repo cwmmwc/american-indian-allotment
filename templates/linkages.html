@@ -1,16 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Trust → Fee Linkages (Recovered from Remarks){% endblock %}
+{% block title %}Trust → Fee Linkages{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <h1>Trust → Fee Linkages</h1>
     <p class="lead">
-        Cross-references parsed from BLM patent remarks text — pointers like
-        <code>SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT</code> — and
-        validated against the patent catalog. This is a <em>separate</em>
-        recovery layer from the older <code>trust_fee_linkages</code> table:
-        the data was already in the remarks column from the IATH import; it
-        just hadn't been parsed.
+        Trust-to-fee patent conversions recovered from BLM patent records by
+        two independent passes: <strong>remarks-regex</strong> (cross-references
+        like <code>SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT</code> parsed
+        from the patent remarks) and <strong>parcel-matching</strong> (same
+        PLSS parcel + same allottee name family, used when the remarks are
+        absent or contain a transcription typo). Both layers live in
+        <code>trust_fee_linkages_recovered</code> with a <code>source</code>
+        column distinguishing them. Distinct from the older
+        <code>trust_fee_linkages</code> table built by allotment-number matching.
     </p>
 </div>
 
@@ -44,13 +47,15 @@
 </div>
 
 <div class="alert alert-light border mb-4 small">
-    <strong>Match types.</strong>
-    <span class="badge bg-success">exact</span> = the extracted accession matches a known patent verbatim
-    ({{ "{:,}".format(totals.n_exact) }} rows).
-    <span class="badge bg-secondary">normalized</span> = matched after stripping leading zeros / formatting variation
-    ({{ "{:,}".format(totals.n_normalized) }} rows).
-    <span class="badge bg-warning">fuzzy</span> = matched within edit distance 1 or 2 — most are clear OCR/typo fixes
-    ({{ "{:,}".format(totals.n_fuzzy) }} rows).
+    <strong>Sources & match types.</strong>
+    <span class="badge bg-info text-dark">remarks</span> source = parsed from remarks
+    ({{ "{:,}".format(totals.n_regex) }} rows);
+    <span class="badge bg-primary">parcel</span> source = matched by shared parcel + allottee name family
+    ({{ "{:,}".format(totals.n_parcel_src) }} rows).
+    Within remarks: <span class="badge bg-success">exact</span> {{ "{:,}".format(totals.n_exact) }},
+    <span class="badge bg-secondary">normalized</span> {{ "{:,}".format(totals.n_normalized) }},
+    <span class="badge bg-warning">fuzzy</span> {{ "{:,}".format(totals.n_fuzzy) }}.
+    Within parcel: <span class="badge bg-primary">parcel+name</span> {{ "{:,}".format(totals.n_parcel) }}.
     A ✓ in the <em>Name</em> column means the trust and fee patentees share at least one name token.
 </div>
 
@@ -58,12 +63,21 @@
     <div class="card-body">
         <form id="linkages-filters" class="row g-2 small align-items-end">
             <div class="col-md-2">
+                <label class="form-label mb-1">Source</label>
+                <select name="source" class="form-select form-select-sm">
+                    <option value="">(any)</option>
+                    <option value="remarks_regex_v2">remarks</option>
+                    <option value="parcel_match_v1">parcel</option>
+                </select>
+            </div>
+            <div class="col-md-2">
                 <label class="form-label mb-1">Match type</label>
                 <select name="match_type" class="form-select form-select-sm">
                     <option value="">(any)</option>
                     <option value="exact">exact</option>
                     <option value="normalized">normalized</option>
                     <option value="fuzzy">fuzzy</option>
+                    <option value="parcel_name">parcel+name</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -107,6 +121,7 @@
                     <th>Name</th>
                     <th>Authority</th>
                     <th>State</th>
+                    <th>Source</th>
                 </tr>
             </thead>
         </table>
@@ -132,6 +147,7 @@ $(function() {
         ajax: {
             url: "{{ url_for('api_linkages') }}",
             data: function(d) {
+                d.source           = $('#linkages-filters select[name="source"]').val()           || '';
                 d.match_type       = $('#linkages-filters select[name="match_type"]').val()       || '';
                 d.state            = $('#linkages-filters input[name="state"]').val()             || '';
                 d.name_consistent  = $('#linkages-filters select[name="name_consistent"]').val()  || '';
@@ -157,14 +173,22 @@ $(function() {
                 return d.toString();
             }},
             { data: 'match_type', render: function(d) {
-                var cls = d === 'exact' ? 'success' : d === 'normalized' ? 'secondary' : 'warning';
-                return '<span class="badge bg-' + cls + '">' + d + '</span>';
+                var cls = d === 'exact' ? 'success'
+                        : d === 'normalized' ? 'secondary'
+                        : d === 'parcel_name' ? 'primary' : 'warning';
+                var label = d === 'parcel_name' ? 'parcel+name' : d;
+                return '<span class="badge bg-' + cls + '">' + label + '</span>';
             }},
             { data: 'name_consistent', render: function(d) {
                 return d ? '<span class="text-success">✓</span>' : '<span class="text-muted">—</span>';
             }},
             { data: 'fee_authority', defaultContent: '—' },
             { data: 'fee_state', defaultContent: '—' },
+            { data: 'source', render: function(d) {
+                if (d === 'remarks_regex_v2') return '<span class="badge bg-info text-dark">remarks</span>';
+                if (d === 'parcel_match_v1') return '<span class="badge bg-primary">parcel</span>';
+                return '<span class="text-muted">' + (d || '—') + '</span>';
+            }},
         ]
     });
 

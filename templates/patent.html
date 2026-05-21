@@ -270,19 +270,34 @@
 {% endif %}
 
 {% if recovered_as_trust or recovered_as_fee %}
+{% macro source_badge(source) -%}
+    {% if source == 'remarks_regex_v2' %}<span class="badge bg-info text-dark" title="parsed from BLM remarks text">remarks</span>
+    {% elif source == 'parcel_match_v1' %}<span class="badge bg-primary" title="recovered by matching parcels + allottee name">parcel</span>
+    {% else %}<span class="badge bg-light text-dark border">{{ source }}</span>
+    {% endif %}
+{%- endmacro %}
+{% macro match_badge(mt) -%}
+    {% if mt == 'exact' %}<span class="badge bg-success">exact</span>
+    {% elif mt == 'normalized' %}<span class="badge bg-secondary">normalized</span>
+    {% elif mt == 'parcel_name' %}<span class="badge bg-primary">parcel+name</span>
+    {% else %}<span class="badge bg-warning">{{ mt }}</span>
+    {% endif %}
+{%- endmacro %}
 <div class="card mb-4">
     <div class="card-header">
-        <h2 class="h5 mb-0">Trust ↔ Fee Linkages Recovered from Remarks</h2>
+        <h2 class="h5 mb-0">Trust ↔ Fee Linkages</h2>
     </div>
     <div class="card-body">
         <p class="text-muted small mb-3">
-            Cross-references parsed from BLM remarks text (e.g.
-            <code>SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT</code>) and validated
-            against the patent catalog. These are <em>separate</em> from the older
-            <code>trust_fee_linkages</code> table — see
-            <a href="{{ url_for('about_project') }}">project notes</a>.
-            <em>match_type</em> records how the cross-reference matched a known patent:
-            <code>exact</code>, <code>normalized</code>, or <code>fuzzy</code> (edit distance 1–2).
+            Trust-to-fee patent conversions recovered from two sources:
+            (1) <em>remarks</em> — cross-references like
+            <code>SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT</code> parsed from
+            BLM's transcribed remarks; (2) <em>parcel</em> — matched by shared
+            PLSS parcel + allottee name family, used when the remarks are absent
+            or carry a transcription typo. Both sources live in
+            <code>trust_fee_linkages_recovered</code>; see
+            <a href="{{ url_for('about_project') }}">project notes</a> for
+            provenance details.
         </p>
 
         {% if recovered_as_trust %}
@@ -296,6 +311,7 @@
                     <th>Authority</th>
                     <th>State</th>
                     <th>Match</th>
+                    <th>Source</th>
                     <th>Patentee</th>
                     <th>Source Text</th>
                 </tr>
@@ -317,9 +333,10 @@
                     <td>{{ r.other_authority or '—' }}</td>
                     <td>{{ r.other_state or '—' }}</td>
                     <td>
-                        <span class="badge bg-{% if r.match_type == 'exact' %}success{% elif r.match_type == 'normalized' %}secondary{% else %}warning{% endif %}">{{ r.match_type }}</span>
+                        {{ match_badge(r.match_type) }}
                         {% if r.name_consistent %} <span class="text-success small" title="trust and fee patentee names share at least one token">✓ name</span>{% endif %}
                     </td>
+                    <td>{{ source_badge(r.source) }}</td>
                     <td>{{ r.other_full_name or '—' }}</td>
                     <td><small class="text-muted"><code>{{ r.extracted_raw }}</code></small></td>
                 </tr>
@@ -337,6 +354,7 @@
                     <th>Trust Date</th>
                     <th>Gap (yrs)</th>
                     <th>Match</th>
+                    <th>Source</th>
                     <th>Patentee</th>
                     <th>Source Text</th>
                 </tr>
@@ -356,9 +374,10 @@
                     <td>{{ r.other_date or '—' }}</td>
                     <td>{{ r.date_gap_years if r.date_gap_years is not none else '—' }}</td>
                     <td>
-                        <span class="badge bg-{% if r.match_type == 'exact' %}success{% elif r.match_type == 'normalized' %}secondary{% else %}warning{% endif %}">{{ r.match_type }}</span>
+                        {{ match_badge(r.match_type) }}
                         {% if r.name_consistent %} <span class="text-success small" title="trust and fee patentee names share at least one token">✓ name</span>{% endif %}
                     </td>
+                    <td>{{ source_badge(r.source) }}</td>
                     <td>{{ r.other_full_name or '—' }}</td>
                     <td><small class="text-muted"><code>{{ r.extracted_raw }}</code></small></td>
                 </tr>

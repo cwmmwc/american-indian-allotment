@@ -70,7 +70,7 @@ A "Related BIA File References" block also appears on individual patent pages (`
 
 ### Trust → Fee Linkages (`/linkages`)
 
-Browse the **57,019 trust→fee linkages** recovered from BLM patent remarks text — cross-references like `SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT` that were parsed and validated against the patent catalog. Filters: match type (exact / normalized / fuzzy d=1 or d=2), fee state, name-consistent (trust and fee patentees share at least one token), and trust→fee gap range. Server-side paginated. A "Trust ↔ Fee Linkages Recovered from Remarks" block also appears on individual patent pages whenever the patent is on either side of a recovered linkage. See the [dedicated section below](#trust--fee-linkages-from-remarks-may-2026) for provenance and match-type definitions.
+Browse the **74,424 trust→fee linkages** recovered from BLM patent records by two independent passes: (1) **remarks-regex** — parse cross-references like `SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT` from the BLM remarks text (65,381 linkages); (2) **parcel-matching** — link trusts to fees that share a PLSS parcel and an allottee name token (9,043 linkages), used when remarks are empty or carry a transcription typo. Filters: source (remarks / parcel), match type (exact / normalized / fuzzy / parcel+name), fee state, name-consistent, trust→fee gap range. Server-side paginated. A "Trust ↔ Fee Linkages" block also appears on individual patent pages whenever the patent is on either side of a recovered linkage, showing the source badge per row. See the [dedicated section below](#trust--fee-linkages-from-remarks-may-2026) for provenance and the bug fixes that made this layer reliable.
 
 ### About (`/about`)
 Project background, methodology, data sources, and acknowledgments.
@@ -149,7 +149,7 @@ The app runs at http://127.0.0.1:5001.
 | `all_patents` (view) | 285,870 | Unified view joining `rails_patents` + `blm_allotment_patents` |
 | `forced_fee_patents_rails` | 17,560 | Hand-verified claim-to-patent linkages |
 | `trust_fee_linkages` | 29,229 | Trust-to-fee patent conversion records (from allotment-number / tribe matching) |
-| `trust_fee_linkages_recovered` | 57,019 | Trust-to-fee linkages recovered by parsing the BLM remarks field (separate provenance from `trust_fee_linkages`) |
+| `trust_fee_linkages_recovered` | 74,424 | Trust-to-fee linkages recovered by parsing BLM remarks (65,381) and matching PLSS parcels + allottee name family (9,043); kept distinct from `trust_fee_linkages` |
 | `wilson_table_vi` | 212 | Wilson Report 1934 reservation baseline data |
 | `wilson_annual_sales` | ~32 | Wilson Table VIII annual land sales 1903–1934 |
 | `murray_comparative` | 52 | Murray Memorandum 1947 vs 1957 land by agency |
@@ -287,36 +287,67 @@ Re-run order after any new ingest: `extract_file_refs_from_remarks.py` (if new r
 
 ## Trust → Fee Linkages from Remarks (May 2026)
 
-A second recovery layer that pulls trust→fee patent linkages directly out of the BLM remarks field. **57,019 validated linkages** now sit in `trust_fee_linkages_recovered`, kept separate from the older `trust_fee_linkages` (29,229 rows, computed via allotment-number / tribe matching) so each table's provenance remains queryable.
+A second recovery layer that pulls trust→fee patent linkages directly out of BLM patent records. **74,424 validated linkages** now sit in `trust_fee_linkages_recovered`, kept separate from the older `trust_fee_linkages` (29,229 rows, computed via allotment-number / tribe matching) so each table's provenance remains queryable.
 
 The trigger for this work: BLM operators routinely typed pointers like `SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT`, `FEE PATENT 720002`, or `PT NR 985654` into the remarks of trust patents that later converted. That data was always present — it just hadn't been parsed.
 
-### Why this matters
+### Two sources
 
-The older `trust_fee_linkages` table covers about 19% of trust-class patents (29,229 of ~155K). The remarks-derived table covers an additional **~37,000 trust patents** that were not reachable through allotment-number matching, raising trust→fee coverage to roughly 60% — without scraping a single PDF.
+The recovered table is fed by two independent passes, distinguished by the `source` column so any linkage can be traced to how it was found:
+
+| source | rows | how it works |
+|---|---:|---|
+| `remarks_regex_v2` | 65,381 | Parse cross-references out of `rails_patents.remarks`, then validate the extracted accession against the patent catalog (exact, normalized, or fuzzy match). |
+| `parcel_match_v1` | 9,043 | Join trust patents to fee patents on shared PLSS parcel (state + county + township + range + section + aliquot) AND at least one shared allottee name token. Used to recover linkages the remarks layer cannot reach: BLM transcription typos in the cross-reference itself, and trust patents with no remarks at all. |
+
+The two layers deduplicate on `(trust_accession, fee_accession)` so a linkage discovered by both methods only appears once.
+
+### Why both layers are needed
+
+The remarks layer is the canonical signal — BLM operators put the cross-reference there exactly because it's the conversion event being documented. But it has two known failure modes:
+
+1. **Transcription typos.** Lizzie Dowd's 1891 trust `IA-0505-453` carries the remarks `CANCELED DOCUMENT  SEE MISCELLANEOUS VOLUME NR 0505-453 FOR FEE PATENT`. The cross-reference accession is wrong — it points to the trust patent itself instead of the real fee `MV-0580-454`. Regex extracts what's there; it cannot know the operator typoed.
+2. **Empty remarks.** Lizzie Dowd's other 1891 trust `IA-0505-452`, on the same parcel, has no remarks at all. The conversion still happened — it's just not textually documented on the trust side.
+
+The parcel layer covers both. It finds `0505-452 → 0580-454` and `0505-453 → 0580-454` (same Section 31, T5S R8W, Yamhill County, OR; trust 1891-06-13, fee 1906-10-29 issued to "GILMAN, LIZZIE D; DOWD, LIZZIE" — surname change matches the 15-year marriage gap).
 
 ### Match types
 
-Every row records how the extracted accession was matched against the patent catalog:
-
 | Type | Rows | Meaning |
 |---|---|---|
-| `exact` | 18,494 | Verbatim accession match |
-| `normalized` | 37,577 | Match after stripping leading zeros / standardizing accession formatting |
-| `fuzzy(d=1)` | 382 | Match within edit distance 1 (mostly transcription typos: a single digit substitution) |
-| `fuzzy(d=2)` | 566 | Match within edit distance 2 (two-character drift — generally a digit + format slip) |
+| `exact` | 21,165 | Remarks accession matches a known patent verbatim |
+| `normalized` | 42,952 | Remarks match after stripping leading zeros / standardizing accession formatting |
+| `fuzzy(d=1)` | 459 | Remarks match within edit distance 1 (single-digit transcription typos) |
+| `fuzzy(d=2)` | 805 | Remarks match within edit distance 2 (two-character drift — usually a digit + format slip) |
+| `parcel_name` | 9,043 | Trust and fee share PLSS parcel + at least one allottee name token |
 
 Each row also carries:
 - **`name_consistent`** — whether the trust and fee patentees share at least one name token (the strongest single confidence signal beyond accession match)
-- **`date_gap_years`** — years between trust date and fee date (median across the corpus is 18 years)
-- **`extracted_raw`** — the literal substring that produced the match, so any individual linkage can be re-audited against the source remarks
+- **`date_gap_years`** — years between trust date and fee date (median across the corpus is 19 years)
+- **`extracted_raw`** — the literal substring that produced the match (for remarks rows) or the literal `(parcel+name match)` marker for parcel rows
+- **`source`** — `remarks_regex_v2` or `parcel_match_v1`
+
+### Bugs the v2 regex fixes
+
+A corpus-wide audit on 2026-05-21 surfaced three bugs in the original `remarks_regex_v1` pipeline:
+
+| Bug | Linkages affected | Status |
+|---|---:|---|
+| The regex stopped at the first accession in `SEE SERIAL PATENT NR X AND Y FOR FEE PATENT` patterns, silently dropping Y. On reissue-trust patents the first number is often the patent's own accession, so we ended up with self-references instead of real linkages. | ~3,970 | **Fixed in v2.** The regex now captures every digit-bearing token inside a `NR ... FOR FEE PATENT` clause, and uses `finditer` to catch multiple clauses per remarks string. |
+| One BLM operator typed the source accession in the cross-reference instead of the target (Lizzie Dowd case). | 1 | **Fixed via parcel layer.** |
+| Trust patents with empty remarks (e.g., Lizzie Dowd's other 1891 trust) had no signal to parse. | unknown thousands | **Fixed via parcel layer.** |
+
+A `CHECK (trust_accession <> fee_accession)` constraint now prevents self-references at the database level. The loader filters them out before insert too.
 
 ### Schema and scripts
 
-- **`sql/create_trust_fee_linkages_recovered.sql`** — table schema (see `DATABASE.md` for the full column listing)
-- **`scripts/parse_remarks_fee_refs.py`** — regex pass over `rails_patents.remarks`
-- **`scripts/validate_remarks_extractions.py`** — match candidates against the patent catalog (exact / normalized / fuzzy)
-- **`scripts/load_trust_fee_linkages_recovered.py`** — batched loader (psycopg2 `execute_values`, 1,000 rows per round-trip); idempotent via `ON CONFLICT (trust_accession, fee_accession) DO NOTHING`
+- **`sql/create_trust_fee_linkages_recovered.sql`** — table schema with UNIQUE + CHECK constraints
+- **`scripts/parse_remarks_fee_refs.py`** — v2 regex pass; emits one row per (trust, fee_ref) pair so multi-fee patents produce multiple candidates
+- **`scripts/validate_remarks_extractions.py`** — match candidates against the patent catalog (exact / normalized / fuzzy with edit-distance cap of 2)
+- **`scripts/recover_linkages_by_parcel.py`** — parcel + allottee name matcher; writes `data/parcel_match_candidates.csv`
+- **`scripts/load_trust_fee_linkages_recovered.py`** — batched loader (`execute_values`, 1,000 rows per round-trip); accepts `--csv` and `--source` flags so both layers use the same script; idempotent via `ON CONFLICT DO NOTHING`
+
+Re-run order after any catalog changes: `parse_remarks_fee_refs.py --full` → `validate_remarks_extractions.py` → `load_trust_fee_linkages_recovered.py --truncate` → `recover_linkages_by_parcel.py` → `load_trust_fee_linkages_recovered.py --csv data/parcel_match_candidates.csv --source parcel_match_v1`.
 
 See [`AI_AS_RESEARCH_PARTNER.md`](AI_AS_RESEARCH_PARTNER.md) for the discovery story.
 

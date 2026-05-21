@@ -1532,6 +1532,7 @@ def patent_detail(objectid):
                        tflr.fee_authority AS other_authority,
                        tflr.fee_state AS other_state,
                        tflr.extracted_raw,
+                       tflr.source,
                        blm.objectid AS other_objectid,
                        rp.id AS other_rails_id,
                        COALESCE(blm.full_name, rp.full_name) AS other_full_name
@@ -1539,6 +1540,7 @@ def patent_detail(objectid):
                 LEFT JOIN blm_allotment_patents blm ON blm.accession_number = tflr.fee_accession
                 LEFT JOIN rails_patents rp           ON rp.accession_number  = tflr.fee_accession
                 WHERE tflr.trust_accession = %s
+                  AND tflr.trust_accession <> tflr.fee_accession
                 ORDER BY tflr.fee_date NULLS LAST, tflr.fee_accession
             """, (patent["accession_number"],))
             recovered_as_trust = cur.fetchall()
@@ -1550,6 +1552,7 @@ def patent_detail(objectid):
                        NULL::text AS other_authority,
                        NULL::text AS other_state,
                        tflr.extracted_raw,
+                       tflr.source,
                        blm.objectid AS other_objectid,
                        rp.id AS other_rails_id,
                        COALESCE(blm.full_name, rp.full_name) AS other_full_name
@@ -1557,6 +1560,7 @@ def patent_detail(objectid):
                 LEFT JOIN blm_allotment_patents blm ON blm.accession_number = tflr.trust_accession
                 LEFT JOIN rails_patents rp           ON rp.accession_number  = tflr.trust_accession
                 WHERE tflr.fee_accession = %s
+                  AND tflr.trust_accession <> tflr.fee_accession
                 ORDER BY tflr.trust_date NULLS LAST, tflr.trust_accession
             """, (patent["accession_number"],))
             recovered_as_fee = cur.fetchall()
@@ -1748,8 +1752,12 @@ def linkages_index():
                 COUNT(*) FILTER (WHERE match_type = 'exact')                 AS n_exact,
                 COUNT(*) FILTER (WHERE match_type = 'normalized')            AS n_normalized,
                 COUNT(*) FILTER (WHERE match_type LIKE 'fuzzy%%')            AS n_fuzzy,
+                COUNT(*) FILTER (WHERE match_type = 'parcel_name')           AS n_parcel,
+                COUNT(*) FILTER (WHERE source = 'remarks_regex_v2')          AS n_regex,
+                COUNT(*) FILTER (WHERE source = 'parcel_match_v1')           AS n_parcel_src,
                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY date_gap_years)  AS median_gap_years
             FROM trust_fee_linkages_recovered
+            WHERE trust_accession <> fee_accession
         """)
         totals = cur.fetchone()
         return render_template("linkages.html", totals=totals)
@@ -1771,9 +1779,10 @@ def api_linkages():
             length = 50
         global_search = request.args.get("search[value]", "").strip()
 
-        match_filter      = request.args.get("match_type", "").strip()       # exact|normalized|fuzzy|''
+        match_filter      = request.args.get("match_type", "").strip()       # exact|normalized|fuzzy|parcel_name|''
         state_filter      = request.args.get("state", "").strip()
         name_filter       = request.args.get("name_consistent", "").strip()  # yes|no|''
+        source_filter     = request.args.get("source", "").strip()           # remarks_regex_v2|parcel_match_v1|''
         min_gap_str       = request.args.get("min_gap", "").strip()
         max_gap_str       = request.args.get("max_gap", "").strip()
 
@@ -1789,12 +1798,15 @@ def api_linkages():
             "name_consistent",   # 6
             "fee_authority",     # 7
             "fee_state",         # 8
+            "source",            # 9
         ]
         order_col = order_cols[min(order_col_idx, len(order_cols) - 1)]
         if order_dir not in ("asc", "desc"):
             order_dir = "asc"
 
-        conditions = []
+        # Defense-in-depth: never return self-references even if one sneaks
+        # past the DB CHECK constraint (e.g., older row from a previous load).
+        conditions = ["trust_accession <> fee_accession"]
         params     = []
 
         if global_search:
@@ -1810,6 +1822,12 @@ def api_linkages():
             conditions.append("match_type = 'normalized'")
         elif match_filter == "fuzzy":
             conditions.append("match_type LIKE 'fuzzy%%'")
+        elif match_filter == "parcel_name":
+            conditions.append("match_type = 'parcel_name'")
+
+        if source_filter in ("remarks_regex_v2", "parcel_match_v1"):
+            conditions.append("source = %s")
+            params.append(source_filter)
 
         if state_filter:
             conditions.append("fee_state ILIKE %s")
@@ -1849,6 +1867,7 @@ def api_linkages():
                    tflr.name_consistent, tflr.date_gap_years,
                    tflr.trust_date, tflr.fee_date,
                    tflr.fee_authority, tflr.fee_state, tflr.extracted_raw,
+                   tflr.source,
                    blm_t.objectid AS trust_objectid,  rp_t.id AS trust_rails_id,
                    blm_f.objectid AS fee_objectid,    rp_f.id AS fee_rails_id
             FROM trust_fee_linkages_recovered tflr
@@ -1883,6 +1902,7 @@ def api_linkages():
                 "fee_authority":      r["fee_authority"] or "",
                 "fee_state":          r["fee_state"] or "",
                 "extracted_raw":      r["extracted_raw"] or "",
+                "source":             r["source"] or "",
             })
 
         return jsonify({
