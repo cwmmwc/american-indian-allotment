@@ -1518,6 +1518,49 @@ def patent_detail(objectid):
             """, (patent["accession_number"],))
             file_refs = cur.fetchall()
 
+        # Trust→fee linkages recovered from remarks regex parsing
+        # (trust_fee_linkages_recovered, 57,019 rows). If this patent is the
+        # TRUST side, show fee patents it points to. If it's the FEE side, show
+        # the trust patent(s) it was recovered from.
+        recovered_as_trust = []
+        recovered_as_fee = []
+        if patent.get("accession_number"):
+            cur.execute("""
+                SELECT tflr.fee_accession AS other_accession,
+                       tflr.match_type, tflr.name_consistent,
+                       tflr.date_gap_years, tflr.fee_date AS other_date,
+                       tflr.fee_authority AS other_authority,
+                       tflr.fee_state AS other_state,
+                       tflr.extracted_raw,
+                       blm.objectid AS other_objectid,
+                       rp.id AS other_rails_id,
+                       COALESCE(blm.full_name, rp.full_name) AS other_full_name
+                FROM trust_fee_linkages_recovered tflr
+                LEFT JOIN blm_allotment_patents blm ON blm.accession_number = tflr.fee_accession
+                LEFT JOIN rails_patents rp           ON rp.accession_number  = tflr.fee_accession
+                WHERE tflr.trust_accession = %s
+                ORDER BY tflr.fee_date NULLS LAST, tflr.fee_accession
+            """, (patent["accession_number"],))
+            recovered_as_trust = cur.fetchall()
+
+            cur.execute("""
+                SELECT tflr.trust_accession AS other_accession,
+                       tflr.match_type, tflr.name_consistent,
+                       tflr.date_gap_years, tflr.trust_date AS other_date,
+                       NULL::text AS other_authority,
+                       NULL::text AS other_state,
+                       tflr.extracted_raw,
+                       blm.objectid AS other_objectid,
+                       rp.id AS other_rails_id,
+                       COALESCE(blm.full_name, rp.full_name) AS other_full_name
+                FROM trust_fee_linkages_recovered tflr
+                LEFT JOIN blm_allotment_patents blm ON blm.accession_number = tflr.trust_accession
+                LEFT JOIN rails_patents rp           ON rp.accession_number  = tflr.trust_accession
+                WHERE tflr.fee_accession = %s
+                ORDER BY tflr.trust_date NULLS LAST, tflr.trust_accession
+            """, (patent["accession_number"],))
+            recovered_as_fee = cur.fetchall()
+
         return render_template(
             "patent.html",
             patent=patent,
@@ -1525,6 +1568,8 @@ def patent_detail(objectid):
             name_matched_claims=name_matched_claims,
             cancelled_research=cancelled_research,
             file_refs=file_refs,
+            recovered_as_trust=recovered_as_trust,
+            recovered_as_fee=recovered_as_fee,
             glo_url=glo_url,
             slugify=slugify,
         )
@@ -1674,6 +1719,170 @@ def api_file_refs():
                 "io_labeled":        r["io_labeled"] or "",
                 "nara_verified":     bool(r["nara_verified"]),
                 "nara_url":          r["nara_url"] or "",
+            })
+
+        return jsonify({
+            "draw": draw,
+            "recordsTotal":    records_total,
+            "recordsFiltered": records_filtered,
+            "data": data,
+        })
+    finally:
+        conn.close()
+
+
+@app.route("/linkages")
+def linkages_index():
+    """Index page for trust→fee linkages recovered from BLM remarks text
+    (table: trust_fee_linkages_recovered, 57K rows). Page chrome only — the
+    actual table loads via /api/linkages (server-side DataTables)."""
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT
+                COUNT(*)                                                     AS total,
+                COUNT(DISTINCT trust_accession)                              AS distinct_trust,
+                COUNT(DISTINCT fee_accession)                                AS distinct_fee,
+                COUNT(*) FILTER (WHERE name_consistent)                      AS name_consistent_n,
+                COUNT(*) FILTER (WHERE match_type = 'exact')                 AS n_exact,
+                COUNT(*) FILTER (WHERE match_type = 'normalized')            AS n_normalized,
+                COUNT(*) FILTER (WHERE match_type LIKE 'fuzzy%%')            AS n_fuzzy,
+                PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY date_gap_years)  AS median_gap_years
+            FROM trust_fee_linkages_recovered
+        """)
+        totals = cur.fetchone()
+        return render_template("linkages.html", totals=totals)
+    finally:
+        conn.close()
+
+
+@app.route("/api/linkages")
+def api_linkages():
+    """JSON API for the recovered-linkages DataTable (server-side)."""
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        draw    = request.args.get("draw", 1, type=int)
+        start   = request.args.get("start", 0, type=int)
+        length  = request.args.get("length", 50, type=int)
+        if length <= 0 or length > 500:
+            length = 50
+        global_search = request.args.get("search[value]", "").strip()
+
+        match_filter      = request.args.get("match_type", "").strip()       # exact|normalized|fuzzy|''
+        state_filter      = request.args.get("state", "").strip()
+        name_filter       = request.args.get("name_consistent", "").strip()  # yes|no|''
+        min_gap_str       = request.args.get("min_gap", "").strip()
+        max_gap_str       = request.args.get("max_gap", "").strip()
+
+        order_col_idx = request.args.get("order[0][column]", 4, type=int)
+        order_dir     = request.args.get("order[0][dir]", "asc")
+        order_cols = [
+            "trust_accession",   # 0
+            "trust_date",        # 1
+            "fee_accession",     # 2
+            "fee_date",          # 3
+            "date_gap_years",    # 4 (default)
+            "match_type",        # 5
+            "name_consistent",   # 6
+            "fee_authority",     # 7
+            "fee_state",         # 8
+        ]
+        order_col = order_cols[min(order_col_idx, len(order_cols) - 1)]
+        if order_dir not in ("asc", "desc"):
+            order_dir = "asc"
+
+        conditions = []
+        params     = []
+
+        if global_search:
+            conditions.append(
+                "(trust_accession ILIKE %s OR fee_accession ILIKE %s OR extracted_raw ILIKE %s)"
+            )
+            needle = f"%{global_search}%"
+            params += [needle, needle, needle]
+
+        if match_filter == "exact":
+            conditions.append("match_type = 'exact'")
+        elif match_filter == "normalized":
+            conditions.append("match_type = 'normalized'")
+        elif match_filter == "fuzzy":
+            conditions.append("match_type LIKE 'fuzzy%%'")
+
+        if state_filter:
+            conditions.append("fee_state ILIKE %s")
+            params.append(f"%{state_filter}%")
+
+        if name_filter == "yes":
+            conditions.append("name_consistent = true")
+        elif name_filter == "no":
+            conditions.append("(name_consistent = false OR name_consistent IS NULL)")
+
+        if min_gap_str:
+            try:
+                conditions.append("date_gap_years >= %s")
+                params.append(int(min_gap_str))
+            except ValueError:
+                pass
+        if max_gap_str:
+            try:
+                conditions.append("date_gap_years <= %s")
+                params.append(int(max_gap_str))
+            except ValueError:
+                pass
+
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        cur.execute("SELECT COUNT(*) AS n FROM trust_fee_linkages_recovered")
+        records_total = cur.fetchone()["n"]
+
+        cur.execute(f"SELECT COUNT(*) AS n FROM trust_fee_linkages_recovered {where}", params)
+        records_filtered = cur.fetchone()["n"]
+
+        # Note: every column in `where` belongs to trust_fee_linkages_recovered
+        # only; none of the JOINed tables expose the same names, so bare
+        # references resolve unambiguously here.
+        cur.execute(f"""
+            SELECT tflr.trust_accession, tflr.fee_accession, tflr.match_type,
+                   tflr.name_consistent, tflr.date_gap_years,
+                   tflr.trust_date, tflr.fee_date,
+                   tflr.fee_authority, tflr.fee_state, tflr.extracted_raw,
+                   blm_t.objectid AS trust_objectid,  rp_t.id AS trust_rails_id,
+                   blm_f.objectid AS fee_objectid,    rp_f.id AS fee_rails_id
+            FROM trust_fee_linkages_recovered tflr
+            LEFT JOIN blm_allotment_patents blm_t ON blm_t.accession_number = tflr.trust_accession
+            LEFT JOIN rails_patents          rp_t ON rp_t.accession_number  = tflr.trust_accession
+            LEFT JOIN blm_allotment_patents blm_f ON blm_f.accession_number = tflr.fee_accession
+            LEFT JOIN rails_patents          rp_f ON rp_f.accession_number  = tflr.fee_accession
+            {where}
+            ORDER BY tflr.{order_col} {order_dir} NULLS LAST, tflr.trust_accession, tflr.fee_accession
+            LIMIT %s OFFSET %s
+        """, params + [length, start])
+        rows = cur.fetchall()
+
+        def fmt_date(d):
+            if not d: return ""
+            return d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d)
+
+        data = []
+        for r in rows:
+            data.append({
+                "trust_accession":    r["trust_accession"],
+                "trust_objectid":     r["trust_objectid"],
+                "trust_rails_id":     r["trust_rails_id"],
+                "trust_date":         fmt_date(r["trust_date"]),
+                "fee_accession":      r["fee_accession"],
+                "fee_objectid":       r["fee_objectid"],
+                "fee_rails_id":       r["fee_rails_id"],
+                "fee_date":           fmt_date(r["fee_date"]),
+                "date_gap_years":     r["date_gap_years"],
+                "match_type":         r["match_type"] or "",
+                "name_consistent":    bool(r["name_consistent"]),
+                "fee_authority":      r["fee_authority"] or "",
+                "fee_state":          r["fee_state"] or "",
+                "extracted_raw":      r["extracted_raw"] or "",
             })
 
         return jsonify({

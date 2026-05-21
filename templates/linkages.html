@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Trust → Fee Linkages (Recovered from Remarks){% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Trust → Fee Linkages</h1>
+    <p class="lead">
+        Cross-references parsed from BLM patent remarks text — pointers like
+        <code>SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT</code> — and
+        validated against the patent catalog. This is a <em>separate</em>
+        recovery layer from the older <code>trust_fee_linkages</code> table:
+        the data was already in the remarks column from the IATH import; it
+        just hadn't been parsed.
+    </p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ "{:,}".format(totals.total) }}</div>
+            <div class="stat-card-label">Recovered linkages</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ "{:,}".format(totals.distinct_trust) }}</div>
+            <div class="stat-card-label">Distinct trust patents</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ "{:,}".format(totals.distinct_fee) }}</div>
+            <div class="stat-card-label">Distinct fee patents</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">
+                {% if totals.median_gap_years is not none %}{{ totals.median_gap_years|round(0, 'floor')|int }} yrs{% else %}—{% endif %}
+            </div>
+            <div class="stat-card-label">Median trust→fee gap</div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-light border mb-4 small">
+    <strong>Match types.</strong>
+    <span class="badge bg-success">exact</span> = the extracted accession matches a known patent verbatim
+    ({{ "{:,}".format(totals.n_exact) }} rows).
+    <span class="badge bg-secondary">normalized</span> = matched after stripping leading zeros / formatting variation
+    ({{ "{:,}".format(totals.n_normalized) }} rows).
+    <span class="badge bg-warning">fuzzy</span> = matched within edit distance 1 or 2 — most are clear OCR/typo fixes
+    ({{ "{:,}".format(totals.n_fuzzy) }} rows).
+    A ✓ in the <em>Name</em> column means the trust and fee patentees share at least one name token.
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form id="linkages-filters" class="row g-2 small align-items-end">
+            <div class="col-md-2">
+                <label class="form-label mb-1">Match type</label>
+                <select name="match_type" class="form-select form-select-sm">
+                    <option value="">(any)</option>
+                    <option value="exact">exact</option>
+                    <option value="normalized">normalized</option>
+                    <option value="fuzzy">fuzzy</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Fee state</label>
+                <input name="state" type="text" class="form-control form-control-sm" placeholder="e.g. MT">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Name consistent</label>
+                <select name="name_consistent" class="form-select form-select-sm">
+                    <option value="">(any)</option>
+                    <option value="yes">yes</option>
+                    <option value="no">no / unknown</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Min gap (yrs)</label>
+                <input name="min_gap" type="number" class="form-control form-control-sm" placeholder="e.g. 0">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Max gap (yrs)</label>
+                <input name="max_gap" type="number" class="form-control form-control-sm" placeholder="e.g. 30">
+            </div>
+            <div class="col-md-2">
+                <button type="button" id="linkages-clear" class="btn btn-sm btn-outline-secondary w-100">Reset filters</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body table-responsive">
+        <table id="linkages-table" class="table table-sm table-hover small" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>Trust Accession</th>
+                    <th>Trust Date</th>
+                    <th>Fee Accession</th>
+                    <th>Fee Date</th>
+                    <th class="text-end">Gap (yrs)</th>
+                    <th>Match</th>
+                    <th>Name</th>
+                    <th>Authority</th>
+                    <th>State</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function patentHref(objectid, rails_id) {
+    if (objectid) return '/patent/' + objectid;
+    if (rails_id) return '/patent/' + rails_id + '?src=rails';
+    return null;
+}
+
+$(function() {
+    var dt = $('#linkages-table').DataTable({
+        serverSide: true,
+        processing: true,
+        pageLength: 50,
+        lengthMenu: [[25, 50, 100, 200], [25, 50, 100, 200]],
+        order: [[4, 'asc']],  // default: shortest gap first
+        ajax: {
+            url: "{{ url_for('api_linkages') }}",
+            data: function(d) {
+                d.match_type       = $('#linkages-filters select[name="match_type"]').val()       || '';
+                d.state            = $('#linkages-filters input[name="state"]').val()             || '';
+                d.name_consistent  = $('#linkages-filters select[name="name_consistent"]').val()  || '';
+                d.min_gap          = $('#linkages-filters input[name="min_gap"]').val()           || '';
+                d.max_gap          = $('#linkages-filters input[name="max_gap"]').val()           || '';
+            }
+        },
+        columns: [
+            { data: null, orderable: true, render: function(row) {
+                var href = patentHref(row.trust_objectid, row.trust_rails_id);
+                if (href) return '<a href="' + href + '"><code>' + row.trust_accession + '</code></a>';
+                return '<code>' + row.trust_accession + '</code>';
+            }},
+            { data: 'trust_date', defaultContent: '—' },
+            { data: null, orderable: true, render: function(row) {
+                var href = patentHref(row.fee_objectid, row.fee_rails_id);
+                if (href) return '<a href="' + href + '"><code>' + row.fee_accession + '</code></a>';
+                return '<code>' + row.fee_accession + '</code>';
+            }},
+            { data: 'fee_date', defaultContent: '—' },
+            { data: 'date_gap_years', className: 'text-end', render: function(d) {
+                if (d === null || d === undefined) return '<span class="text-muted">—</span>';
+                return d.toString();
+            }},
+            { data: 'match_type', render: function(d) {
+                var cls = d === 'exact' ? 'success' : d === 'normalized' ? 'secondary' : 'warning';
+                return '<span class="badge bg-' + cls + '">' + d + '</span>';
+            }},
+            { data: 'name_consistent', render: function(d) {
+                return d ? '<span class="text-success">✓</span>' : '<span class="text-muted">—</span>';
+            }},
+            { data: 'fee_authority', defaultContent: '—' },
+            { data: 'fee_state', defaultContent: '—' },
+        ]
+    });
+
+    $('#linkages-filters').on('change input', 'select, input', function() {
+        dt.ajax.reload();
+    });
+    $('#linkages-clear').on('click', function() {
+        $('#linkages-filters')[0].reset();
+        dt.ajax.reload();
+    });
+});
+</script>
+{% endblock %}

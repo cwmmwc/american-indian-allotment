@@ -138,7 +138,7 @@ Same schema as `fee_patents` plus:
 
 ### `trust_fee_linkages` (29,229 rows)
 
-Computed links between trust patents and their corresponding fee patents.
+Computed links between trust patents and their corresponding fee patents. Built by matching trust patents to fee patents using allotment numbers, tribe, and basic remarks cross-references. Covers about 19% of trust-class patents.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -155,6 +155,31 @@ Computed links between trust patents and their corresponding fee patents.
 | allotment_number | text | Allotment number |
 | trust_glo_url | text | Link to trust patent GLO record |
 | fee_glo_url | text | Link to fee patent GLO record |
+
+### `trust_fee_linkages_recovered` (57,019 rows)
+
+A **separate, larger** set of trust→fee linkages recovered from the BLM patent remarks field via regex parsing — see `scripts/parse_remarks_fee_refs.py` and `scripts/validate_remarks_extractions.py`. Each row represents a remarks-text cross-reference like `SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT` that was matched against the patent catalog, validated either exactly (18,494), by normalization (37,577), or by short edit-distance fuzz match (566 at distance 2, 382 at distance 1). Coverage takes trust-class patent linkage from ~19% to ~60% **without scraping a single PDF** — the data was already in the remarks column from the IATH import; it just hadn't been parsed.
+
+Kept distinct from `trust_fee_linkages` so the two sources can be reconciled or unioned downstream as needed, and so the provenance of each row remains queryable.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | serial PK | |
+| trust_accession | text | Trust patent accession number |
+| fee_accession | text | Fee patent accession number |
+| extracted_raw | text | The raw substring matched from the trust patent's remarks |
+| match_type | text | `exact` / `normalized` / `fuzzy(d=1)` / `fuzzy(d=2)` |
+| name_overlap | text | Shared name tokens between trust and fee patentee, if any |
+| name_consistent | boolean | True if trust and fee patentee names share at least one token |
+| date_gap_years | integer | fee_date − trust_date in years; null if either date missing |
+| trust_date | date | Trust patent signature date |
+| fee_date | date | Fee patent signature date |
+| fee_authority | text | Authority on the fee patent (e.g., "Indian Fee Patent") |
+| fee_state | text | State of the fee patent |
+| source | text | Default `'remarks_regex_v1'`; future passes can stamp other values |
+| created_at | timestamp | |
+
+**Unique on `(trust_accession, fee_accession)`.** Loaded by `scripts/load_trust_fee_linkages_recovered.py` from `linkage_candidates.csv`. Idempotent — re-running uses `ON CONFLICT DO NOTHING`.
 
 ### `parcels_patents_by_tribe` (401,811 rows)
 

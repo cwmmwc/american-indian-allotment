@@ -68,6 +68,10 @@ Browse the **66,840 BIA archival file references** that the project has parsed a
 
 A "Related BIA File References" block also appears on individual patent pages (`/patent/<id>`) whenever the patent has a captured reference.
 
+### Trust → Fee Linkages (`/linkages`)
+
+Browse the **57,019 trust→fee linkages** recovered from BLM patent remarks text — cross-references like `SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT` that were parsed and validated against the patent catalog. Filters: match type (exact / normalized / fuzzy d=1 or d=2), fee state, name-consistent (trust and fee patentees share at least one token), and trust→fee gap range. Server-side paginated. A "Trust ↔ Fee Linkages Recovered from Remarks" block also appears on individual patent pages whenever the patent is on either side of a recovered linkage. See the [dedicated section below](#trust--fee-linkages-from-remarks-may-2026) for provenance and match-type definitions.
+
 ### About (`/about`)
 Project background, methodology, data sources, and acknowledgments.
 
@@ -144,7 +148,8 @@ The app runs at http://127.0.0.1:5001.
 | `blm_allotment_patents` | 239,845 | BLM patent mirror from ArcGIS (mappable patents) |
 | `all_patents` (view) | 285,870 | Unified view joining `rails_patents` + `blm_allotment_patents` |
 | `forced_fee_patents_rails` | 17,560 | Hand-verified claim-to-patent linkages |
-| `trust_fee_linkages` | 29,229 | Trust-to-fee patent conversion records |
+| `trust_fee_linkages` | 29,229 | Trust-to-fee patent conversion records (from allotment-number / tribe matching) |
+| `trust_fee_linkages_recovered` | 57,019 | Trust-to-fee linkages recovered by parsing the BLM remarks field (separate provenance from `trust_fee_linkages`) |
 | `wilson_table_vi` | 212 | Wilson Report 1934 reservation baseline data |
 | `wilson_annual_sales` | ~32 | Wilson Table VIII annual land sales 1903–1934 |
 | `murray_comparative` | 52 | Murray Memorandum 1947 vs 1957 land by agency |
@@ -279,6 +284,41 @@ UVA Law Library's [`uvalawlibrary/nara-index-cards`](https://github.com/uvalawli
 - **`scripts/compute_file_ref_aggregates.py`** — populates the pre-computed aggregate columns
 
 Re-run order after any new ingest: `extract_file_refs_from_remarks.py` (if new remarks) → `backfill_file_refs_from_structured.py` (if new patents) → `backfill_io_labeled_for_remarks.py` → `compute_io_labeled_rollup.py` → `compute_file_ref_aggregates.py`.
+
+## Trust → Fee Linkages from Remarks (May 2026)
+
+A second recovery layer that pulls trust→fee patent linkages directly out of the BLM remarks field. **57,019 validated linkages** now sit in `trust_fee_linkages_recovered`, kept separate from the older `trust_fee_linkages` (29,229 rows, computed via allotment-number / tribe matching) so each table's provenance remains queryable.
+
+The trigger for this work: BLM operators routinely typed pointers like `SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT`, `FEE PATENT 720002`, or `PT NR 985654` into the remarks of trust patents that later converted. That data was always present — it just hadn't been parsed.
+
+### Why this matters
+
+The older `trust_fee_linkages` table covers about 19% of trust-class patents (29,229 of ~155K). The remarks-derived table covers an additional **~37,000 trust patents** that were not reachable through allotment-number matching, raising trust→fee coverage to roughly 60% — without scraping a single PDF.
+
+### Match types
+
+Every row records how the extracted accession was matched against the patent catalog:
+
+| Type | Rows | Meaning |
+|---|---|---|
+| `exact` | 18,494 | Verbatim accession match |
+| `normalized` | 37,577 | Match after stripping leading zeros / standardizing accession formatting |
+| `fuzzy(d=1)` | 382 | Match within edit distance 1 (mostly transcription typos: a single digit substitution) |
+| `fuzzy(d=2)` | 566 | Match within edit distance 2 (two-character drift — generally a digit + format slip) |
+
+Each row also carries:
+- **`name_consistent`** — whether the trust and fee patentees share at least one name token (the strongest single confidence signal beyond accession match)
+- **`date_gap_years`** — years between trust date and fee date (median across the corpus is 18 years)
+- **`extracted_raw`** — the literal substring that produced the match, so any individual linkage can be re-audited against the source remarks
+
+### Schema and scripts
+
+- **`sql/create_trust_fee_linkages_recovered.sql`** — table schema (see `DATABASE.md` for the full column listing)
+- **`scripts/parse_remarks_fee_refs.py`** — regex pass over `rails_patents.remarks`
+- **`scripts/validate_remarks_extractions.py`** — match candidates against the patent catalog (exact / normalized / fuzzy)
+- **`scripts/load_trust_fee_linkages_recovered.py`** — batched loader (psycopg2 `execute_values`, 1,000 rows per round-trip); idempotent via `ON CONFLICT (trust_accession, fee_accession) DO NOTHING`
+
+See [`AI_AS_RESEARCH_PARTNER.md`](AI_AS_RESEARCH_PARTNER.md) for the discovery story.
 
 ## IATH Source Database Access (May 2026)
 
