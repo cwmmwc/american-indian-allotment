@@ -5,11 +5,11 @@
 <div class="page-header">
     <h1>BIA File References</h1>
     <p class="lead">
-        Archival file numbers (NNNNN-YY) parsed from BLM patent remarks.
+        Archival file numbers (NNNNN-YY) connected to BLM allotment patents.
         Each reference points to a BIA correspondence file that touched the
-        processing of one or more allotment patents. Clicking a reference
-        opens the cluster of patents that share it &mdash; a single
-        administrative episode rendered as data.
+        processing of one or more patents. Clicking a reference opens the
+        cluster of patents that share it &mdash; a single administrative
+        episode rendered as data.
     </p>
 </div>
 
@@ -23,7 +23,13 @@
     <div class="col-md-3">
         <div class="card h-100 text-center p-3">
             <div class="stat-card-number">{{ totals.distinct_patents }}</div>
-            <div class="stat-card-label">Patents with a file reference</div>
+            <div class="stat-card-label">Patents linked to a reference</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ totals.largest_cluster }}</div>
+            <div class="stat-card-label">Largest cluster</div>
         </div>
     </div>
     <div class="col-md-3">
@@ -32,28 +38,59 @@
             <div class="stat-card-label">NARA-verified so far</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card h-100 text-center p-3">
-            <div class="stat-card-number">{{ refs[0].n_patents if refs else 0 }}</div>
-            <div class="stat-card-label">Largest cluster</div>
-        </div>
-    </div>
 </div>
 
 <div class="alert alert-light border mb-4 small">
     <strong>How to read this table.</strong>
     Each row is one archival file. <em>Patents</em> shows how many BLM records
-    cite that file in their remarks &mdash; the larger the number, the larger
-    the administrative episode. The <em>Label</em> column shows the wording BLM
-    transcribers used (<code>IO</code>, <code>BIA</code>, or <code>DOCUMENT</code>);
-    these labels are interchangeable in the transcribed remarks and do not by
-    themselves establish whether the file is a verified CCF reference. See the
-    <a href="{{ url_for('about_project') }}">project notes</a> for caveats.
+    reference that file. The <em>I.O.</em> column reflects whether the file
+    carries the explicit Indian Office mark across its appearances
+    (<code>yes</code>, <code>no</code>, <code>mixed</code>, or <code>unknown</code>);
+    see the <a href="{{ url_for('about_project') }}">project notes</a> for what these mean.
+    The largest clusters are the most administratively significant episodes.
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form id="filerefs-filters" class="row g-2 small align-items-end">
+            <div class="col-md-2">
+                <label class="form-label mb-1">I.O. label</label>
+                <select name="io_labeled" class="form-select form-select-sm">
+                    <option value="">(any)</option>
+                    <option value="yes">yes</option>
+                    <option value="no">no</option>
+                    <option value="mixed">mixed</option>
+                    <option value="unknown">unknown</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label mb-1">CCF era</label>
+                <select name="era" class="form-select form-select-sm">
+                    <option value="">(any)</option>
+                    <option value="pre_1907">pre-1907 (predates CCF)</option>
+                    <option value="ccf_1907_1942">1907–1942 (digitized index window)</option>
+                    <option value="ccf_1943_1975">1943–1975 (CCF series 121B/121C)</option>
+                    <option value="post_1975">post-1975 (post-CCF)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Min # patents</label>
+                <input name="min_patents" type="number" min="1" class="form-control form-control-sm" placeholder="e.g. 50">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label mb-1">Tribe or state contains</label>
+                <input name="tribe_or_state" type="text" class="form-control form-control-sm" placeholder="e.g. Blackfeet, MT">
+            </div>
+            <div class="col-md-2">
+                <button type="button" id="filerefs-clear" class="btn btn-sm btn-outline-secondary w-100">Reset filters</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <div class="card mb-4">
     <div class="card-body table-responsive">
-        <table id="filerefs-table" class="table table-sm table-hover small">
+        <table id="filerefs-table" class="table table-sm table-hover small" style="width:100%;">
             <thead>
                 <tr>
                     <th>File Ref</th>
@@ -62,57 +99,68 @@
                     <th>Date Range</th>
                     <th>States</th>
                     <th>Top Tribe</th>
-                    <th>Top Label</th>
+                    <th>I.O.</th>
                     <th>NARA</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for r in refs %}
-                <tr>
-                    <td>
-                        <a href="{{ url_for('file_ref_detail', spec=r.letter_number ~ '-' ~ r.year_raw) }}">
-                            <code>{{ r.letter_number }}-{{ r.year_raw }}</code>
-                        </a>
-                    </td>
-                    <td>{{ r.year or '—' }}</td>
-                    <td class="text-end"><strong>{{ r.n_patents }}</strong></td>
-                    <td class="text-muted">
-                        {% if r.min_date %}
-                            {{ r.min_date.strftime('%Y-%m-%d') }}
-                            {% if r.max_date and r.max_date != r.min_date %}
-                                &nbsp;–&nbsp; {{ r.max_date.strftime('%Y-%m-%d') }}
-                            {% endif %}
-                        {% else %}—{% endif %}
-                    </td>
-                    <td>{{ r.states or '—' }}</td>
-                    <td>{{ r.top_tribe or '—' }}</td>
-                    <td><span class="badge bg-secondary">{{ r.top_label or '—' }}</span></td>
-                    <td>
-                        {% if r.nara_verified %}
-                        <span class="text-success">✓</span>
-                        {% else %}
-                        <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
         </table>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
 $(function() {
-    $('#filerefs-table').DataTable({
+    var dt = $('#filerefs-table').DataTable({
+        serverSide: true,
+        processing: true,
         pageLength: 50,
-        lengthMenu: [[25, 50, 100, 200, -1], [25, 50, 100, 200, "All"]],
-        order: [[2, 'desc']],
-        columnDefs: [
-            { targets: [1, 2], type: 'num' }
+        lengthMenu: [[25, 50, 100, 200], [25, 50, 100, 200]],
+        order: [[2, 'desc']],   // default sort: patent_count desc
+        ajax: {
+            url: "{{ url_for('api_file_refs') }}",
+            data: function(d) {
+                // Append our custom filter values to every request
+                d.io_labeled    = $('#filerefs-filters select[name="io_labeled"]').val()   || '';
+                d.era           = $('#filerefs-filters select[name="era"]').val()          || '';
+                d.min_patents   = $('#filerefs-filters input[name="min_patents"]').val()   || '';
+                d.tribe_or_state= $('#filerefs-filters input[name="tribe_or_state"]').val()|| '';
+            }
+        },
+        columns: [
+            { data: null, render: function(row) {
+                var spec = encodeURIComponent(row.ref);
+                return '<a href="/file_ref/' + spec + '"><code>' + row.ref + '</code></a>';
+            }, orderable: true },
+            { data: 'year', defaultContent: '—' },
+            { data: 'patent_count', className: 'text-end', render: function(d) {
+                return '<strong>' + d.toLocaleString() + '</strong>';
+            }},
+            { data: null, orderable: true, render: function(row) {
+                if (!row.min_date) return '<span class="text-muted">—</span>';
+                if (row.min_date === row.max_date) return row.min_date;
+                return row.min_date + '<br><span class="text-muted small">to ' + row.max_date + '</span>';
+            }},
+            { data: 'state_list', defaultContent: '—' },
+            { data: 'top_tribe', defaultContent: '—' },
+            { data: 'io_labeled', render: function(d) {
+                if (!d) return '<span class="text-muted">—</span>';
+                var cls = {yes:'success', no:'secondary', mixed:'warning text-dark', unknown:'light text-dark border'}[d] || 'secondary';
+                return '<span class="badge bg-' + cls + '">' + d + '</span>';
+            }},
+            { data: 'nara_verified', render: function(d) {
+                return d ? '<span class="text-success">✓</span>' : '<span class="text-muted">—</span>';
+            }, orderable: true },
         ]
+    });
+
+    // Re-fetch whenever a filter changes
+    $('#filerefs-filters').on('change input', 'select, input', function() {
+        dt.ajax.reload();
+    });
+    $('#filerefs-clear').on('click', function() {
+        $('#filerefs-filters')[0].reset();
+        dt.ajax.reload();
     });
 });
 </script>

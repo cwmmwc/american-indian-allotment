@@ -58,6 +58,16 @@ Landing pages for each of 57 tribes with summary statistics, timeline charts, so
 
 - **Du Bois Data Portraits** (`/dubois`) — Experimental visualizations inspired by W.E.B. Du Bois's data portraits: a spiral chart of Wilson annual sales, horizontal bars of land alienated vs. retained by reservation, a forced fee timeline with policy era shading, and a radial bar chart of FR claims by tribe.
 
+### BIA File References (`/file_refs`, `/file_ref/<letter>-<year>`)
+
+Browse the **66,840 BIA archival file references** that the project has parsed and clustered against allotment patents.
+
+- **`/file_refs`** — Sortable index of every distinct file reference, with filters for I.O.-label status (`yes` / `no` / `mixed` / `unknown`), CCF era (pre-1907 / 1907–1942 / 1943–1975 / post-1975), minimum patent count, and tribe-or-state. Server-side paginated (DataTables AJAX) so the page loads in under a second even at 66K rows. Each row shows the file reference, year, number of patents that share it, geographic and tribal concentration, and the rolled-up I.O. label.
+
+- **`/file_ref/<letter>-<year>`** — Cluster view for a single file reference. Shows the full cohort of patents that share the reference, plus state / tribe / authority / label-variant breakdowns and a date range. Used to turn batches of individually unremarkable patents into a single coherent administrative episode (e.g., the 4,544 Blackfeet patents from 1922 that share file `25338-21`).
+
+A "Related BIA File References" block also appears on individual patent pages (`/patent/<id>`) whenever the patent has a captured reference.
+
 ### About (`/about`)
 Project background, methodology, data sources, and acknowledgments.
 
@@ -80,6 +90,14 @@ The Wilson Report documented the state of **212 Indian reservations** as of 1934
 
 ### Murray Memorandum (1947–1957)
 The Murray Memorandum documented a second wave of land loss during the termination era. Across **52 BIA agencies**, individual Indian trust land fell from **15.9 million acres (1947) to 12.6 million (1957)** — a net loss of 3.3 million acres through 18,546 trust removal transactions.
+
+### BIA Central Classified Files References (May 2026)
+**66,840** distinct BIA archival file references (in the NNNNN-YY format used by the Bureau of Indian Affairs' Central Classified Files system, 1907–1975) linked to **159,477** allotment patents through **182,446** patent-reference connections. Each file reference is a pointer into the BIA correspondence record at the National Archives — the underlying paper trail of allotment processing, fee conversions, and policy decisions. Files are shared across patents that were processed together, so clustering by reference exposes administrative episodes that aren't otherwise visible in the patent metadata. The largest single cluster connects **4,544 Blackfeet 1922 trust patents** to one 1921 BIA file. See the [dedicated section below](#bia-file-references-may-2026) for the schema, the I.O. labeling system, and the major clusters.
+
+## Research Notes
+
+- [`CORPORATE_BUYERS.md`](CORPORATE_BUYERS.md) — corporate (non-Native) grantees of allotment patents across the corpus. Identifies five distinct historical episodes (Creek removal speculators, Plains cattle, Western timber, Great Lakes paper, California utilities) and the mass-acquisition events that define them. Sources: `scripts/find_corporate_buyers.py`, `scripts/find_lumber_buyers.py`, `scripts/link_lumber_to_fr.py`.
+- [`AI_AS_RESEARCH_PARTNER.md`](AI_AS_RESEARCH_PARTNER.md) — note on how working with an AI model contributed to this project, prompted by the discovery that ~55,000 missing trust→fee linkages were already sitting unparsed in the database's `remarks` field. A reflection on AI's value not in automation but in asking the right question at the right moment.
 
 ## Tech Stack
 
@@ -135,6 +153,9 @@ The app runs at http://127.0.0.1:5001.
 | `murray_agency_removal` | 41 | Murray total acres removed by agency |
 | `murray_lands_acquired` | 23 | Federal lands acquired since 1930 |
 | `parcels_patents_by_tribe` | 401,811 | PLSS legal land descriptions |
+| `patent_file_references` | 66,840 | Distinct BIA NNNNN-YY archival file references with I.O. rollup + cluster aggregates |
+| `patent_file_ref_links` | 182,446 | Many-to-many between patents and file references, with per-link I.O. label evidence |
+| `cancelled_patent_research` | 439 | McMillen-compiled cancelled-patent metadata (legal authority, dates, CCF numbers) |
 
 ## Key Files
 
@@ -180,6 +201,130 @@ The patent detail route (`/patent/<id>`) checks `blm_allotment_patents.objectid`
 The `glo_url()` function hardcoded `docClass=SER` (Serial Land Patent) for all GLO links. But 91,957 patents have non-Serial document classes — State Land Patents (`STA`), Indian Allotment Patents (`IA`), Miscellaneous Volume Patents (`MV`), etc. Links for these patents pointed to BLM with the wrong document class and failed to resolve.
 
 **Fix:** `glo_url()` now accepts the patent's `document_code` (or maps `authority` names like "State Land Patent" to codes like "STA") and generates links with the correct `docClass` parameter. All 285,870 patents now produce valid GLO links.
+
+## BIA File References (May 2026)
+
+A new analytical primitive layered on top of the existing patent data: every BLM allotment patent that carries a BIA Central Classified Files reference is now indexed by that reference, with each file's full cluster of patents queryable as a single research object. **66,840 distinct file references** are linked to **159,477 patents** through **182,446 patent-reference connections**. The largest single cluster connects 4,544 Blackfeet 1922 trust patents to one 1921 BIA file.
+
+### Why this matters
+
+The BIA's Central Classified Files (CCF) is the universal subject correspondence archive of the Indian Office at the National Archives. Per [NARA's documentation](https://www.archives.gov/research/native-americans/central-classified-files), a complete CCF citation has four elements: `letter_number / year / decimal_classification / agency-or-jurisdiction` (example: `12540 / 1950 / 307.4 / Alaska`). Letter numbers run from single digits to six digits; the year is when the file was opened; the decimal class is the BIA's subject taxonomy; the agency is the BIA office responsible. The system was active from **1907 to 1975**, in three NARA-numbered series (121A: 1907–1939; 121B: 1940–1957; 121C: 1958–1975). NARA has digitized the index cards through 1942 ([catalog reference](https://www.archives.gov/research/native-americans/central-classified-files-index)); post-1942 index entries exist only on paper at Archives 1.
+
+BLM allotment patents in the CCF era carry these references in the top-left of the printed form, sometimes labeled "I.O." (Indian Office), sometimes unlabeled. When a trust patent later converted to fee, a middle-page "Fee Patent Issued" stamp records the conversion's own administrative file reference. **The same BIA file appears on many patents** because BIA processed patents in batches under shared correspondence files — which means clustering patents by shared reference reveals the administrative episodes that produced them.
+
+### Data sources
+
+Two complementary capture mechanisms feed `patent_file_references`:
+
+1. **BLM's structured columns** (the bulk). `rails_patents.misc_document_number` carries the I.O.-labeled reference; `rails_patents.document_number` carries the unlabeled reference when one is present. A direct backfill from these columns (no regex, no vision) produces ~65,540 of the 66,840 distinct references. This data was always in the database — it just hadn't been promoted into a queryable structure.
+
+2. **Transcribed BLM remarks** (the original parse). `rails_patents.remarks` sometimes contains BLM operators' free-text annotations like `ADDITIONAL IO #60798-08` or `ADDITIONAL BIA #6744-49`. A regex pass (`scripts/extract_file_refs_from_remarks.py`) recovered the original 1,300 references — most of which are NOT in BLM's structured columns because they reference *additional* files (typically the BIA conversion-action file when a trust patent was stamped during fee conversion).
+
+The two sources are merged into the same schema with provenance: `patent_file_ref_links.source_location` records `structured_misc_doc` / `structured_doc_number` / `remarks`, and `context_label` preserves the exact transcribed label.
+
+### The I.O. labeling system
+
+BLM placed I.O.-labeled CCF references in `misc_document_number` and unlabeled ones in `document_number` — a convention that holds for ~99.9% of distinct references. A corpus-wide audit found **80 "leaky" references** (0.12%) that appear in both columns across different patents; root causes include both BLM data-entry errors and genuine document-level labeling variation where the same file was marked I.O. on some patents but not others.
+
+The schema records this faithfully:
+
+- **Per-link `io_labeled`** (yes / no / unknown) on `patent_file_ref_links` records what each individual source said — `misc_document_number` → yes; `document_number` → no; `remarks` with an IO-family label → yes; `remarks` with a BIA / DOCUMENT label → unknown (those labels are operator convention, not document truth).
+- **Per-reference `io_labeled` rollup** on `patent_file_references` aggregates across all links to that file:
+  - `yes` (62,601 refs, 94%) — every link confirms I.O.-labeled
+  - `no` (4,131 refs, 6%) — every link confirms unlabeled
+  - `mixed` (80 refs, 0.12%) — both yes and no evidence exists; manual review recommended
+  - `unknown` (28 refs, 0.04%) — only unlabeled-label remarks evidence (BIA / DOCUMENT family)
+
+### Important caveat
+
+**A reference being on a patent does not mean the underlying file is about that patent.** Direct PDF and NARA index card inspection confirms cases of both:
+
+- *Subject-relevant*: CCF `73344-08 I.O.` appears on Aichikapomik's 1909 Turtle Mountain Chippewa trust patent, and the NARA card for that file reads "Relative allotments of Turtle Mountain Indians" (decimal 312, Fort Totten Agency) — directly relevant to her allotment.
+- *Administratively-stamped-but-unrelated*: CCF `30429-09 I.O.` appears on Hannah Fights-the-Bear's 1910 Cheyenne River Sioux trust patent, but the NARA card for that file reads "Telegram from F. E. Leupp [BIA Commissioner] re: authority for wire screen for Phoenix School, all tuberculosis work suspended awaiting this material" (decimal 525, Schools) — has zero substantive connection to her allotment.
+
+The reference's *subject relevance* requires reading the NARA card content. This project captures the reference; the relevance question lives downstream.
+
+### Notable clusters
+
+| Reference | Year | Patents | Tribe / State | Issued | Authority dominant |
+|---|---|---|---|---|---|
+| `25338-21` | 1921 | 4,544 | Blackfeet (MT) | 1922 | Trust |
+| `67183-20` | 1920 | 2,966 | Gila River (AZ) | 1921 | (BLM authority blank) |
+| `29450-23` | 1923 | 2,751 | Crow (MT) | 1923–24 | Trust + Homestead Trust |
+| `79351-25` | 1925 | 2,487 | Standing Rock Sioux (SD/ND) | 1926 | Trust |
+| `5426-08` / `119392-08` | 1908 | 2,375 each | Flathead (MT) | 1908 | Trust |
+| `19162-26` | 1926 | 2,251 | Assiniboine & Gros Ventre (Fort Belknap, MT) | 1927 | Trust + Homestead Trust |
+| `9834-10` | 1910 | 2,057 | Colville (WA) | 1917 | Trust |
+| `87140-11` | 1911 | 1,980 | Assiniboine & Sioux (Fort Peck, MT) | 1913 | Trust |
+| `37106-13` | 1913 | 1,837 | Shoshone & Bannock (Fort Hall, ID) | 1916 | Trust |
+| `63889-19` | 1919 | 1,786 | White Earth Chippewa (MN) | 1919–20 | **Indian Fee Patent** |
+| `6744-49` | 1949 | 171 | Pit River / Paiute / Wintu / Dixie Valley (CA) | 1950–52 | Indian Fee Patent (termination-era) |
+| `14329-08` | 1908 | 4 | Leech Lake Chippewa (MN) | 1908 | Misc. Volume — Fred Nason family |
+
+Every top cluster is **tribally and geographically homogeneous** — a single tribal allotment batch processed under one administrative file. The CCF year typically precedes patent issuance by 1–3 years (file opened, then patents flowed through later).
+
+### Future verification: NARA Index Cards integration
+
+UVA Law Library's [`uvalawlibrary/nara-index-cards`](https://github.com/uvalawlibrary/nara-index-cards) project (Loren S. Moulds, research partner) has extracted **~1.4 million NARA BIA Central Classified Files index cards** for the digitized 1907–1942 window, using vision-language models (Qwen2.5-VL-72B and Gemma 4 31B). Each extracted card has the letter number, year, decimal classification, agency, correspondent, and a one-line summary as structured fields. For the **683 of our 66,840 references that fall in the 1907–1942 window**, joining against Loren's data would resolve each ref from a partial citation (letter + year only) to the full four-element CCF citation, enriching every cluster page with subject classification and agency. Post-1942 references (in CCF series 121B / 121C) remain partial citations until either Loren's project extends forward in time or the paper index at NARA Archives 1 is consulted.
+
+### Schema and scripts
+
+- **`sql/create_patent_file_references.sql`** — original schema (now extended)
+- **`sql/add_io_labeled_columns.sql`** — adds per-link / per-ref `io_labeled` text columns
+- **`sql/add_file_ref_aggregates.sql`** — adds pre-computed aggregate columns (`patent_count`, `state_list`, `top_tribe`, `top_context_label`, `min_signature_date`, `max_signature_date`) so the server-side DataTables endpoint can paginate at scale without per-request aggregation
+- **`scripts/extract_file_refs_from_remarks.py`** — regex-based capture from `remarks` field
+- **`scripts/backfill_file_refs_from_structured.py`** — direct backfill from `misc_document_number` and `document_number`
+- **`scripts/backfill_io_labeled_for_remarks.py`** — assigns per-link `io_labeled` to existing remarks-derived links based on the transcribed `context_label`
+- **`scripts/compute_io_labeled_rollup.py`** — computes per-reference `io_labeled` rollup from all links
+- **`scripts/compute_file_ref_aggregates.py`** — populates the pre-computed aggregate columns
+
+Re-run order after any new ingest: `extract_file_refs_from_remarks.py` (if new remarks) → `backfill_file_refs_from_structured.py` (if new patents) → `backfill_io_labeled_for_remarks.py` → `compute_io_labeled_rollup.py` → `compute_file_ref_aggregates.py`.
+
+## IATH Source Database Access (May 2026)
+
+Direct PostgreSQL access to the IATH Rails database at `land-sales.iath.virginia.edu` was obtained in May 2026, providing the authoritative source data behind the legacy site at `land-sales.iath.virginia.edu`.
+
+**Connection:**
+```
+psql "host=land-sales.iath.virginia.edu port=5432 user=cwm6w password=land-sales-access dbname=land-sales"
+```
+
+**Exported tables** (CSV, at `~/Desktop/iath_export/`):
+
+| Table | Rows | Description |
+|-------|-----:|-------------|
+| `patents` | 285,870 | Full patent catalog (same data as local `rails_patents`) |
+| `patent_persons` | 371,582 | Join table linking patents to people — has `patent_id`, `person_id`, `patent_role_id` |
+| `people` | 316,776 | Patentee names with structured fields: `glo_last_name`, `glo_first_name`, `glo_middle_name` |
+| `patent_roles` | 1 | Role lookup |
+| `fedreg` | 35,686 | Federal Register claims (authoritative source for local `federal_register_claims`) |
+| `fedreg_table_of_contents` | 215 | FR document structure |
+| `tribes` | 255 | Tribe lookup |
+| `authorities` | 21 | Patent authority types |
+| `glo_tribes` | 1,412 | GLO tribe name variants |
+
+Export script: `export_iath_tables.sh`. User has read-only access (`SELECT` on tables; no `pg_dump` due to sequence permissions).
+
+### What this improves over the scrape
+
+The May 2026 patentee name fix scraped `land-sales.iath.virginia.edu` to populate the `full_name` column on `rails_patents`. That was a workaround for missing data. The IATH database export supersedes the scrape in three ways:
+
+1. **Structured name fields.** The `people` table has `glo_last_name`, `glo_first_name`, `glo_middle_name` as separate columns. The scrape produced a single concatenated `full_name` string (e.g., "CHARLES FISH; MARY FISH; ELJAH FISH"). Structured fields are better for name matching — `glo_last_name = 'BISSONETTE'` is more reliable than `full_name ILIKE '%bissonette%'`.
+
+2. **Multi-patentee records preserved.** The `patent_persons` join table has 371,582 rows for 285,870 patents — some patents have multiple patentees, each with their own person ID, sequence number, and role. The scrape collapsed these into semicolon-separated strings. The join table preserves them as separate queryable rows, enabling network queries like "find every patent where Philip Points appears."
+
+3. **Authoritative Federal Register data.** The `fedreg` table (35,686 rows) is the canonical source for forced fee claims. Our `federal_register_claims` table was imported separately and may have diverged. The IATH version is the authoritative copy maintained by the legacy site.
+
+### Pending work
+
+The IATH export data has not yet been loaded into `allotment_research` to replace the scraped approximation. When done, this would involve:
+
+- Importing `people` and `patent_persons` as new tables in `allotment_research`
+- Updating the `all_patents` view to join through `patent_persons` → `people` for names (replacing the scraped `full_name` column on `rails_patents`)
+- Comparing `fedreg` against `federal_register_claims` for any discrepancies
+- Updating Cloud SQL with the same changes
+
+This is an improvement to data quality, not a structural change. The app code, views, and routes continue to work as-is with the scraped data until the reload happens.
 
 ## GitHub
 

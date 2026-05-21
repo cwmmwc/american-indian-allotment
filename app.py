@@ -1534,50 +1534,154 @@ def patent_detail(objectid):
 
 @app.route("/file_refs")
 def file_refs_index():
-    """Index of every BIA file reference parsed from patent remarks.
-    Sorted by cluster size descending so the most administratively significant
-    files (the ones that touched the most patents) are at the top.
+    """Index of every BIA file reference parsed from patent remarks + BLM's
+    structured CCF columns. Page chrome only — table data is loaded via the
+    /api/file_refs JSON endpoint (server-side DataTables) because the corpus
+    is ~66K refs and rendering them all server-side would be too heavy.
     """
     conn = get_db()
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            WITH agg AS (
-                SELECT
-                    pfrl.file_ref_id,
-                    COUNT(DISTINCT pfrl.patent_accession)              AS n_patents,
-                    COUNT(DISTINCT bap.state) FILTER (WHERE bap.state IS NOT NULL)             AS n_states,
-                    string_agg(DISTINCT bap.state, ', ' ORDER BY bap.state)                     AS states,
-                    mode() WITHIN GROUP (ORDER BY bap.preferred_name)   AS top_tribe,
-                    MIN(bap.signature_date)                             AS min_date,
-                    MAX(bap.signature_date)                             AS max_date,
-                    mode() WITHIN GROUP (ORDER BY pfrl.context_label)   AS top_label
-                FROM patent_file_ref_links pfrl
-                LEFT JOIN blm_allotment_patents bap
-                    ON bap.accession_number = pfrl.patent_accession
-                GROUP BY pfrl.file_ref_id
-            )
-            SELECT
-                pfr.id, pfr.letter_number, pfr.year, pfr.year_raw,
-                pfr.nara_verified, pfr.decimal_class, pfr.agency,
-                agg.n_patents, agg.n_states, agg.states,
-                agg.top_tribe, agg.top_label, agg.min_date, agg.max_date
-            FROM patent_file_references pfr
-            JOIN agg ON agg.file_ref_id = pfr.id
-            ORDER BY agg.n_patents DESC, pfr.year DESC, pfr.letter_number
-        """)
-        refs = cur.fetchall()
-
-        cur.execute("""
             SELECT
                 COUNT(*) AS total_refs,
                 COUNT(*) FILTER (WHERE nara_verified) AS verified_refs,
-                (SELECT COUNT(DISTINCT patent_accession) FROM patent_file_ref_links) AS distinct_patents
+                COUNT(*) FILTER (WHERE io_labeled = 'yes')     AS io_yes,
+                COUNT(*) FILTER (WHERE io_labeled = 'no')      AS io_no,
+                COUNT(*) FILTER (WHERE io_labeled = 'mixed')   AS io_mixed,
+                COUNT(*) FILTER (WHERE io_labeled = 'unknown') AS io_unknown,
+                (SELECT MAX(patent_count) FROM patent_file_references)                       AS largest_cluster,
+                (SELECT COUNT(DISTINCT patent_accession) FROM patent_file_ref_links)         AS distinct_patents
             FROM patent_file_references
         """)
         totals = cur.fetchone()
+        return render_template("file_refs.html", totals=totals)
+    finally:
+        conn.close()
 
-        return render_template("file_refs.html", refs=refs, totals=totals)
+
+@app.route("/api/file_refs")
+def api_file_refs():
+    """JSON API for the file-refs DataTable (server-side). Reads pre-computed
+    aggregate columns on patent_file_references (populated by
+    scripts/compute_file_ref_aggregates.py) for fast paged lookups."""
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        draw     = request.args.get("draw", 1, type=int)
+        start    = request.args.get("start", 0, type=int)
+        length   = request.args.get("length", 50, type=int)
+        if length <= 0 or length > 500:
+            length = 50
+        global_search = request.args.get("search[value]", "").strip()
+
+        # Custom filters
+        io_filter         = request.args.get("io_labeled", "").strip()      # yes|no|mixed|unknown|''
+        era_filter        = request.args.get("era", "").strip()             # pre_1907|ccf_1907_1942|ccf_1943_1975|post_1975|''
+        min_patents_str   = request.args.get("min_patents", "").strip()     # integer or ''
+        tribe_or_state    = request.args.get("tribe_or_state", "").strip()  # free-text matched against state_list OR top_tribe
+
+        # Sort column index → SQL column
+        order_col_idx = request.args.get("order[0][column]", 2, type=int)
+        order_dir     = request.args.get("order[0][dir]", "desc")
+        order_cols = [
+            "letter_number",        # 0: File Ref
+            "year",                 # 1: Year
+            "patent_count",         # 2: # Patents (default sort)
+            "min_signature_date",   # 3: Date range
+            "state_list",           # 4: States
+            "top_tribe",            # 5: Top Tribe
+            "io_labeled",           # 6: I.O. labeled
+            "nara_verified",        # 7: NARA Verified
+        ]
+        order_col = order_cols[min(order_col_idx, len(order_cols) - 1)]
+        if order_dir not in ("asc", "desc"):
+            order_dir = "desc"
+
+        conditions = []
+        params = []
+
+        if global_search:
+            conditions.append(
+                "(letter_number ILIKE %s OR year_raw ILIKE %s OR top_tribe ILIKE %s OR state_list ILIKE %s)"
+            )
+            needle = f"%{global_search}%"
+            params += [needle, needle, needle, needle]
+
+        if io_filter in ("yes", "no", "mixed", "unknown"):
+            conditions.append("io_labeled = %s")
+            params.append(io_filter)
+
+        if era_filter == "pre_1907":
+            conditions.append("year < 1907")
+        elif era_filter == "ccf_1907_1942":
+            conditions.append("year BETWEEN 1907 AND 1942")
+        elif era_filter == "ccf_1943_1975":
+            conditions.append("year BETWEEN 1943 AND 1975")
+        elif era_filter == "post_1975":
+            conditions.append("year > 1975")
+
+        if min_patents_str:
+            try:
+                n = int(min_patents_str)
+                if n > 0:
+                    conditions.append("patent_count >= %s")
+                    params.append(n)
+            except ValueError:
+                pass
+
+        if tribe_or_state:
+            conditions.append("(top_tribe ILIKE %s OR state_list ILIKE %s)")
+            params += [f"%{tribe_or_state}%", f"%{tribe_or_state}%"]
+
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        cur.execute("SELECT COUNT(*) AS n FROM patent_file_references")
+        records_total = cur.fetchone()["n"]
+
+        cur.execute(f"SELECT COUNT(*) AS n FROM patent_file_references {where}", params)
+        records_filtered = cur.fetchone()["n"]
+
+        cur.execute(f"""
+            SELECT id, letter_number, year, year_raw,
+                   patent_count, state_list, top_tribe, top_context_label,
+                   min_signature_date, max_signature_date,
+                   io_labeled, nara_verified, nara_url
+            FROM patent_file_references
+            {where}
+            ORDER BY {order_col} {order_dir} NULLS LAST, letter_number, year_raw
+            LIMIT %s OFFSET %s
+        """, params + [length, start])
+        rows = cur.fetchall()
+
+        data = []
+        for r in rows:
+            def fmt_date(d):
+                if not d: return ""
+                return d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d)
+            data.append({
+                "ref":               f"{r['letter_number']}-{r['year_raw']}",
+                "letter_number":     r["letter_number"],
+                "year_raw":          r["year_raw"],
+                "year":              r["year"],
+                "patent_count":      r["patent_count"] or 0,
+                "state_list":        r["state_list"] or "",
+                "top_tribe":         r["top_tribe"] or "",
+                "top_context_label": r["top_context_label"] or "",
+                "min_date":          fmt_date(r["min_signature_date"]),
+                "max_date":          fmt_date(r["max_signature_date"]),
+                "io_labeled":        r["io_labeled"] or "",
+                "nara_verified":     bool(r["nara_verified"]),
+                "nara_url":          r["nara_url"] or "",
+            })
+
+        return jsonify({
+            "draw": draw,
+            "recordsTotal":    records_total,
+            "recordsFiltered": records_filtered,
+            "data": data,
+        })
     finally:
         conn.close()
 
