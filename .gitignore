@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .env
 *.sql
+iath_export/
+data/

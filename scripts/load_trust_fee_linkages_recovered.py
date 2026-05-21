@@ -19,7 +19,7 @@ import psycopg2.extras
 from collections import Counter
 
 DB_URL    = os.environ.get("DATABASE_URL", "dbname=allotment_research user=cwm6W")
-CSV_PATH  = "linkage_candidates.csv"
+CSV_PATH  = "data/linkage_candidates.csv"
 DRY_RUN   = "--dry-run" in sys.argv
 BATCH     = 1000
 

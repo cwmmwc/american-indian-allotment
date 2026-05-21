@@ -27,9 +27,9 @@ import psycopg2.extras
 from collections import Counter, defaultdict
 
 DB_URL = os.environ.get("DATABASE_URL", "dbname=allotment_research user=cwm6W")
-IN_CSV = "remarks_fee_refs.csv"
-CANDIDATES_CSV = "linkage_candidates.csv"
-UNMATCHED_CSV = "linkage_unmatched.csv"
+IN_CSV = "data/remarks_fee_refs.csv"
+CANDIDATES_CSV = "data/linkage_candidates.csv"
+UNMATCHED_CSV = "data/linkage_unmatched.csv"
 
 MAX_EDIT_DISTANCE = 2          # cap for fuzzy match
 MIN_NAME_OVERLAP_TOKENS = 1    # at least one shared name token (>=2 chars)

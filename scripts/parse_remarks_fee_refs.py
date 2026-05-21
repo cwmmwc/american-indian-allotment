@@ -39,7 +39,7 @@ EXTRACTION_FILES = [
     "annotation_extractions_v3.json",   # v3 (100)
 ]
 
-OUT_CSV = "remarks_fee_refs.csv"
+OUT_CSV = "data/remarks_fee_refs.csv"
 
 # Regex patterns for fee-patent references in remarks text.
 # Order matters: try more specific patterns first. When a remarks string
@@ -248,7 +248,7 @@ def run_test():
             print(f"  {acc:14s}  {name}  remarks={rem!r}")
 
     # Write test results to CSV for inspection
-    with open("remarks_test_results.csv", "w", newline="") as f:
+    with open("data/remarks_test_results.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=[
             "accession", "full_name", "vision_fee_issued", "vision_patent_number",
             "remarks_fee_ref", "remarks_cancellation", "remarks_raw"
@@ -257,7 +257,7 @@ def run_test():
         for row in rows_out:
             w.writerow(row)
     print()
-    print("Per-row test results: remarks_test_results.csv")
+    print("Per-row test results: data/remarks_test_results.csv")
 
     cur.close()
     conn.close()
