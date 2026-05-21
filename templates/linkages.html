@@ -5,17 +5,108 @@
 <div class="page-header">
     <h1>Trust → Fee Linkages</h1>
     <p class="lead">
-        Trust-to-fee patent conversions recovered from BLM patent records by
-        two independent passes: <strong>remarks-regex</strong> (cross-references
-        like <code>SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT</code> parsed
-        from the patent remarks) and <strong>parcel-matching</strong> (same
-        PLSS parcel + same allottee name family, used when the remarks are
-        absent or contain a transcription typo). Both layers live in
-        <code>trust_fee_linkages_recovered</code> with a <code>source</code>
-        column distinguishing them. Distinct from the older
-        <code>trust_fee_linkages</code> table built by allotment-number matching.
+        Pairings between the two patents that documented a single allotment's
+        passage from federal trust to private fee ownership — the legal
+        mechanism through which the great majority of allotment land left
+        Indian hands.
     </p>
 </div>
+
+<div class="card mb-4 about-block">
+    <div class="card-body">
+        <h2 class="h5">What these linkages show</h2>
+        <p>
+            Under the General Allotment Act of 1887 (the Dawes Act) and its
+            successors, reservation land was divided into parcels and assigned
+            to individual Indian allottees. Each allotment was first issued as
+            a <strong>trust patent</strong>: the federal government held legal
+            title for an initial period of twenty-five years (often
+            administratively extended), during which the land could not be
+            sold, mortgaged, taxed, or otherwise alienated. When the trust
+            period ended — by expiration, by application, or, after 1917,
+            often by the BIA's unilateral decision under the "forced fee"
+            policy — the trust patent was replaced by a <strong>fee
+            patent</strong>. With the fee patent the allottee acquired full
+            legal title; the land also became taxable and salable. Most
+            allotments were lost to tax foreclosure, sale, or fraud within a
+            few years of fee conversion.
+        </p>
+        <p>
+            In the BLM catalog the trust patent and the fee patent appear as
+            <em>two separate records</em>, identical in their land
+            description but issued years (often decades) apart under different
+            authorities. <strong>Each linkage on this page pairs the trust
+            patent for an allotment with the fee patent that succeeded it.</strong>
+            With the pairing, every allotment becomes a story you can trace:
+            who received it, when it was placed in trust, how long it remained
+            so, and when (and under what authority) it was converted out. The
+            median gap from trust to fee across the recovered corpus is
+            <strong>{% if totals.median_gap_years is not none %}{{ totals.median_gap_years|round(0, 'floor')|int }} years{% else %}—{% endif %}</strong>
+            — long enough that the patentee's surname has often changed
+            (marriage, remarriage), which is itself a useful corroboration signal.
+        </p>
+        <p class="mb-0">
+            Without these linkages the BLM patent catalog reads as two
+            disconnected piles of records. With them, the catalog becomes a
+            longitudinal source for land-dispossession research — countable,
+            mappable, and queryable by tribe, agency, year, or PLSS parcel.
+            This page is distinct from, and supplements, the older
+            <code>trust_fee_linkages</code> table that was built by matching
+            allotment numbers.
+        </p>
+    </div>
+</div>
+
+<details class="mb-4">
+    <summary class="h6">How these linkages were recovered (technical)</summary>
+    <div class="border rounded p-3 mt-2 small">
+        <p>
+            The catalog itself does not store the trust→fee pairing as a
+            structured field. We recovered it from two independent passes:
+        </p>
+        <ol>
+            <li>
+                <strong>Remarks parsing (<code>remarks_regex_v2</code>).</strong>
+                When BLM transcribed allotment patents into the modern catalog,
+                staff often typed pointers into the remarks field like
+                <code>SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT</code> on
+                trust patents whose conversion had been recorded. A regex pass
+                extracts every accession-shaped token from those clauses (the
+                v2 regex captures sibling references in <code>NR X AND Y FOR
+                FEE PATENT</code> patterns that an earlier version dropped on
+                the floor), and a validator confirms each extracted accession
+                against the patent catalog by exact match, normalized match
+                (stripping leading zeros / formatting variation), or short
+                edit-distance fuzzy match (capped at distance 2 — typically
+                single-digit transcription typos).
+            </li>
+            <li>
+                <strong>Parcel + name matching (<code>parcel_match_v1</code>).</strong>
+                Some trust patents have a typo in the remarks reference; others
+                have no remarks at all. For these we match trusts to fees on
+                shared PLSS coordinates (state + county + township + range +
+                section + aliquot subdivision) plus at least one shared
+                allottee name token — the second condition is what catches
+                Lizzie Dowd's 1891 trust patent linking to a 1906 fee patent
+                issued to "Lizzie D. Gilman; Lizzie Dowd" (marriage between
+                trust and fee).
+            </li>
+        </ol>
+        <p>
+            Both layers write to the same <code>trust_fee_linkages_recovered</code>
+            table with a <code>source</code> column distinguishing them, and a
+            <code>UNIQUE (trust_accession, fee_accession)</code> constraint that
+            de-duplicates any pair both methods discover. A
+            <code>CHECK (trust_accession &lt;&gt; fee_accession)</code> constraint
+            prevents self-references at the database level.
+        </p>
+        <p class="mb-0">
+            See the <a href="{{ url_for('about_project') }}">project notes</a>
+            and the README for the bug history that produced the v2 regex and
+            the parcel layer.
+        </p>
+    </div>
+</details>
 
 <div class="row mb-4">
     <div class="col-md-3">
