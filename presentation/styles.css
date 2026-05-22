@@ -1,0 +1,254 @@
+/* Custom presentation styling — leans toward an academic publication look. */
+
+.reveal {
+    font-family: 'Iowan Old Style', 'Palatino', 'Palatino Linotype', Georgia, serif;
+    color: #1a1a1a;
+    font-size: 26px;
+}
+
+/* Per-slide content scrolls if it still overflows after layout. */
+.reveal .slides > section {
+    max-height: 100vh;
+    overflow-y: auto;
+}
+
+.reveal .slides {
+    text-align: left;
+}
+
+.reveal h1, .reveal h2, .reveal h3 {
+    font-family: 'Iowan Old Style', 'Palatino', 'Palatino Linotype', Georgia, serif;
+    color: #1a1a1a;
+    font-weight: normal;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.reveal h1 { font-size: 1.8em; line-height: 1.15; margin-bottom: 0.4em; }
+.reveal h2 { font-size: 1.3em; line-height: 1.2;  margin-bottom: 0.4em; }
+.reveal h3 { font-size: 1.0em; line-height: 1.3;  margin-bottom: 0.4em; }
+
+.reveal .slide-number {
+    font-family: 'Iowan Old Style', Georgia, serif;
+    font-size: 14px;
+    color: #888;
+}
+
+/* Section dividers — small caps eyebrow */
+.reveal .eyebrow {
+    font-variant: small-caps;
+    letter-spacing: 0.08em;
+    color: #888;
+    font-size: 0.55em;
+    margin-bottom: 0.5em;
+}
+
+/* Body copy */
+.reveal p, .reveal li {
+    line-height: 1.45;
+    font-size: 0.9em;
+}
+
+.reveal .lede {
+    font-size: 1.05em;
+    line-height: 1.4;
+    color: #1a1a1a;
+}
+
+/* Number callouts */
+.reveal .big-number {
+    font-size: 2.6em;
+    font-weight: normal;
+    line-height: 1.0;
+    color: #2a2a2a;
+    font-family: 'Iowan Old Style', Georgia, serif;
+    font-variant-numeric: oldstyle-nums;
+}
+
+.reveal .big-number-label {
+    font-size: 0.55em;
+    color: #555;
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+    margin-top: 0.2em;
+}
+
+/* Pull-quote / aside */
+.reveal blockquote {
+    font-style: italic;
+    border-left: 3px solid #999;
+    margin: 0.8em 0;
+    padding-left: 0.8em;
+    color: #333;
+    box-shadow: none;
+    background: none;
+    width: auto;
+}
+
+/* Tables */
+.reveal table {
+    font-size: 0.7em;
+    margin: 0.4em 0;
+    border-collapse: collapse;
+}
+.reveal table th {
+    font-weight: normal;
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    color: #555;
+    border-bottom: 1px solid #999;
+    padding: 4px 12px 4px 0;
+    text-align: left;
+}
+.reveal table td {
+    padding: 3px 12px 3px 0;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+/* Inline code (for letter numbers, file references) */
+.reveal code {
+    font-family: 'Iowan Old Style', Georgia, serif;
+    font-variant-numeric: oldstyle-nums;
+    background: #f3eedf;
+    padding: 0 4px;
+    border-radius: 2px;
+    font-size: 0.95em;
+}
+
+/* Image captions */
+.reveal figure { margin: 0; }
+.reveal figure img {
+    max-height: 70vh;
+    width: auto;
+    margin: 0 auto;
+    display: block;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.25);
+    border: 1px solid #d0d0d0;
+}
+.reveal figcaption {
+    font-size: 0.55em;
+    font-style: italic;
+    color: #555;
+    margin-top: 0.4em;
+    text-align: center;
+}
+
+/* Side-by-side document layout */
+.reveal .docs-two-up {
+    display: flex;
+    gap: 1em;
+    align-items: flex-start;
+}
+.reveal .docs-two-up figure {
+    flex: 1;
+}
+
+.reveal .docs-three-up {
+    display: flex;
+    gap: 1em;
+    align-items: flex-start;
+}
+.reveal .docs-three-up figure {
+    flex: 1;
+}
+
+/* Two-column body layout */
+.reveal .cols-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2em;
+}
+
+.reveal .cols-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5em;
+}
+
+/* Stat grid */
+.reveal .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5em;
+    margin: 0.5em 0;
+}
+
+.reveal .stat-grid .stat {
+    text-align: center;
+}
+
+/* Image-placeholder boxes (so the deck reads even before screenshots are dropped in) */
+.reveal .placeholder {
+    background: #f6f3ea;
+    border: 1px dashed #b59f56;
+    color: #7a672e;
+    padding: 1.5em 1em;
+    text-align: center;
+    font-size: 0.6em;
+    font-style: italic;
+    border-radius: 4px;
+}
+
+/* Section divider slides */
+.reveal section.divider {
+    text-align: center;
+}
+.reveal section.divider .part-label {
+    font-variant: small-caps;
+    letter-spacing: 0.1em;
+    color: #b59f56;
+    font-size: 0.8em;
+    margin-bottom: 0.5em;
+}
+.reveal section.divider h1 {
+    font-size: 2.2em;
+    margin-bottom: 0.5em;
+}
+
+/* No dropdown bullet points; classic dashes */
+.reveal ul {
+    list-style: none;
+    padding-left: 0;
+}
+.reveal ul li {
+    padding-left: 1.2em;
+    text-indent: -1.2em;
+    margin-bottom: 0.4em;
+}
+.reveal ul li::before {
+    content: "— ";
+    color: #888;
+}
+
+/* Strong emphasis */
+.reveal strong { font-weight: 600; }
+
+/* Speaker notes (visible in presenter mode) */
+.reveal aside.notes { display: none; }
+
+/* Title slide */
+.reveal .title-slide {
+    text-align: left;
+}
+.reveal .title-slide h1 {
+    font-size: 2.2em;
+    line-height: 1.1;
+    margin-bottom: 0;
+}
+.reveal .title-slide .subtitle {
+    font-size: 1.1em;
+    color: #555;
+    font-style: italic;
+    margin: 0.4em 0 1.5em 0;
+}
+.reveal .title-slide .byline {
+    color: #333;
+    font-size: 0.85em;
+    margin-bottom: 0.2em;
+}
+.reveal .title-slide .affiliation {
+    color: #555;
+    font-size: 0.75em;
+    font-style: italic;
+}

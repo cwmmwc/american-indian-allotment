@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>How AI Reads Government Forms — A Working Example</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/white.min.css" id="theme">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="reveal">
+<div class="slides">
+
+<!-- ============================== 1. TITLE ============================== -->
+<section class="title-slide">
+    <div class="eyebrow">A short walkthrough for the curious</div>
+    <h1>How AI Reads Two Hundred Thousand<br>Government Forms</h1>
+    <p class="subtitle">A real research workflow, in eleven slides — written for a friend who's wondering whether any of this could be useful in their own work.</p>
+    <p class="byline"><strong>Christian W. McMillen</strong></p>
+    <p class="affiliation">University of Virginia · land-sales.iath.virginia.edu</p>
+</section>
+
+
+<!-- ============================== 2. THE RESEARCH ============================== -->
+<section>
+    <div class="eyebrow">What I'm actually doing</div>
+    <h2>The research</h2>
+    <p class="lede">
+        I research how individual Indians lost their allotment lands across
+        the twentieth century. The federal policy that drove the loss is
+        known as the allotment era. It ran from the Dawes Act in 1887 to
+        the Indian Reorganization Act in 1934, and it was designed to break
+        apart shared tribal land bases by handing individual parcels to
+        individual people who could then, and almost always did, lose them.
+        The losses set in motion by that policy continued for decades after
+        the policy itself ended, which is why my research extends across
+        the whole century.
+    </p>
+    <p>
+        The federal government issued roughly <strong>285,000 patents</strong>
+        for those allotments. A patent is a deed: the document conveying the
+        land. Every patent was first issued as a "trust patent," with the
+        federal government holding legal title for 25 years; during that
+        period the land could not be sold, mortgaged, or taxed. When the
+        trust period ended, the trust patent was replaced by a "fee patent,"
+        which gave the allottee full legal title but also made the land
+        taxable and salable. Most allotments were lost within a few years
+        of fee conversion.
+    </p>
+</section>
+
+
+<!-- ============================== 3. THE DATABASE ============================== -->
+<section>
+    <div class="eyebrow">Where the data lives</div>
+    <h2>The database</h2>
+    <p>
+        Everything I do in this project sits on top of a PostgreSQL database
+        I have built up over several years. PostgreSQL is a standard
+        open-source database system, the same kind a bank or a research
+        library uses to keep structured records.
+    </p>
+    <p>What I have loaded into it:</p>
+    <ul>
+        <li><strong>285,000 BLM allotment patents</strong>, scraped from the General Land Office records catalog</li>
+        <li><strong>35,000 Federal Register allotment claims</strong> from two 1983 publications, of which about 10,000 are forced-fee and adjacent categories</li>
+        <li><strong>400,000 PLSS land descriptions</strong> linking patents to their physical parcels</li>
+        <li>Lookup tables for tribes and agencies</li>
+    </ul>
+    <p>
+        The basic structured data is in place. The AI work in the rest of
+        this deck is about reading the information that was never captured
+        in the structured records, only on the scanned patent images themselves.
+    </p>
+</section>
+
+
+<!-- ============================== 3. WHAT A PATENT LOOKS LIKE ============================== -->
+<section>
+    <div class="eyebrow">A real document</div>
+    <h2>What a patent looks like</h2>
+    <div class="cols-2">
+        <div>
+            <figure>
+                <img src="img/full_patent_bridget_silk.png" alt="Full scanned page of Bridget Silk's 1910 trust patent">
+                <figcaption>
+                    Patent <code>100449</code> · Bridget Silk · Standing Rock Sioux · January 6, 1910 ·
+                    <a href="https://glorecords.blm.gov/details/patent/default.aspx?accession=100449&docClass=SER" target="_blank">original at BLM</a>
+                </figcaption>
+            </figure>
+        </div>
+        <div>
+            <p>One printed page with annotations typed or stamped on top. The data points the patent records:</p>
+            <ul>
+                <li><strong>Name.</strong> The allottee.</li>
+                <li><strong>Date.</strong> Signed by the President; here, Taft.</li>
+                <li><strong>Legal description.</strong> Township, Range, Section, and the aliquot subdivision.</li>
+                <li><strong>Authority.</strong> Trust, Fee, Allotment, and so on.</li>
+            </ul>
+            <p>All four data points are already in my database. The numbers typed in the upper left are not.</p>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================== 4. ANNOTATION 1: CCF FILE REF ============================== -->
+<section>
+    <div class="eyebrow">What's missing — region 1</div>
+    <h2>The top-left form block</h2>
+    <div class="cols-2">
+        <div>
+            <figure>
+                <img src="img/topleft_ccf_reference.png" alt="Top-left of Bridget Silk's patent showing three stamped reference numbers">
+                <figcaption>
+                    Top-left of patent <code>100449</code>. Three stamped references:
+                    <code>87941-09</code>, <code>91014-09 I.O.</code>, and <code>3569</code>.
+                </figcaption>
+            </figure>
+        </div>
+        <div>
+            <p>Every patent processed by the BIA after 1907 has a small block of numbers typed into the upper-left corner. The numbers take the form <code>NNNNN-YY</code>, and one of them is sometimes labeled "I.O." for Indian Office.</p>
+            <p>Each number points to a file in the BIA's <strong>Central Classified Files</strong>, the correspondence archive at the National Archives that ran from 1907 to 1975. Following one of these references leads to a folder of letters, memos, and administrative decisions about that specific allotment.</p>
+            <p>These reference numbers were never captured in the structured BLM records. They exist only on the PDF scan.</p>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================== 6. THE FEE PATENT STAMP ============================== -->
+<section>
+    <div class="eyebrow">What's missing — region 2</div>
+    <h2>The middle-page fee patent stamp</h2>
+    <div class="cols-2">
+        <div>
+            <figure>
+                <img src="img/middle_fee_stamp.png" alt="Fee patent issued stamp on a 1908 trust patent">
+                <figcaption>
+                    Middle of patent <code>5515</code> · Good House Woman ·
+                    Crow Creek Sioux · trust patent 1908, fee patent 1960.
+                </figcaption>
+            </figure>
+        </div>
+        <div>
+            <p>
+                Many fee patents are separate records in my database, with
+                their own patent number, date, and allottee record.
+            </p>
+            <p>
+                For other conversions, though, the BIA simply stamped the
+                original trust patent with the new fee number and date. The
+                stamp shown here records that Good House Woman's 1908 trust
+                patent was converted to a fee patent on February 14, 1960. A
+                fifty-two-year arc, recorded in five handwritten lines on the
+                original document.
+            </p>
+            <p>
+                For trust patents like this one, the stamp is the only
+                record of the conversion. It is not in my database. The
+                vision model's job is to find and read these stamps.
+            </p>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================== 6. THE SCALE PROBLEM ============================== -->
+<section>
+    <div class="eyebrow">Why I can't just read them</div>
+    <h2>The scale problem</h2>
+    <p class="lede">For some patents BLM did capture the file reference in a structured column. For tens of thousands of others, they didn't — and the only way to recover the information is to read the PDF.</p>
+    <div class="stat-grid">
+        <div class="stat">
+            <div class="big-number">285K</div>
+            <div class="big-number-label">Patents in the catalog</div>
+        </div>
+        <div class="stat">
+            <div class="big-number">~80K</div>
+            <div class="big-number-label">Missing annotation data</div>
+        </div>
+        <div class="stat">
+            <div class="big-number">30 sec</div>
+            <div class="big-number-label">To read one by hand</div>
+        </div>
+        <div class="stat">
+            <div class="big-number">666 hr</div>
+            <div class="big-number-label">To read them all</div>
+        </div>
+    </div>
+    <p>Not happening. Not for one human, not for a research team. And honestly, even if I had the time, I don't <em>want</em> to spend the next four months reading PDF forms.</p>
+</section>
+
+
+<!-- ============================== 7. HOW THE AI READS A FORM ============================== -->
+<section>
+    <div class="eyebrow">The new tool in the kit</div>
+    <h2>How the AI reads a form</h2>
+    <p>
+        Modern AI models can be shown an image and asked questions about it —
+        the way you'd brief a research assistant. I give the model the
+        scanned PDF and a written prompt:
+    </p>
+    <blockquote>
+        "Look at the top-left of this form. What reference numbers do you see?
+        Now look at the middle of the page. Is there a stamp that says
+        <em>Fee Patent Issued</em>? If yes, what number and date does it record?"
+    </blockquote>
+    <p>The model returns structured data — something like:</p>
+    <pre style="font-size: 0.75em; background: #f3eedf; padding: 0.5em; border-radius: 3px; font-family: 'SF Mono', Menlo, monospace; line-height: 1.4;">{
+  "ccf_reference":     "87941-09",
+  "ccf_label":         "I.O.",
+  "fee_patent_issued": true,
+  "fee_patent_number": "1210268",
+  "fee_patent_date":   "1960-02-14"
+}</pre>
+    <p style="font-size: 0.9em;">
+        About a penny per patent. Two seconds. Same task takes me thirty
+        seconds and a steady supply of attention.
+    </p>
+</section>
+
+
+<!-- ============================== 8a. THE MODEL ISN'T OFF THE SHELF ============================== -->
+<section>
+    <div class="eyebrow">A misconception worth correcting</div>
+    <h2>The model is general. The pipeline isn't.</h2>
+    <p>
+        The AI model itself is general-purpose. Anthropic trained it on
+        billions of images and texts long before I existed as a user. That
+        training was not done for me, and it was not done with Indian
+        Allotment patents in mind.
+    </p>
+    <p>
+        General training does not make the model automatically reliable for
+        a specific task like reading a 1909 patent's upper-left CCF stamp.
+        The reliability has to be worked out, and I am the one who works it
+        out.
+    </p>
+    <p>
+        I am not retraining the model itself. I cannot do that, and I do
+        not need to. What I am doing is iteratively refining the
+        <strong>prompt</strong>, meaning the written instructions I send
+        along with the PDF on every API call.
+    </p>
+</section>
+
+
+<!-- ============================== 8b. FOUR ROUNDS OF PROMPT REFINEMENT ============================== -->
+<section>
+    <div class="eyebrow">Four rounds of prompt refinement</div>
+    <h2>Why we are on v4</h2>
+    <p>
+        Each version of the prompt was tested on a 25-PDF sample whose
+        correct answers I had already worked out by hand. Then I compared
+        what the model said to what I knew was right and looked for the
+        failures. Then I rewrote the prompt.
+    </p>
+    <table style="margin-top: 0.4em;">
+        <thead><tr><th>Round</th><th>Change</th><th>Accuracy</th></tr></thead>
+        <tbody>
+            <tr><td><code>v1</code></td><td>First pass. One prompt, one field.</td><td>~70%</td></tr>
+            <tr><td><code>v2</code></td><td>Described the form layout explicitly.</td><td>~85%</td></tr>
+            <tr><td><code>v3</code></td><td>Required an "unreadable" answer when a field was illegible, instead of letting the model guess.</td><td>~92%</td></tr>
+            <tr><td><code>v4</code></td><td>Split the top-left read and the middle-page read into separate API calls. One specialty per call.</td><td>&gt;97%</td></tr>
+        </tbody>
+    </table>
+    <p style="margin-top: 0.5em;">
+        The skill is not the model. The skill is knowing how to ask.
+    </p>
+</section>
+
+
+<!-- ============================== 10a. WHAT AN API IS ============================== -->
+<section>
+    <div class="eyebrow">How the bulk read actually runs</div>
+    <h2>An API is a contract</h2>
+    <p>
+        The PDFs do not live on my laptop. Neither does the AI. The PDFs
+        sit on BLM's catalog server. The AI sits on Anthropic's servers.
+        My code on my laptop talks to each of them over the internet.
+    </p>
+    <p>
+        The mechanism for that conversation is called an <strong>API</strong>,
+        short for Application Programming Interface. It is just a contract
+        for how one program asks another for something. The same idea sits
+        behind your phone's weather app talking to a weather service, or a
+        credit card terminal talking to your bank.
+    </p>
+    <p>
+        This project uses two different APIs in sequence, one from BLM and
+        one from Anthropic. They do opposite things.
+    </p>
+</section>
+
+
+<!-- ============================== 10b. TWO API CALLS PER PATENT ============================== -->
+<section>
+    <div class="eyebrow">The two API calls per patent</div>
+    <h2>BLM sends the PDF; Anthropic reads it</h2>
+    <p>
+        In step one, my downloader script sends a short message to BLM that
+        says, in effect, "give me patent <code>100449</code>." BLM looks up
+        the record, generates the patent image on the fly, and sends back
+        the PDF, about 150 KB.
+    </p>
+    <p>
+        In step two, my extractor script ships that PDF over to Anthropic
+        along with the written instructions from the previous slide. The AI
+        reads the image and sends back the extracted fields in the
+        labeled-list format we saw, only a few hundred bytes of text. That
+        answer goes straight into my database.
+    </p>
+    <div class="stat-grid">
+        <div class="stat">
+            <div class="big-number">8,818</div>
+            <div class="big-number-label">PDFs in this batch</div>
+        </div>
+        <div class="stat">
+            <div class="big-number">~2,000</div>
+            <div class="big-number-label">Downloaded so far</div>
+        </div>
+        <div class="stat">
+            <div class="big-number">~600/hr</div>
+            <div class="big-number-label">Polite rate</div>
+        </div>
+        <div class="stat">
+            <div class="big-number">~11 hr</div>
+            <div class="big-number-label">Remaining</div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================== 9. A REAL RESULT ============================== -->
+<section>
+    <div class="eyebrow">One concrete payoff</div>
+    <h2>Lizzie Dowd's allotment, recovered</h2>
+    <p>
+        Before this work, Lizzie Dowd's allotment lived in my database as
+        <strong>three disconnected records</strong>:
+    </p>
+    <table>
+        <thead><tr><th>Accession</th><th>Year</th><th>Name as recorded</th><th>Authority</th></tr></thead>
+        <tbody>
+            <tr><td><code>IA-0505-452</code></td><td>1891</td><td>Lizzie Dowd</td><td>Indian Allotment — General (trust)</td></tr>
+            <tr><td><code>IA-0505-453</code></td><td>1891</td><td>Lizzie Dowd</td><td>Indian Allotment — General (trust)</td></tr>
+            <tr><td><code>MV-0580-454</code></td><td>1906</td><td>Lizzie D. Gilman; Lizzie Dowd</td><td>Indian Fee Patent</td></tr>
+        </tbody>
+    </table>
+    <p>
+        Same parcel, same Section 31 in Yamhill County, Oregon. Two trust
+        patents issued in 1891 and a fee patent issued fifteen years later.
+        The surname change tells most of the story: Lizzie Dowd married
+        someone named Gilman between the trust and fee dates. The fee
+        patent was the moment her land became taxable, salable, and, by the
+        statistics, very likely to be lost.
+    </p>
+    <p>
+        After this work, those three rows are linked together into one
+        allotment with a fifteen-year arc. Multiply that linkage by tens of
+        thousands, and the whole catalog stops being a pile of records and
+        becomes a readable history.
+    </p>
+</section>
+
+
+<!-- ============================== 10. THE BIGGER POINT ============================== -->
+<section>
+    <div class="eyebrow">The honest takeaway</div>
+    <h2>The AI didn't replace me. It changed what I can ask.</h2>
+    <p class="lede">
+        I am still a historian. The interesting work is still the work of
+        framing the question, knowing the archive, reading documents
+        carefully, and arguing about what they mean.
+    </p>
+    <ul>
+        <li>Reading 285,000 documents was impossible. Now it is a few days of compute.</li>
+        <li>I still verify samples by hand. That usually means a few dozen patents per batch, and often more if the model's outputs surprise me.</li>
+        <li>The work shifts from "find the data" to "design the question and audit the answer."</li>
+        <li>The historian's craft is the same. The constraints on what is worth attempting have changed.</li>
+    </ul>
+    <p>The biggest difference is that I no longer have to choose what to read on the basis of how much time the reading itself will take.</p>
+</section>
+
+
+<!-- ============================== 11. HOW TO START ============================== -->
+<section>
+    <div class="eyebrow">If any of this sounds useful</div>
+    <h2>How to start</h2>
+    <ol>
+        <li>Pick something you would never have time to read manually: a pile of letters, a stack of forms, a folder of court records, photographs of artifacts.</li>
+        <li>Get ten of them into a format the AI can see, which usually means PDFs or images.</li>
+        <li>Write a prompt that describes what to look for, the way you would brief a research assistant. Be specific about the format of the answer you want.</li>
+        <li>Run the prompt on the ten. Look at what the model got right and what it missed. Adjust the prompt and run again.</li>
+        <li>When it is reliable on ten, run it on a hundred. Then a thousand. Then everything.</li>
+    </ol>
+    <p style="margin-top: 1em; font-size: 0.85em; color: #555;">
+        The whole project, including code and data:
+        <a href="https://github.com/cwmmwc/american-indian-allotment" target="_blank">github.com/cwmmwc/american-indian-allotment</a>
+    </p>
+</section>
+
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.min.js"></script>
+<script>
+    Reveal.initialize({
+        hash: true,
+        slideNumber: true,
+        transition: 'none',
+        controls: true,
+        progress: true,
+    });
+</script>
+
+</body>
+</html>
