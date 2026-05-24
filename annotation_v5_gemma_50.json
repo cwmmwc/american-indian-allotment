@@ -1,0 +1,1680 @@
+[
+  {
+    "accession_number": "87408",
+    "full_name": "AH-TO-MAN-KA; CAMPBELL LEFLORE",
+    "signature_date": "1909-11-04",
+    "state": "MS",
+    "county": "",
+    "authority": "Choctaw Scrip",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "401-tyr",
+            "year_suffix": "tyr",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          }
+        ],
+        "allotment_number": "87408",
+        "raw_block_text": "(RECORD OF PATENTS.)\n401-tyr.\n87408"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 189
+    }
+  },
+  {
+    "accession_number": "1089115",
+    "full_name": "",
+    "signature_date": "1937-03-24",
+    "state": "CA",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1676431",
+            "year_suffix": "22",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          },
+          {
+            "letter_number": "87172",
+            "year_suffix": "25",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "1676431\n87172  I. O.\n25"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 246
+    }
+  },
+  {
+    "accession_number": "815041",
+    "full_name": "",
+    "signature_date": "1921-07-22",
+    "state": "AZ",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "97116",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "1038",
+        "raw_block_text": "97116-29\nI. O.\n1038"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 190
+    }
+  },
+  {
+    "accession_number": "297305",
+    "full_name": "",
+    "signature_date": "1912-10-21",
+    "state": "MS",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "29705",
+            "year_suffix": "08",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "711",
+        "raw_block_text": "I.O. 29705-08\n711"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 188
+    }
+  },
+  {
+    "accession_number": "842161",
+    "full_name": "ALPHONSO KUTCH",
+    "signature_date": "1922-01-10",
+    "state": "ID",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "4-1067",
+            "year_suffix": "R",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          }
+        ],
+        "allotment_number": "591",
+        "raw_block_text": "970352.\n591\n4-1067 R."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 169
+    }
+  },
+  {
+    "accession_number": "769633",
+    "full_name": "MARY LUCY THOMAS. TYPES; PETER TYPES; THOMAS TYPES",
+    "signature_date": "1920-08-26",
+    "state": "ID",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "73344",
+            "year_suffix": "08",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "98238",
+        "raw_block_text": "73344-08\nI.O.\n98238"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 192
+    }
+  },
+  {
+    "accession_number": "689403",
+    "full_name": "EMILY BEAR-EAGLE",
+    "signature_date": "1919-06-23",
+    "state": "SD",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "83491",
+            "year_suffix": "19",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          },
+          {
+            "letter_number": "627-19",
+            "year_suffix": "19",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "3999",
+        "raw_block_text": "83491\n627-19. I.O.\n3999"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 250
+    }
+  },
+  {
+    "accession_number": "1108928",
+    "full_name": "MOLLIE SOCTISH; PETER SOCTISH",
+    "signature_date": "1940-08-10",
+    "state": "CA",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1814081",
+            "year_suffix": "40",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "338",
+        "raw_block_text": "1814081\n403-40. I.O.\n338"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 179
+    }
+  },
+  {
+    "accession_number": "1038201",
+    "full_name": "",
+    "signature_date": "1930-06-12",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "1038201",
+        "raw_block_text": "Santa Fe 059292\n4-1070-R\n49611-29 I.O.\nAllotment No. 1038201"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 204
+    }
+  },
+  {
+    "accession_number": "1012353",
+    "full_name": "WOOS-SY-PI-TI; J A. MEADE",
+    "signature_date": "1928-02-14",
+    "state": "OK",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1267078",
+            "year_suffix": "26",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "382",
+        "raw_block_text": "1267078\n650-26. I. O.\n382"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 179
+    }
+  },
+  {
+    "accession_number": "985277",
+    "full_name": "CHARLEY PURDY",
+    "signature_date": "1926-09-14",
+    "state": "CA",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "242A",
+        "raw_block_text": "49611-29\nI.O.\n242A"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 190
+    }
+  },
+  {
+    "accession_number": "999292",
+    "full_name": "",
+    "signature_date": "1927-03-30",
+    "state": "NM",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "4-1070",
+            "year_suffix": "R",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          }
+        ],
+        "allotment_number": "22396",
+        "raw_block_text": "Santa Fe 022396\n4-1070-R"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 187
+    }
+  },
+  {
+    "accession_number": "1089053",
+    "full_name": "",
+    "signature_date": "1938-07-19",
+    "state": "AZ",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "167211",
+            "year_suffix": "11",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "473",
+        "raw_block_text": "167211 I. O.\n11\n473"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 189
+    }
+  },
+  {
+    "accession_number": "623425",
+    "full_name": "ISABEL PORTER",
+    "signature_date": "1918-03-30",
+    "state": "MN",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "68633",
+            "year_suffix": "08",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          },
+          {
+            "letter_number": "25376",
+            "year_suffix": "20",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "623425",
+        "raw_block_text": "68633-08\nI.O.\n25376-20\nI.O.\nRECORD OF PATENTS: Patent Number 623425"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 272
+    }
+  },
+  {
+    "accession_number": "689387",
+    "full_name": "JESSE WARD",
+    "signature_date": "1919-06-23",
+    "state": "SD",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "53429",
+            "year_suffix": "27-19",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "3983",
+        "raw_block_text": "53429\n627-19. I.O.\n3983"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 197
+    }
+  },
+  {
+    "accession_number": "1088244",
+    "full_name": "GERTRUDE BURR; WOMAN-IN-THE-WATER; GERTRUDE BAD-GUN",
+    "signature_date": "1937-01-29",
+    "state": "ND",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1668492",
+            "year_suffix": "00",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          },
+          {
+            "letter_number": "84251",
+            "year_suffix": "00",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          },
+          {
+            "letter_number": "1664",
+            "year_suffix": "07",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          },
+          {
+            "letter_number": "1074-A",
+            "year_suffix": null,
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "1668492\n84251\n1664 and 1074-A.\nI. O."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 353
+    }
+  },
+  {
+    "accession_number": "741788",
+    "full_name": "",
+    "signature_date": "1920-03-26",
+    "state": "AZ",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "41458",
+            "year_suffix": "18",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "4-1063-R\nPhoenix 041458"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": true
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 181
+    }
+  },
+  {
+    "accession_number": "366576",
+    "full_name": "OUCHEQUENESH",
+    "signature_date": "1913-11-22",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "41063",
+            "year_suffix": "R",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "Glasgow 07984.\n4-1063-R."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 179
+    }
+  },
+  {
+    "accession_number": "21216",
+    "full_name": "NAVA THOMAS",
+    "signature_date": "1908-10-12",
+    "state": "CA",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "4-1063",
+            "year_suffix": "07",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          }
+        ],
+        "allotment_number": "21216",
+        "raw_block_text": "4-1063-07\n21216"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 185
+    }
+  },
+  {
+    "accession_number": "512007",
+    "full_name": "JOSEPH FREDERICK. CHAMPAGNE",
+    "signature_date": "1916-02-05",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "626",
+        "raw_block_text": "Lewistown 014445.\n4-1063-R.\n49611-29 I.O.\nAllotment No. 626"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 214
+    }
+  },
+  {
+    "accession_number": "976646",
+    "full_name": "",
+    "signature_date": "1926-03-25",
+    "state": "NM",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "73344",
+            "year_suffix": "08",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "242",
+        "raw_block_text": "73344-08\nI.O.\n242\n1063-R"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 196
+    }
+  },
+  {
+    "accession_number": "480927",
+    "full_name": "ALBERT NICHOLAS",
+    "signature_date": "1915-06-30",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49097",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "48097",
+        "raw_block_text": "Bureau of Indian Affairs\n49097-29\nI.O.\nRECORD OF PATENTS: Patent Number 48097"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 206
+    }
+  },
+  {
+    "accession_number": "920481",
+    "full_name": "",
+    "signature_date": "1923-10-12",
+    "state": "AZ",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "242A",
+        "raw_block_text": "49611-29\nI.O.\n242A"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 173
+    }
+  },
+  {
+    "accession_number": "1068476",
+    "full_name": "AGNES HAWKINS; R F. STRAYER; C A. STRAYER",
+    "signature_date": "1934-03-07",
+    "state": "SD",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1534671",
+            "year_suffix": "89",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "4616",
+        "raw_block_text": "1534671\n895-29. I. O.\n4616-Pine Ridge Reservation."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 202
+    }
+  },
+  {
+    "accession_number": "1060548",
+    "full_name": "ROBERT HORSE; BROOKS HORSE",
+    "signature_date": "1933-01-03",
+    "state": "SD",
+    "county": "",
+    "authority": "Indian Reissue Trust",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1475749",
+            "year_suffix": "32",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          },
+          {
+            "letter_number": "49187",
+            "year_suffix": "32",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "5840-A",
+        "raw_block_text": "1475749\n49187-32. I. O.\n5840-A."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 259
+    }
+  },
+  {
+    "accession_number": "807109",
+    "full_name": "",
+    "signature_date": "1921-05-20",
+    "state": "KS",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "48",
+        "raw_block_text": "Wyandott Reserve\nCompetent Class A-\nNo. 48\n4-1042-R."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 138
+    }
+  },
+  {
+    "accession_number": "1075343",
+    "full_name": "",
+    "signature_date": "1935-04-15",
+    "state": "NM",
+    "county": "",
+    "authority": "Indian Homestead Trust",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "058934",
+            "year_suffix": "10",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 058934.\nI.O. 1040-R"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 190
+    }
+  },
+  {
+    "accession_number": "600781",
+    "full_name": "",
+    "signature_date": "1917-09-18",
+    "state": "UT",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "600781",
+            "year_suffix": "21",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "320",
+        "raw_block_text": "RECORD OF PATENTS. Patent Number 600781\n1"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 188
+    }
+  },
+  {
+    "accession_number": "404454",
+    "full_name": "ROSALIE BERCIER",
+    "signature_date": "1914-05-09",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "242",
+        "raw_block_text": "49611-29\nI.O.\n242"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 188
+    }
+  },
+  {
+    "accession_number": "211707",
+    "full_name": "DANIEL STONE",
+    "signature_date": "1911-06-26",
+    "state": "NE",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "01440-R",
+            "year_suffix": "11",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          }
+        ],
+        "allotment_number": "525",
+        "raw_block_text": "O'NEILL 03476.\n525\n4-1040-R.\n11"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 197
+    }
+  },
+  {
+    "accession_number": "1112961",
+    "full_name": "",
+    "signature_date": "1942-01-26",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1-1070",
+            "year_suffix": "R",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "24",
+        "raw_block_text": "1-1070-R\nI.O.\n24"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 169
+    }
+  },
+  {
+    "accession_number": "937950",
+    "full_name": "JAMES BUFFALO",
+    "signature_date": "1924-05-09",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "112763",
+            "year_suffix": "08",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "505",
+        "raw_block_text": "112763-08\nI.O.\n505"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 190
+    }
+  },
+  {
+    "accession_number": "1085539",
+    "full_name": "NIP-KER; LAWRENCE TOMAH; NOCK-TO-AH",
+    "signature_date": "1936-08-28",
+    "state": "OK",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "165108",
+            "year_suffix": "11",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "2295",
+        "raw_block_text": "165108\n15314\n2295\nI. O."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 179
+    }
+  },
+  {
+    "accession_number": "843353",
+    "full_name": "",
+    "signature_date": "1922-01-16",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "242",
+        "raw_block_text": "4-1063-R.\nSanta Fe 042524\n49611-29 I.O.\n242"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 207
+    }
+  },
+  {
+    "accession_number": "1028350",
+    "full_name": "",
+    "signature_date": "1929-06-10",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "102833",
+            "year_suffix": "50",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 058005\n102833-50\nI.O.\nRECORD OF PATENTS: Patent Number 1028330\n6-5139"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 201
+    }
+  },
+  {
+    "accession_number": "621681",
+    "full_name": "FRANCOIS LAMBERT",
+    "signature_date": "1918-03-11",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "1493",
+        "raw_block_text": "49611-29\nI.O.\n1493"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 190
+    }
+  },
+  {
+    "accession_number": "1039609",
+    "full_name": "",
+    "signature_date": "1930-08-08",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "242A",
+        "raw_block_text": "I.O. 49611-29\n242A"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 173
+    }
+  },
+  {
+    "accession_number": "404451",
+    "full_name": "MARY LATERREGRASS",
+    "signature_date": "1914-05-09",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "46",
+        "raw_block_text": "49611-29\nI.O.\nAllotment No. 46"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 192
+    }
+  },
+  {
+    "accession_number": "453912",
+    "full_name": "MARY ROSE. DECOUTEAU",
+    "signature_date": "1915-01-16",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "43912",
+            "year_suffix": "15",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "Glasgow 06040.\n4-1061-R.\n43912-15\nI.O."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 182
+    }
+  },
+  {
+    "accession_number": "551813",
+    "full_name": "EMMA LATRAIL. CLARK",
+    "signature_date": "1916-10-24",
+    "state": "ND",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "40631",
+            "year_suffix": "31",
+            "explicitly_labeled_io": true,
+            "label_text": "Indian Office"
+          }
+        ],
+        "allotment_number": "551813",
+        "raw_block_text": "40631-31\nIndian Office\nRECORD OF PATENTS. Patent Number 551813"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 200
+    }
+  },
+  {
+    "accession_number": "369097",
+    "full_name": "ENENEPANASKISET; SINKS-INTO-THE-EARTH",
+    "signature_date": "1913-12-02",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "242",
+        "raw_block_text": "49611-29\nI.O.\n242"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 171
+    }
+  },
+  {
+    "accession_number": "112231",
+    "full_name": "BRYNIL BRYNILSON",
+    "signature_date": "1910-02-17",
+    "state": "MN",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "406-tyr",
+            "year_suffix": null,
+            "explicitly_labeled_io": false,
+            "label_text": null
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "(RECORD OF PATENTS.)\n406-tyr.\n11231"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 182
+    }
+  },
+  {
+    "accession_number": "1086593",
+    "full_name": "MAREEP JASPER; MARY LUCKY; NANCY RUBE",
+    "signature_date": "1936-10-26",
+    "state": "CA",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1655006",
+            "year_suffix": "09",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "109",
+        "raw_block_text": "1655006\n78868\nI. O.\n109 and 118.\n4-1068-R"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 194
+    }
+  },
+  {
+    "accession_number": "1043186",
+    "full_name": "",
+    "signature_date": "1931-01-03",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "061971",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 061971\nI.O.\nRECORD OF PATENTS: Patent Number 1043186\n6-8179"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 190
+    }
+  },
+  {
+    "accession_number": "564959",
+    "full_name": "ALBERT POITRA; JOSEPH POITRA; ALPHONSIN POITRA",
+    "signature_date": "1917-02-01",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49611",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "242A",
+        "raw_block_text": "49611-29\nI.O.\n242A"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 190
+    }
+  },
+  {
+    "accession_number": "1042296",
+    "full_name": "JOSEPH SPEAKS-WALKING; JOSEPH RICHARD. SPEAKS-WALKING",
+    "signature_date": "1930-11-21",
+    "state": "ND",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1395595",
+            "year_suffix": "756",
+            "explicitly_labeled_io": false,
+            "label_text": ""
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "1395595\n756-Standing Rock Sioux.\n4-1079-R"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 192
+    }
+  },
+  {
+    "accession_number": "1053582",
+    "full_name": "JOHN LINDHE. MUNROE",
+    "signature_date": "1932-02-29",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Homestead Trust",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "1435081",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "3151",
+        "raw_block_text": "1435081\n3151\nI.O. 1435081-29"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 186
+    }
+  },
+  {
+    "accession_number": "953646",
+    "full_name": "",
+    "signature_date": "1925-02-18",
+    "state": "CA",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49699",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "14699",
+        "raw_block_text": "Sacramento 014699\n4-1063-R\n49699-29 I.O.\nAllotment No. 14699"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 217
+    }
+  },
+  {
+    "accession_number": "1106124",
+    "full_name": "",
+    "signature_date": "1939-12-06",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "110636",
+            "year_suffix": "26",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 011036\n4-1060-R\nI.O. 110636-26"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 203
+    }
+  },
+  {
+    "accession_number": "1111952",
+    "full_name": "JACOB JOHNSON; NELLIE BROWN",
+    "signature_date": "1941-09-11",
+    "state": "OK",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "248",
+        "raw_block_text": "1160344\n248"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": ""
+    },
+    "usage": {
+      "input": 1601,
+      "output": 124
+    }
+  }
+]

@@ -1,0 +1,1386 @@
+[
+  {
+    "accession_number": "87408",
+    "full_name": "AH-TO-MAN-KA; CAMPBELL LEFLORE",
+    "signature_date": "1909-11-04",
+    "state": "MS",
+    "county": "",
+    "authority": "Choctaw Scrip",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": ""
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "This appears to be a pre-1907 Choctaw Scrip patent (form 4-401-tyr., patent number 87408, dated November 4, 1909) for Campbell Leflore as assignee of Ah-to-man-ka. The top-left block contains only handwritten markings on the left margin (appears to be filing/binding notations) and no NNNNN-YY CCF references. There is no allotment number in the top-left block. The form code '4-401-tyr.' is a printed template code in the header, not a CCF reference. No fee patent issued stamp or cancellation overlay is present in the middle of the page. The reference 'Jackson 03977' near the top appears to be an agency or office filing reference, not a CCF NNNNN-YY format reference."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 263
+    }
+  },
+  {
+    "accession_number": "1089115",
+    "full_name": "",
+    "signature_date": "1937-03-24",
+    "state": "CA",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "87172",
+            "year_suffix": "",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "25",
+        "raw_block_text": "1676431\n87172  I. O.\n25"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "medium",
+      "notes": "The number '87172' appears without a year suffix dash format (no '-YY' component visible), and '1676431' is a 7-digit number without a year suffix \u2014 neither strictly matches the NNNNN-YY format. '87172' is labeled 'I. O.' but lacks a year suffix. '1676431' is a long serial and goes only in raw_block_text. The form code '4-1068-R' is a printed form code in the header, not a CCF reference. No middle-page fee patent or cancellation marks are present."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 243
+    }
+  },
+  {
+    "accession_number": "815041",
+    "full_name": "",
+    "signature_date": "1921-07-22",
+    "state": "AZ",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "1038",
+        "raw_block_text": "969266\n67183\n1038"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains two numbers (969266 and 67183) that are not in NNNNN-YY format \u2014 969266 is a 6-digit number with no year suffix dash, and 67183 is a 5-digit number with no year suffix dash \u2014 so neither qualifies as a CCF reference. The form code '4-1063-R' appears centered at the top of the printed template and is not a CCF reference. Allotment number 1038 is clearly printed. No fee patent stamp or cancellation overlay is present in the middle of the page."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 212
+    }
+  },
+  {
+    "accession_number": "297305",
+    "full_name": "",
+    "signature_date": "1912-10-21",
+    "state": "MS",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "CHOCTAW SCRIP."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "This is a Choctaw Scrip patent (pre-CCF era form), signed by President William H. Taft, dated October 21, 1912. The top-left carries only 'CHOCTAW SCRIP.' with no NNNNN-YY references and no allotment number. The form code '4-1043-R.' and '4-1044-R.' appear at the top center of pages 1 and 2 respectively \u2014 these are printed form codes, not CCF references. No fee patent issued mark or cancellation overlay is present in the middle of either page. The left margin contains handwritten notations (appearing to be case/file references like '4446641-2') but these are not in the top-left form-number block format. Patent number 297305 appears in the footer record line on both pages."
+    },
+    "usage": {
+      "input": 6493,
+      "output": 268
+    }
+  },
+  {
+    "accession_number": "842161",
+    "full_name": "ALPHONSO KUTCH",
+    "signature_date": "1922-01-10",
+    "state": "ID",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "591",
+        "raw_block_text": "970352.\n591"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The number '970352' in the top-left does not match NNNNN-YY format (no year suffix), so it is not captured as a CCF reference. The form code '4-1067 R.' appears in the top center header area and is not a CCF reference. No fee patent stamp or cancellation overlay is visible in the middle of the page."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 155
+    }
+  },
+  {
+    "accession_number": "769633",
+    "full_name": "MARY LUCY THOMAS. TYPES; PETER TYPES; THOMAS TYPES",
+    "signature_date": "1920-08-26",
+    "state": "ID",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "792",
+        "raw_block_text": "938338\n792\n4-1040-R."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The top-left block contains '938338' (7-digit number, not a NNNNN-YY CCF reference), '792' (allotment number), and '4-1040-R.' (printed form code). No NNNNN-YY references present. No fee patent stamp or cancellation overlay visible in the middle of the page. This is a fee simple patent (not a trust patent) issued August 26, 1920, signed by Woodrow Wilson, Patent Number 769633."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 196
+    }
+  },
+  {
+    "accession_number": "689403",
+    "full_name": "EMILY BEAR-EAGLE",
+    "signature_date": "1919-06-23",
+    "state": "SD",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "627",
+            "year_suffix": "19",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "3999",
+        "raw_block_text": "834919\n627-19. I.O.\n3999"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "834919 in the top-left appears to be a 6-digit number without a 2-digit year suffix in NNNNN-YY format; it is captured in raw_block_text only. 627-19 with I.O. label is the CCF reference. Form code 4-1063-R appears in the top center header and is not a CCF reference. No middle-page stamps or cancellation overlays are present."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 215
+    }
+  },
+  {
+    "accession_number": "1108928",
+    "full_name": "MOLLIE SOCTISH; PETER SOCTISH",
+    "signature_date": "1940-08-10",
+    "state": "CA",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "403",
+            "year_suffix": "40",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "338",
+        "raw_block_text": "1814081\n403-40. I.O.\n338"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "medium",
+      "notes": "The top-left block contains '1814081' (7-digit serial, not a CCF NNNNN-YY reference, so excluded from references[]), '403-40. I.O.' (captured as a reference with letter_number='403', year_suffix='40', labeled I.O.), and allotment number '338'. Note that '403' is only 3 digits, which is below the stated 4-6 digit minimum for CCF references; however it is clearly formatted as NNN-YY with an explicit I.O. label and is the only candidate reference. No fee patent issued stamp or cancellation overlay visible in the middle of the page."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 263
+    }
+  },
+  {
+    "accession_number": "1038201",
+    "full_name": "",
+    "signature_date": "1930-06-12",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 059292"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Santa Fe 059292' which appears to be a local agency reference, not a CCF NNNNN-YY format reference. The form code '4-1070-R' appears in the center header above the title and is a printed form code, not a CCF reference. No allotment number is visible in the top-left block. No fee patent issued stamp or cancellation overlay is present in the middle of the page. Patent dated June 12, 1930, signed by Herbert Hoover."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 191
+    }
+  },
+  {
+    "accession_number": "1012353",
+    "full_name": "WOOS-SY-PI-TI; J A. MEADE",
+    "signature_date": "1928-02-14",
+    "state": "OK",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "650",
+            "year_suffix": "28",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "382",
+        "raw_block_text": "1287078\n650-28. I. O.\n382"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The top-left block contains '1287078' (7-digit serial, not a NNNNN-YY reference), '650-28 I.O.' (a valid CCF reference with I.O. label), and allotment number '382'. No fee patent issued stamp or cancellation overlay visible in the middle of the page. The form code '4-1000-B.' appears in the center header and is not a CCF reference."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 214
+    }
+  },
+  {
+    "accession_number": "985277",
+    "full_name": "CHARLEY PURDY",
+    "signature_date": "1926-09-14",
+    "state": "CA",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Sacramento 016316"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "partial",
+      "confidence": "medium",
+      "notes": "Top-left block contains 'Sacramento 016316' which appears to be a local/agency serial number, not a CCF NNNNN-YY reference. No allotment number visible in the top-left block. The form code '4-1063-R' appears in the top-center header area and is a printed form code, not a CCF reference. A 'Fee Patent Issued' stamp/label is clearly visible in the middle of the page between the land description and the NOW KNOW YE paragraph, with handwritten fill-in (partially legible numbers). No cancellation overlay detected."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 205
+    }
+  },
+  {
+    "accession_number": "999292",
+    "full_name": "",
+    "signature_date": "1927-03-30",
+    "state": "NM",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 022396"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Santa Fe 022396' which appears to be a Santa Fe office reference number, not a NNNNN-YY CCF format reference. The form code '4-1070-R' is a printed form code in the center header, not a CCF reference. No allotment number is visible in the top-left block. No middle-page fee patent or cancellation marks are present."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 166
+    }
+  },
+  {
+    "accession_number": "1089053",
+    "full_name": "",
+    "signature_date": "1938-07-19",
+    "state": "AZ",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "11817",
+            "year_suffix": "",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "473",
+        "raw_block_text": "1672211\n11817  I. O.\n473"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "medium",
+      "notes": "The top-left block contains '1672211' (7-digit number, not a NNNNN-YY reference) and '11817 I. O.' \u2014 however, '11817' is only 5 digits but lacks a year suffix dash format (no '-YY' portion visible). It appears the reference may be split across two lines: '1672211' could be a long serial and '11817' a standalone number labeled I.O. without a clear year suffix. Since no dash+2-digit year suffix is discernible for 11817, it does not strictly conform to NNNNN-YY format; captured in raw_block_text. No fee patent issued stamp or cancellation overlay is present in the middle of the page."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 279
+    }
+  },
+  {
+    "accession_number": "623425",
+    "full_name": "ISABEL PORTER",
+    "signature_date": "1918-03-30",
+    "state": "MN",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "7",
+        "raw_block_text": "500380\n7."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "partial",
+      "confidence": "medium",
+      "notes": "Top-left block contains '500380' (7-digit serial, not a NNNNN-YY reference) and '7.' which appears to be the allotment number or a page/lot number. No NNNNN-YY CCF references found. Middle of page has a 'Fee Patent Issued' stamp with handwritten fill-in including dates (11/7/30 visible) and patent/letter numbers. The stamp is somewhat worn/faded but the 'Fee Patent Issued' wording is legible. The form code '4-1062-R.' appears in the center header and is not a CCF reference."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 217
+    }
+  },
+  {
+    "accession_number": "689387",
+    "full_name": "JESSE WARD",
+    "signature_date": "1919-06-23",
+    "state": "SD",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "627",
+            "year_suffix": "19",
+            "explicitly_labeled_io": true,
+            "label_text": "I.O."
+          }
+        ],
+        "allotment_number": "3983",
+        "raw_block_text": "834919\n627-19. I.O.\n3983"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "834919 appears in the top-left but is a 6-digit number without a year suffix in the NNNNN-YY format (no dash separating a 2-digit year), so it is not captured as a CCF reference. 627-19 with I.O. label is the CCF reference. Form code 4-1063-R appears in the center header area and is not a CCF reference. No middle-page stamps or cancellation overlays are present."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 223
+    }
+  },
+  {
+    "accession_number": "1088244",
+    "full_name": "GERTRUDE BURR; WOMAN-IN-THE-WATER; GERTRUDE BAD-GUN",
+    "signature_date": "1937-01-29",
+    "state": "ND",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "84251",
+            "year_suffix": "",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "1668492\n84251 I. O.\n1664 and 1074-A."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "medium",
+      "notes": "The top-left block contains '1668492' (7-digit number, not a NNNNN-YY reference), '84251 I. O.' which appears to be a 5-digit number with I.O. label but lacks a year suffix dash format \u2014 it may be an incomplete or atypical reference. '1664 and 1074-A.' are also present but do not match NNNNN-YY format. No allotment number is clearly identifiable in the top-left block. The form code '4-1068-R' appears in the top center header and is NOT a CCF reference. No fee patent stamp or cancellation overlay visible in the middle of the page. Patent signed by Franklin D. Roosevelt, dated January 29, 1937. Patent number 1988244 appears in the footer."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 307
+    }
+  },
+  {
+    "accession_number": "741788",
+    "full_name": "",
+    "signature_date": "1920-03-26",
+    "state": "AZ",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Phoenix 041858"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": true
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains only 'Phoenix 041858' \u2014 no NNNNN-YY CCF references and no allotment number visible. The form code '4-1063-R.' appears in the center header area (not the top-left block) and is not a CCF reference. A diagonal handwritten cancellation overlay reading 'Cancelled by Secretary of Interior, See [date/ref]' is clearly present across the middle of the page. No fee patent issued mark is present."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 181
+    }
+  },
+  {
+    "accession_number": "366576",
+    "full_name": "OUCHEQUENESH",
+    "signature_date": "1913-11-22",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Glasgow 07984."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left contains 'Glasgow 07984.' which appears to be a land office/district identifier, not a NNNNN-YY CCF reference. The form code '4-1063-R.' appears in the top center header area (not top-left block) and is a printed form code, not a CCF reference. No allotment number is visible in the top-left block. No fee patent issued stamp or cancellation overlay detected in the middle of the page. Patent Number 366576 in footer is this patent's own record ID."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 194
+    }
+  },
+  {
+    "accession_number": "21216",
+    "full_name": "NAVA THOMAS",
+    "signature_date": "1908-10-12",
+    "state": "CA",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "184",
+        "raw_block_text": "Susanville.\n184."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "partial",
+      "confidence": "medium",
+      "notes": "The top-left block shows 'Susanville.' and '184.' (allotment number). No NNNNN-YY CCF references are present in the top-left block. In the middle of the page, a 'Fee Patent Issued' stamp/label is clearly present with handwritten fill-in showing 'Letter No. 96-3-122-21' (partially legible) and 'Patent No. 792757' (partially legible). The form code '4-182a-tyr.' appears in the top header area and is not a CCF reference. The number '21216' in the top-right corner appears to be a document/record number, not a CCF reference."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 235
+    }
+  },
+  {
+    "accession_number": "512007",
+    "full_name": "JOSEPH FREDERICK. CHAMPAGNE",
+    "signature_date": "1916-02-05",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Lewistown 014445."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The top-left block contains only 'Lewistown 014445.' which does not match the NNNNN-YY CCF reference format, and no allotment number is visible in the top-left block. The form code '4-1063-B' appears centered at the top header and is not a CCF reference. A clear 'Fee Patent Issued' stamp is present in the middle of the page with 'Letter No.' and 'Patent No. 626265' filled in. No cancellation overlay is present."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 195
+    }
+  },
+  {
+    "accession_number": "976646",
+    "full_name": "",
+    "signature_date": "1926-03-25",
+    "state": "NM",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 011018"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Santa Fe 011018' which appears to be an agency/office reference number, not a NNNNN-YY CCF format reference. The center-top carries form code '4-1063-R.' which is a printed BLM form code, not a CCF reference. No allotment number is visible in the top-left block. At the bottom of the page, 'RECORD OF PATENTS: Patent Number 976646' and '1106118' appear to be this patent's own record identifiers. Also at the bottom is text reading 'See new patent No.' followed by a number and 'Supplemental Patent' \u2014 this is a footer notation about a supplemental patent, not a middle-page fee patent stamp. No Fee Patent Issued stamp and no cancellation overlay are present in the middle of the page."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 262
+    }
+  },
+  {
+    "accession_number": "480927",
+    "full_name": "ALBERT NICHOLAS",
+    "signature_date": "1915-06-30",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Havre 024650."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Havre 024650.' which appears to be an agency identifier and a file/allotment reference number but does not follow the NNNNN-YY CCF format. The form code '4-1063-R' appears in the top center header area (not the top-left block) and is a printed form code, not a CCF reference. No fee patent issued mark or cancellation overlay visible in the middle of the page. Patent dated June 30, 1915, signed by Woodrow Wilson. Patent number 480927."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 201
+    }
+  },
+  {
+    "accession_number": "920481",
+    "full_name": "",
+    "signature_date": "1923-10-12",
+    "state": "AZ",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Phoenix 055334\n4-1063-R"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The top-left area contains 'Phoenix 055334' (a 6-digit number without a year suffix dash format) and '4-1063-R' which is a printed form code, not a CCF reference. Neither qualifies as a NNNNN-YY reference. No allotment number is visible in the top-left block. No fee patent stamp or cancellation overlay is present in the middle of the page."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 175
+    }
+  },
+  {
+    "accession_number": "1068476",
+    "full_name": "AGNES HAWKINS; R F. STRAYER; C A. STRAYER",
+    "signature_date": "1934-03-07",
+    "state": "SD",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "895",
+            "year_suffix": "29",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "4616",
+        "raw_block_text": "1534671\n895-29. I. O.\n4616-Pine Ridge Reservation.\n4-1042-R."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The top-left block contains: '1534671' (7-digit serial, not a CCF reference), '895-29 I.O.' (CCF reference with I.O. label), and '4616-Pine Ridge Reservation' (allotment number 4616). The form code '4-1042-R.' is a printed BLM form code, not a CCF reference. No fee patent stamp or cancellation overlay is visible in the middle of the page."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 237
+    }
+  },
+  {
+    "accession_number": "1060548",
+    "full_name": "ROBERT HORSE; BROOKS HORSE",
+    "signature_date": "1933-01-03",
+    "state": "SD",
+    "county": "",
+    "authority": "Indian Reissue Trust",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "49187",
+            "year_suffix": "32",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "5840-A",
+        "raw_block_text": "1475749\n49187-32. I. O.\n5840-A."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The number 1475749 in the top-left is a 7-digit serial number, not a NNNNN-YY CCF reference, so it is captured only in raw_block_text. The allotment number appears as '5840-A.' The form code '4-1040-R' appears in the top center header and is not a CCF reference. No fee patent stamp or cancellation overlay is visible in the middle of the page."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 225
+    }
+  },
+  {
+    "accession_number": "807109",
+    "full_name": "",
+    "signature_date": "1921-05-20",
+    "state": "KS",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "48",
+        "raw_block_text": "Wyandott Reserve\nCompetent Class A.\nNo. 48\n4-1043-R."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The top-left block contains 'Wyandott Reserve / Competent Class A. / No. 48' and the form code '4-1043-R.' which is a printed BLM form code, not a CCF NNNNN-YY reference. No NNNNN-YY references present. Allotment number is 48. Page 2 shows form code '4-1044-R.' in the header \u2014 also a form code, not a CCF reference. No fee patent issued stamp or cancellation overlay found on either page. This is a fee simple grant (absolute and unconditional grant in fee simple) dated May 20, 1921, signed by President Warren G. Harding. Patent number 807109."
+    },
+    "usage": {
+      "input": 6493,
+      "output": 263
+    }
+  },
+  {
+    "accession_number": "1075343",
+    "full_name": "",
+    "signature_date": "1935-04-15",
+    "state": "NM",
+    "county": "",
+    "authority": "Indian Homestead Trust",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 058934."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The top-left block contains 'Santa Fe 058934.' which appears to be a Santa Fe land office reference number, not a NNNNN-YY CCF reference format. The form code '4-1040-R' is printed in the center header area and is not a CCF reference. No allotment number is visible in the top-left block. No fee patent issued stamp or cancellation overlay is present in the middle of the page. Patent dated April 15, 1935, signed by Franklin D. Roosevelt, for Frank Dailey, an Indian."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 199
+    }
+  },
+  {
+    "accession_number": "600781",
+    "full_name": "",
+    "signature_date": "1917-09-18",
+    "state": "UT",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "379",
+        "raw_block_text": "473578\n379"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The number 473578 in the top-left does not match NNNNN-YY format (no year suffix dash); it is a 6-digit serial without a 2-digit year suffix and is not a CCF reference. The form code '4-1043-R.' and '4-1044-R.' appear in the center header area and are printed form codes, not CCF references. No fee patent stamp or cancellation overlay visible on either page."
+    },
+    "usage": {
+      "input": 6493,
+      "output": 176
+    }
+  },
+  {
+    "accession_number": "404454",
+    "full_name": "ROSALIE BERCIER",
+    "signature_date": "1914-05-09",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Glasgow 0847."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains only 'Glasgow 0847.' which appears to be an agency/office identifier, not a CCF NNNNN-YY reference. No allotment number visible in the top-left block. The form code '4-1063-R.' appears at the top center and is not a CCF reference. A 'Fee Patent Issued' stamp/label is clearly visible in the middle of the page, above the NOW KNOW YE paragraph, with handwritten patent number (appears to read something like 1134679) and letter number 49466."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 200
+    }
+  },
+  {
+    "accession_number": "211707",
+    "full_name": "DANIEL STONE",
+    "signature_date": "1911-06-26",
+    "state": "NE",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "525",
+        "raw_block_text": "O'NEILL 03478.\n525."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'O'NEILL 03478' (an agency/name reference, not a NNNNN-YY CCF format) and allotment number 525. No NNNNN-YY formatted references present. A 'Fee Patent Issued' stamp is visible in the lower-left area of the page near the seal, with handwritten fill-in including letter number and patent number details. Form code '4-1040-R.' appears in the top center header and is not a CCF reference."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 197
+    }
+  },
+  {
+    "accession_number": "1112961",
+    "full_name": "",
+    "signature_date": "1942-01-26",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 011610"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Santa Fe 011610' which appears to be an agency file reference but does not conform to the NNNNN-YY format (no two-digit year suffix separated by dash). No allotment number is visible in the top-left block. The printed form code '4-1070-R' appears in the center header and is not a CCF reference. No fee patent issued stamp or cancellation overlay is present in the middle of the page."
+    },
+    "usage": {
+      "input": 4885,
+      "output": 177
+    }
+  },
+  {
+    "accession_number": "937950",
+    "full_name": "JAMES BUFFALO",
+    "signature_date": "1924-05-09",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "505",
+        "raw_block_text": "1122763\n505"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The number '1122763' in the top-left is a 7-digit serial, not a NNNNN-YY CCF reference, so it is not included in references[]. The form code '4-1072-R' appears centered at the top of the printed template and is not a CCF reference. No middle-page stamps or cancellation overlays are present. This appears to be a fee simple patent (directed by Secretary order) rather than a trust patent, but the extraction schema is applied as instructed."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 188
+    }
+  },
+  {
+    "accession_number": "1085539",
+    "full_name": "NIP-KER; LAWRENCE TOMAH; NOCK-TO-AH",
+    "signature_date": "1936-08-28",
+    "state": "OK",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "15314",
+            "year_suffix": "",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": "2295",
+        "raw_block_text": "1651058\n15314   I. O.\n2295"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "medium",
+      "notes": "The entry '15314' appears without a year suffix dash component visible \u2014 it may be a standalone number rather than a proper NNNNN-YY reference. '1651058' is a 7-digit number and does not match NNNNN-YY format, so it is excluded from references. The form code '4-1068-R' appears in the center header and is not a CCF reference. No fee patent stamp or cancellation overlay found in the middle of the page."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 222
+    }
+  },
+  {
+    "accession_number": "843353",
+    "full_name": "",
+    "signature_date": "1922-01-16",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 042524"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Santa Fe 042524' which appears to be a Santa Fe office reference number, not in NNNNN-YY format. The form code '4-1063-R.' is printed in the center header area (not the top-left block) and is a BLM form code, not a CCF reference. No allotment number is visible in the top-left block. No middle-page fee patent or cancellation marks present. Patent number 843353 appears in the footer as this patent's own record number."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 194
+    }
+  },
+  {
+    "accession_number": "1028350",
+    "full_name": "",
+    "signature_date": "1929-06-10",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 058005"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Santa Fe 058005' which is an agency file reference, not a NNNNN-YY CCF reference format. No allotment number visible in the top-left block. The form code '4-1063-R' appears in the top center header and is a printed form code, not a CCF reference. No fee patent issued stamp or cancellation overlay present in the middle of the page. Patent signed by Herbert Hoover, dated June 10, 1929."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 185
+    }
+  },
+  {
+    "accession_number": "621681",
+    "full_name": "FRANCOIS LAMBERT",
+    "signature_date": "1918-03-11",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Glasgow 01493"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Glasgow 01493' which appears to be an agency/office reference, not a NNNNN-YY CCF reference. The form code '4-1061-R.' appears in the center header area and is a printed form code, not a CCF reference. No allotment number visible in the top-left block. No fee patent issued stamp or cancellation overlay detected in the middle of the page."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 168
+    }
+  },
+  {
+    "accession_number": "1039609",
+    "full_name": "",
+    "signature_date": "1930-08-08",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 059213"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Santa Fe 059213' which is a field office serial number, not a NNNNN-YY CCF reference. The form code '4-1070-R' appears in the center header area and is a printed form code, not a CCF reference. No allotment number is visible in the top-left block. No fee patent stamp or cancellation overlay present in the middle of the page."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 168
+    }
+  },
+  {
+    "accession_number": "404451",
+    "full_name": "MARY LATERREGRASS",
+    "signature_date": "1914-05-09",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Glasgow 0477."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains only 'Glasgow 0477.' which appears to be an agency/location identifier, not a CCF NNNNN-YY reference. The form code '4-1063-R.' is printed in the top center header and is not a CCF reference. No allotment number is visible in the top-left block. A 'Fee Patent Issued' stamp/label is clearly present in the middle of the page, with a Patent No. 433853 filled in. No cancellation overlay is present."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 190
+    }
+  },
+  {
+    "accession_number": "453912",
+    "full_name": "MARY ROSE. DECOUTEAU",
+    "signature_date": "1915-01-16",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Glasgow 06040."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Glasgow 06040.' which appears to be an agency/file identifier but does not conform to the NNNNN-YY format (no dash with 2-digit year suffix). No allotment number is visible in the top-left block. The form code '4-1061-R.' appears in the top center of the printed template and is not a CCF reference. No fee patent or cancellation marks visible in the middle of the page."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 177
+    }
+  },
+  {
+    "accession_number": "551813",
+    "full_name": "EMMA LATRAIL. CLARK",
+    "signature_date": "1916-10-24",
+    "state": "ND",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Williston 013071"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The top-left block contains 'Williston 013071' which appears to be an agency/serial identifier, not a NNNNN-YY CCF reference. The form code '4-1061-R.' appears in the center header area and is not a CCF reference. No allotment number is visible in the top-left block. No fee patent issued stamp or cancellation overlay present in the middle of the page."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 169
+    }
+  },
+  {
+    "accession_number": "369097",
+    "full_name": "ENENEPANASKISET; SINKS-INTO-THE-EARTH",
+    "signature_date": "1913-12-02",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Trust Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Glasgow 014925."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Glasgow 014925.' which appears to be a local agency identifier, not a NNNNN-YY CCF reference (it lacks the standard format). The form code '4-1063-R.' appears centered at the top of the printed form template. No allotment number visible in the top-left block. No fee patent stamp or cancellation overlay present in the middle of the page. Patent signed by Woodrow Wilson, dated December 2, 1913."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 182
+    }
+  },
+  {
+    "accession_number": "112231",
+    "full_name": "BRYNIL BRYNILSON",
+    "signature_date": "1910-02-17",
+    "state": "MN",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Crookston 04260.\nCertificate No."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "This appears to be a pre-CCF era standard cash-entry patent (not a trust/allotment patent). The top-left area contains 'Crookston 04260.' (land office and entry number) and 'Certificate No.' with no value filled in. No NNNNN-YY CCF references present. No allotment number visible. The form code '4-400-tyr.' appears in the header near center-top. Patent number 112231 appears top-right. Signed by President William H. Taft, dated February 17, 1910 (Thirty-Fourth year). No fee patent stamp or cancellation overlay visible in the middle of the page."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 238
+    }
+  },
+  {
+    "accession_number": "1086593",
+    "full_name": "MAREEP JASPER; MARY LUCKY; NANCY RUBE",
+    "signature_date": "1936-10-26",
+    "state": "CA",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "78868",
+            "year_suffix": "",
+            "explicitly_labeled_io": true,
+            "label_text": "I. O."
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "1655006\n78868   I. O.\n109 and 118."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "medium",
+      "notes": "The top-left block contains '1655006' (7-digit number, not a NNNNN-YY reference), '78868 I. O.' (5-digit number with I.O. label but no year suffix visible \u2014 unclear if year suffix is present or cut off; captured as-is), and '109 and 118.' which appear to be allotment numbers referenced together. No single clean allotment number is identifiable; '109 and 118' may refer to dual allotment numbers being partitioned. No fee patent or cancellation marks are present in the middle of the page. The form code '4-1068-R' appears in the top center header area and is NOT a CCF reference."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 278
+    }
+  },
+  {
+    "accession_number": "1043186",
+    "full_name": "",
+    "signature_date": "1931-01-03",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [
+          {
+            "letter_number": "061971",
+            "year_suffix": "",
+            "explicitly_labeled_io": false,
+            "label_text": null
+          }
+        ],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 061971"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "medium",
+      "notes": "The top-left block reads 'Santa Fe 061971' \u2014 this is a Santa Fe office reference rather than a standard NNNNN-YY CCF reference with a two-digit year suffix. It does not conform to the NNNNN-YY format (no dash and two-digit year), so it should not be placed in references[]. The center-top shows form code '4-1063-R' which is a printed form code, not a CCF reference. No allotment number is visible in the top-left block. No fee patent issued stamp or cancellation overlay is present in the middle of the page."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 239
+    }
+  },
+  {
+    "accession_number": "564959",
+    "full_name": "ALBERT POITRA; JOSEPH POITRA; ALPHONSIN POITRA",
+    "signature_date": "1917-02-01",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Havre 010458"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Havre 010458' which appears to be an agency office identifier or file reference, not a NNNNN-YY CCF reference. No allotment number visible in the top-left block. The printed form code '4-1040-R.' appears in the header center area and is not a CCF reference. No fee patent issued stamp or cancellation overlay visible in the middle of the page. This is a fee simple patent (not a trust patent) issued February 1, 1917 under Woodrow Wilson, Patent Number 564959."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 203
+    }
+  },
+  {
+    "accession_number": "1042296",
+    "full_name": "JOSEPH SPEAKS-WALKING; JOSEPH RICHARD. SPEAKS-WALKING",
+    "signature_date": "1930-11-21",
+    "state": "ND",
+    "county": "",
+    "authority": "Indian Fee Patent",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "1756",
+        "raw_block_text": "1395595\n1756-Standing Rock Sioux."
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains '1395595' (7-digit serial, not a NNNNN-YY CCF reference) and '1756-Standing Rock Sioux.' where 1756 is the allotment number with agency label. The form code '4-1072-R' appears in the center header and is not a CCF reference. No fee patent stamp or cancellation overlay visible in the middle of the page."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 179
+    }
+  },
+  {
+    "accession_number": "1053582",
+    "full_name": "JOHN LINDHE. MUNROE",
+    "signature_date": "1932-02-29",
+    "state": "MT",
+    "county": "",
+    "authority": "Indian Homestead Trust",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "3151",
+        "raw_block_text": "1435081\n3151"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains '1435081' (7-digit serial, not a NNNNN-YY CCF reference) and '3151' (allotment number). No NNNNN-YY references present. A 'FEE PATENT ISSUED' stamp/label is clearly visible in the middle of the page with handwritten fill-in fields for Misc. Letter No. and Patent No., confirming fee_patent_issued=true. The form code '4-1040-R' in the header is a printed form code, not a CCF reference."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 205
+    }
+  },
+  {
+    "accession_number": "953646",
+    "full_name": "",
+    "signature_date": "1925-02-18",
+    "state": "CA",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Sacramento 014699"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": true,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains 'Sacramento 014699' which is a local office serial number, not a NNNNN-YY CCF reference format, so references[] is empty. No allotment number is present in the block. The form code '4-1063-R' appears in the top center header and is a printed form code, not a CCF reference. A clear 'Fee Patent Issued' stamp is visible in the middle of the page dated OCT 22 1947, with handwritten Patent and Letter numbers below it."
+    },
+    "usage": {
+      "input": 4903,
+      "output": 191
+    }
+  },
+  {
+    "accession_number": "1106124",
+    "full_name": "",
+    "signature_date": "1939-12-06",
+    "state": "NM",
+    "county": "",
+    "authority": "",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": null,
+        "raw_block_text": "Santa Fe 011036"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "The top-left block contains only 'Santa Fe 011036', which is an agency file reference but does not match the NNNNN-YY CCF format (it has a 6-digit number without a 2-digit year suffix separated by a dash). No allotment number is printed on this page. The form code '4-1050-R' appears in the center header and is not a CCF reference. No fee patent issued stamp or cancellation overlay is visible in the middle of the page. This appears to be a supplemental/quitclaim patent issued December 6, 1939 under FDR, clearing coal reservation on a 1926 trust patent (No. 976657) for Che-le, a Navajo Indian."
+    },
+    "usage": {
+      "input": 4886,
+      "output": 242
+    }
+  },
+  {
+    "accession_number": "1111952",
+    "full_name": "JACOB JOHNSON; NELLIE BROWN",
+    "signature_date": "1941-09-11",
+    "state": "OK",
+    "county": "",
+    "authority": "Indian Partition",
+    "extraction": {
+      "top_left_form_block": {
+        "references": [],
+        "allotment_number": "248",
+        "raw_block_text": "1160344\n248"
+      },
+      "middle_page_outcome": {
+        "fee_patent_issued": false,
+        "patent_cancelled": false
+      },
+      "page_legibility": "clear",
+      "confidence": "high",
+      "notes": "Top-left block contains '1160344' (7-digit serial, not a NNNNN-YY CCF reference) and allotment number '248'. Form code '4-1068-R' appears in the center header \u2014 not a CCF reference. No fee patent stamp or cancellation overlay visible in the middle of the page."
+    },
+    "usage": {
+      "input": 4885,
+      "output": 150
+    }
+  }
+]
