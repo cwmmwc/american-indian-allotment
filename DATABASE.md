@@ -156,43 +156,45 @@ Computed links between trust patents and their corresponding fee patents. Built 
 | trust_glo_url | text | Link to trust patent GLO record |
 | fee_glo_url | text | Link to fee patent GLO record |
 
-### `trust_fee_linkages_recovered` (57,019 rows)
+### `trust_fee_linkages_recovered` (74,621 rows)
 
-A **separate, larger** set of trust→fee linkages recovered from BLM patent records by two independent passes. Kept distinct from the older `trust_fee_linkages` (29,229 rows, allotment-number matching) so each table's provenance stays queryable.
+A **separate, larger** set of trust→fee linkages recovered from BLM patent records by three independent passes. Kept distinct from the older `trust_fee_linkages` (29,229 rows, allotment-number matching) so each table's provenance stays queryable.
 
-**The two recovery sources** (distinguished by the `source` column):
+**The three recovery sources** (distinguished by the `source` column):
 
 | source | rows | how | scripts |
 |---|---:|---|---|
 | `remarks_regex_v2` | 65,381 | Parse remarks for cross-references like `SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT`, then validate the extracted accession against the patent catalog. v2 fixes a v1 regex bug that captured only the first accession in `NR X AND Y FOR FEE PATENT` patterns and silently dropped ~3,970 sibling refs. | `parse_remarks_fee_refs.py` → `validate_remarks_extractions.py` |
 | `parcel_match_v1` | 9,043 | Match trust patents to fee patents at the same PLSS parcel (state/county/township/range/section/aliquot) with at least one shared allottee name token | `recover_linkages_by_parcel.py` |
+| `vision_v5` | 197 | Vision-model read (Claude Sonnet 4.6, cross-validated with Qwen2.5-VL-72B) of the scanned trust-patent page surfaced a "Fee Patent Issued" stamp where remarks and parcel matching missed it. `fee_accession` is NULL on these rows — the v5 prompt confirms a conversion occurred but does not transcribe the handwritten fee-patent number. | `extract_annotations_v4.py` (Sonnet) + `extract_annotations_qwen_vision.py` (Qwen on HPC) → `extract_vision_v5_candidate_hidden.py` → `compare_sonnet_qwen_candidate_hidden.py` → `load_vision_v5_hidden_conversions.py` |
 
-The parcel layer exists to catch two cases that text parsing cannot: (1) BLM transcription typos where the cross-reference accession is wrong — e.g., Lizzie Dowd's 1891 trust `0505-453` points to `0505-453` in remarks instead of the real fee `MV-0580-454`; (2) trust patents with no remarks text at all, where the conversion exists in the catalog but isn't textually documented on the trust side.
+The parcel layer exists to catch two cases that text parsing cannot: (1) BLM transcription typos where the cross-reference accession is wrong — e.g., Lizzie Dowd's 1891 trust `0505-453` points to `0505-453` in remarks instead of the real fee `MV-0580-454`; (2) trust patents with no remarks text at all, where the conversion exists in the catalog but isn't textually documented on the trust side. The vision layer catches a third case the previous two cannot: trust patents where the only evidence of conversion is a physical stamp on the page itself, never transcribed into either the remarks column or a sibling fee-patent record.
 
-Combined coverage raises trust→fee linkage from ~19% (old table) to ~60% **without any PDF scraping** — the data was already in the remarks column and in the parcel descriptions from the IATH import.
+Combined coverage raises trust→fee linkage from ~19% (old table) to ~60% **without any PDF scraping** for the regex+parcel layers; the vision layer added ~200 additional confirmed conversions identified only from the scanned pages.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | id | serial PK | |
 | trust_accession | text | Trust patent accession number |
-| fee_accession | text | Fee patent accession number |
-| extracted_raw | text | For `remarks_regex_v2`: the raw substring matched. For `parcel_match_v1`: literal `(parcel+name match)` |
-| match_type | text | `exact` / `normalized` / `fuzzy(d=1)` / `fuzzy(d=2)` / `parcel_name` |
+| fee_accession | text NULL | Fee patent accession number. NULL for `vision_v5` rows where the conversion was confirmed by stamp but the fee patent's own accession is not extractable from the v5 prompt output. |
+| extracted_raw | text | For `remarks_regex_v2`: the raw substring matched. For `parcel_match_v1`: literal `(parcel+name match)`. NULL for `vision_v5`. |
+| match_type | text | `exact` / `normalized` / `fuzzy(d=1)` / `fuzzy(d=2)` / `parcel_name` / `vision_fee_stamp` |
 | name_overlap | text | Shared name tokens between trust and fee patentee, if any |
 | name_consistent | boolean | True if trust and fee patentee names share at least one token |
 | date_gap_years | integer | fee_date − trust_date in years; null if either date missing |
 | trust_date | date | Trust patent signature date |
-| fee_date | date | Fee patent signature date |
-| fee_authority | text | Authority on the fee patent (e.g., "Indian Fee Patent") |
-| fee_state | text | State of the fee patent |
-| source | text | `remarks_regex_v2` (default) or `parcel_match_v1` |
+| fee_date | date | Fee patent signature date (NULL for `vision_v5`) |
+| fee_authority | text | Authority on the fee patent (NULL for `vision_v5`) |
+| fee_state | text | State of the fee patent (reuses trust state for `vision_v5` as a locality hint) |
+| source | text | `remarks_regex_v2` (default) / `parcel_match_v1` / `vision_v5` |
 | created_at | timestamp | |
 
 **Constraints:**
-- `UNIQUE (trust_accession, fee_accession)` — a given trust/fee pair appears at most once across both sources. The regex layer loads first and wins ties (no functional difference; the data is the same pair).
-- `CHECK (trust_accession <> fee_accession)` — a patent cannot be its own fee patent. The CHECK was added after a corpus-wide audit found 41 self-references produced by the v1 regex (now fixed). The loader filters self-refs before insert and the constraint rejects any that slip through.
+- `UNIQUE (trust_accession, fee_accession)` — a given trust/fee pair appears at most once across the regex+parcel sources. The regex layer loads first and wins ties (no functional difference; the data is the same pair). The vision layer is exempt in practice because its `fee_accession` is always NULL and Postgres treats NULLs as distinct in unique indexes.
+- `CHECK (trust_accession <> fee_accession)` — a patent cannot be its own fee patent. The CHECK was added after a corpus-wide audit found 41 self-references produced by the v1 regex (now fixed). With NULL fee_accession the comparison evaluates to UNKNOWN, which passes the CHECK — so vision rows insert cleanly. The loader filters self-refs before insert and the constraint rejects any non-NULL ones that slip through.
+- App-level queries that filter self-references use `IS DISTINCT FROM` rather than `<>` so vision rows (NULL fee_accession) stay visible. Plain `<>` would silently drop them.
 
-Loaded by `scripts/load_trust_fee_linkages_recovered.py` (accepts `--csv` and `--source` flags so both sources use the same script). Idempotent — re-running uses `ON CONFLICT DO NOTHING`.
+Loaded by `scripts/load_trust_fee_linkages_recovered.py` (regex + parcel sources, accepts `--csv` and `--source` flags so both use the same script; idempotent via `ON CONFLICT DO NOTHING`) and `scripts/load_vision_v5_hidden_conversions.py` (vision source; pre-filters trust_accessions already present with `source='vision_v5'` to stay idempotent in the absence of a unique index on NULL fee_accession).
 
 ### `parcels_patents_by_tribe` (401,811 rows)
 

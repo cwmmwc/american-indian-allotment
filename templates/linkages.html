@@ -62,7 +62,7 @@
     <div class="border rounded p-3 mt-2 small">
         <p>
             The catalog itself does not store the trust→fee pairing as a
-            structured field. We recovered it from two independent passes:
+            structured field. We recovered it from three independent passes:
         </p>
         <ol>
             <li>
@@ -91,14 +91,29 @@
                 issued to "Lizzie D. Gilman; Lizzie Dowd" (marriage between
                 trust and fee).
             </li>
+            <li>
+                <strong>Vision-model patent reads (<code>vision_v5</code>).</strong>
+                Trust patents whose neither remarks nor parcels surfaced a
+                fee pair, but whose scanned page carries a "Fee Patent Issued"
+                stamp visible to a vision model. Both Claude Sonnet 4.6 and
+                Qwen2.5-VL-72B were run on the residual candidate set; only
+                cases with model consensus (or manually-confirmed Sonnet
+                catches) were promoted to the table. These rows confirm a
+                conversion occurred but leave <code>fee_accession</code> NULL
+                because the v5 prompt does not transcribe the handwritten
+                fee-patent number from the stamp.
+            </li>
         </ol>
         <p>
-            Both layers write to the same <code>trust_fee_linkages_recovered</code>
+            All three layers write to the same <code>trust_fee_linkages_recovered</code>
             table with a <code>source</code> column distinguishing them, and a
             <code>UNIQUE (trust_accession, fee_accession)</code> constraint that
-            de-duplicates any pair both methods discover. A
+            de-duplicates any pair multiple methods discover. A
             <code>CHECK (trust_accession &lt;&gt; fee_accession)</code> constraint
-            prevents self-references at the database level.
+            prevents self-references at the database level. The
+            <code>fee_accession</code> column is nullable to accommodate the
+            vision layer, where we know a conversion occurred but not which
+            fee patent documents it.
         </p>
         <p class="mb-0">
             See the <a href="{{ url_for('about_project') }}">project notes</a>
@@ -142,7 +157,9 @@
     <span class="badge bg-info text-dark">remarks</span> source = parsed from remarks
     ({{ "{:,}".format(totals.n_regex) }} rows);
     <span class="badge bg-primary">parcel</span> source = matched by shared parcel + allottee name family
-    ({{ "{:,}".format(totals.n_parcel_src) }} rows).
+    ({{ "{:,}".format(totals.n_parcel_src) }} rows);
+    <span class="badge bg-warning text-dark">vision</span> source = vision-model read of the trust-patent scan
+    ({{ "{:,}".format(totals.n_vision) }} rows; fee-side patent not identified).
     Within remarks: <span class="badge bg-success">exact</span> {{ "{:,}".format(totals.n_exact) }},
     <span class="badge bg-secondary">normalized</span> {{ "{:,}".format(totals.n_normalized) }},
     <span class="badge bg-warning">fuzzy</span> {{ "{:,}".format(totals.n_fuzzy) }}.
@@ -159,6 +176,7 @@
                     <option value="">(any)</option>
                     <option value="remarks_regex_v2">remarks</option>
                     <option value="parcel_match_v1">parcel</option>
+                    <option value="vision_v5">vision</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -254,6 +272,7 @@ $(function() {
             }},
             { data: 'trust_date', defaultContent: '—' },
             { data: null, orderable: true, render: function(row) {
+                if (!row.fee_accession) return '<em class="text-muted">not identified</em>';
                 var href = patentHref(row.fee_objectid, row.fee_rails_id);
                 if (href) return '<a href="' + href + '"><code>' + row.fee_accession + '</code></a>';
                 return '<code>' + row.fee_accession + '</code>';
@@ -278,6 +297,7 @@ $(function() {
             { data: 'source', render: function(d) {
                 if (d === 'remarks_regex_v2') return '<span class="badge bg-info text-dark">remarks</span>';
                 if (d === 'parcel_match_v1') return '<span class="badge bg-primary">parcel</span>';
+                if (d === 'vision_v5')       return '<span class="badge bg-warning text-dark">vision</span>';
                 return '<span class="text-muted">' + (d || '—') + '</span>';
             }},
         ]

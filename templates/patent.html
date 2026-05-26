@@ -273,6 +273,7 @@
 {% macro source_badge(source) -%}
     {% if source == 'remarks_regex_v2' %}<span class="badge bg-info text-dark" title="parsed from BLM remarks text">remarks</span>
     {% elif source == 'parcel_match_v1' %}<span class="badge bg-primary" title="recovered by matching parcels + allottee name">parcel</span>
+    {% elif source == 'vision_v5' %}<span class="badge bg-warning text-dark" title="vision-model read of the trust patent page; fee-side patent not identified">vision</span>
     {% else %}<span class="badge bg-light text-dark border">{{ source }}</span>
     {% endif %}
 {%- endmacro %}
@@ -289,12 +290,16 @@
     </div>
     <div class="card-body">
         <p class="text-muted small mb-3">
-            Trust-to-fee patent conversions recovered from two sources:
+            Trust-to-fee patent conversions recovered from three sources:
             (1) <em>remarks</em> — cross-references like
             <code>SEE SERIAL PATENT NR 75921-09 FOR FEE PATENT</code> parsed from
             BLM's transcribed remarks; (2) <em>parcel</em> — matched by shared
             PLSS parcel + allottee name family, used when the remarks are absent
-            or carry a transcription typo. Both sources live in
+            or carry a transcription typo; (3) <em>vision</em> — vision-model
+            reads of the actual trust-patent scans that found a "Fee Patent
+            Issued" stamp where neither (1) nor (2) had a hit. Vision rows
+            confirm that a conversion happened but don't identify the
+            corresponding fee patent. All three sources live in
             <code>trust_fee_linkages_recovered</code>; see
             <a href="{{ url_for('about_project') }}">project notes</a> for
             provenance details.
@@ -324,8 +329,10 @@
                             <a href="{{ url_for('patent_detail', objectid=r.other_objectid) }}"><code>{{ r.other_accession }}</code></a>
                         {% elif r.other_rails_id %}
                             <a href="{{ url_for('patent_detail', objectid=r.other_rails_id) }}?src=rails"><code>{{ r.other_accession }}</code></a>
-                        {% else %}
+                        {% elif r.other_accession %}
                             <code>{{ r.other_accession }}</code>
+                        {% else %}
+                            <em class="text-muted small">fee patent not identified</em>
                         {% endif %}
                     </td>
                     <td>{{ r.other_date or '—' }}</td>

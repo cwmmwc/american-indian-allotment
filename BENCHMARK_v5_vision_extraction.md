@@ -96,6 +96,18 @@ The 50-PDF and 300-PDF per-PDF costs for Sonnet differ ($0.0382 vs. $0.0228);
 the larger sample is probably the more reliable basis for full-batch
 projection. The full residual is likely to fall in the **$200–$340** band.
 
+### Cost (full 8,818-PDF Sonnet production run, actual)
+
+| | Tokens (8,818 PDFs) | Actual billed | Per-PDF |
+|---|---|---|---|
+| Sonnet 4.6 (v5) | 43,333,549 in / 1,848,344 out | **$157.73** | $0.0179 |
+
+The full-batch per-PDF cost ($0.0179) came in below both the 300-PDF
+projection ($0.0228) and the 50-PDF projection ($0.0382), almost certainly
+because of prompt caching on the shared system-prompt/schema overhead being
+amortized over a much larger run. The landed total was below the $200–$340
+projection band.
+
 ### Quality — Opus vs. Sonnet (v4, 300 PDFs)
 
 Agreement was high on the bool flags (99.7% on `fee_patent_issued`) and
@@ -186,7 +198,9 @@ Reasons:
    ways the v5 prompt cannot fix.
 3. Opus 4.7 produces results comparable to Sonnet on the bool flags but
    costs roughly twice as much per PDF in actual billed charges.
-4. The production cost (~$200–$340 for 8,818 PDFs) is acceptable.
+4. The production cost — **$157.73 actual** for the full 8,818-PDF batch
+   ($0.0179/PDF) — came in below the $200–$340 projection band and is
+   acceptable.
 
 ## What this benchmark says about Gemma 3 27B vision
 

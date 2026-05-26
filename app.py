@@ -1540,7 +1540,7 @@ def patent_detail(objectid):
                 LEFT JOIN blm_allotment_patents blm ON blm.accession_number = tflr.fee_accession
                 LEFT JOIN rails_patents rp           ON rp.accession_number  = tflr.fee_accession
                 WHERE tflr.trust_accession = %s
-                  AND tflr.trust_accession <> tflr.fee_accession
+                  AND tflr.trust_accession IS DISTINCT FROM tflr.fee_accession
                 ORDER BY tflr.fee_date NULLS LAST, tflr.fee_accession
             """, (patent["accession_number"],))
             recovered_as_trust = cur.fetchall()
@@ -1560,7 +1560,7 @@ def patent_detail(objectid):
                 LEFT JOIN blm_allotment_patents blm ON blm.accession_number = tflr.trust_accession
                 LEFT JOIN rails_patents rp           ON rp.accession_number  = tflr.trust_accession
                 WHERE tflr.fee_accession = %s
-                  AND tflr.trust_accession <> tflr.fee_accession
+                  AND tflr.trust_accession IS DISTINCT FROM tflr.fee_accession
                 ORDER BY tflr.trust_date NULLS LAST, tflr.trust_accession
             """, (patent["accession_number"],))
             recovered_as_fee = cur.fetchall()
@@ -1755,9 +1755,10 @@ def linkages_index():
                 COUNT(*) FILTER (WHERE match_type = 'parcel_name')           AS n_parcel,
                 COUNT(*) FILTER (WHERE source = 'remarks_regex_v2')          AS n_regex,
                 COUNT(*) FILTER (WHERE source = 'parcel_match_v1')           AS n_parcel_src,
+                COUNT(*) FILTER (WHERE source = 'vision_v5')                 AS n_vision,
                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY date_gap_years)  AS median_gap_years
             FROM trust_fee_linkages_recovered
-            WHERE trust_accession <> fee_accession
+            WHERE trust_accession IS DISTINCT FROM fee_accession
         """)
         totals = cur.fetchone()
         return render_template("linkages.html", totals=totals)
@@ -1805,8 +1806,9 @@ def api_linkages():
             order_dir = "asc"
 
         # Defense-in-depth: never return self-references even if one sneaks
-        # past the DB CHECK constraint (e.g., older row from a previous load).
-        conditions = ["trust_accession <> fee_accession"]
+        # past the DB CHECK constraint. IS DISTINCT FROM keeps vision_v5 rows
+        # (fee_accession IS NULL) visible — plain <> would silently drop them.
+        conditions = ["trust_accession IS DISTINCT FROM fee_accession"]
         params     = []
 
         if global_search:
@@ -1825,7 +1827,7 @@ def api_linkages():
         elif match_filter == "parcel_name":
             conditions.append("match_type = 'parcel_name'")
 
-        if source_filter in ("remarks_regex_v2", "parcel_match_v1"):
+        if source_filter in ("remarks_regex_v2", "parcel_match_v1", "vision_v5"):
             conditions.append("source = %s")
             params.append(source_filter)
 
