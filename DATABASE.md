@@ -245,15 +245,15 @@ Tribe name lookup table.
 | state | text | Primary state |
 | notes | text | |
 
-### `rails_patents` (285,870 rows)
+### `rails_patents` (286,165 rows as of 2026-05-26)
 
-Full patent catalog exported from the Rails admin application (land-sales.iath.virginia.edu/db/admin/patents). Covers all 285,870 allotment patents. Of these, 239,845 also appear in `blm_allotment_patents` (matched by accession_number) and have PLSS geometry; the remaining 46,025 are searchable but not mappable.
+Full patent catalog exported from the Rails admin application (land-sales.iath.virginia.edu/db/admin/patents). Started at 285,870 patents; grew by 295 net rows from the 2026-05-26 SD2610 re-scrape (349 inserted, 54 empty-shell rows deleted). Of these, 239,845 also appear in `blm_allotment_patents` (matched by accession_number) and have PLSS geometry; the rest are searchable but not mappable.
 
-**Source CSV:** `patents-2026-03-18.csv` exported from the Rails admin.
+**Source CSV:** `patents-2026-03-18.csv` exported from the Rails admin. The SD2610 additions came from direct scraping of glorecords.blm.gov (see `scripts/scrape_blm_volume.py`).
 
 | Column | Type | Description |
 |--------|------|-------------|
-| id | integer PK | Rails record ID |
+| id | integer PK | Rails record ID (original IATH ids 1–285,870; new rows from re-scrape get ids 285,871+ via `rails_patents_id_seq`, added 2026-05-26) |
 | accession_number | text | GLO accession number (various formats: numeric, state-prefixed like "KS4580__.311", hyphenated like "04-2000-0042") |
 | document_class | text | e.g., "Serial Land Patent", "State Land Patent", "Indian Allotment Patent", "Indian Fee Patent", "Miscellaneous Volume Patent" |
 | document_code | text | e.g., "SER", "STA", "IA", "IF", "MV" |
@@ -268,10 +268,15 @@ Full patent catalog exported from the Rails admin application (land-sales.iath.v
 | blm_serial_number | text | BLM serial number |
 | document_number | text | Document number |
 | misc_document_number | text | Miscellaneous document number |
+| authority | text | BLM authority (the legal statute name, e.g. "Indian Allotment - General" or "Timber Culture"). **Added 2026-05-26.** NULL for the original 285,870 IATH-imported rows (the source CSV had no `authority` column); populated only for the 496 SD2610 records covered by the re-scrape. Phase 2 re-scrapes of the other gappy state volumes will extend coverage. |
+
+**Schema notes (added 2026-05-26):**
+- `rails_patents_id_seq` — sequence on `id`, starts at `GREATEST(MAX(rails_patents.id), MAX(blm_allotment_patents.objectid))` so new auto-generated ids never collide with the existing URL-routing ranges. The original IATH bulk import supplied ids explicitly so no sequence was needed; adding one was necessary once we started inserting new rows from re-scrapes.
+- `authority` column — added so the `all_patents` view's un-mappable branch can expose real BLM authority strings instead of falling back to `document_class`. View's un-mappable branch now uses `COALESCE(rp.authority, rp.document_class) AS authority`. See `sql/update_all_patents_view_with_authority.sql`.
 
 **Indexes:** accession_number, glo_tribe_name, state, signature_date.
 
-**Non-mappable patents (46,025) by document class:**
+**Non-mappable patents (~46,300) by document class:**
 
 | Category | Count | Reason |
 |----------|-------|--------|

@@ -1181,6 +1181,14 @@ TRUST_AUTHORITIES = (
     'Indian Homestead Trust', 'Indian Reissue Trust',
     'Indian Allotment - General', 'Indian Allotment in Nat. Forest',
     'Indian Allotment-Wyandotte', 'Indian Partition',
+    # 'Timber Culture' added 2026-05-26 after the SD2610 re-scrape revealed
+    # ~294 Rosebud Sioux allotments issued under the statutory authority of
+    # the March 3, 1873 Timber Culture Act. They are functionally Indian
+    # trust patents (Indigenous allottees, Indian allotment numbers,
+    # remarks containing fee-conversion references). The 'Timber Culture'
+    # string is BLM's authority field naming the legal vehicle, not the
+    # kind of land or recipient.
+    'Timber Culture',
 )
 
 
