@@ -327,18 +327,43 @@ def run_test():
 
 
 def run_full():
-    """Scan every trust-class patent's remarks for fee/cancellation references."""
+    """Scan every trust-class patent's remarks for fee/cancellation references.
+
+    Two-branch filter — the original IN-list was too narrow because the
+    all_patents view aliases document_class AS authority for un-mappable
+    patents (the UNION ALL branch where blm_allotment_patents has no row).
+    That made every un-mappable trust patent look like "Serial Land Patent"
+    in the authority column and silently excluded them from the scan
+    (~9,400 trust patents missed in the original v2 run).
+
+    Fixed filter:
+      (1) mappable side: real blm authority IN trust-class list, OR
+      (2) un-mappable side: objectid IS NULL (i.e. rails-only) AND the
+          accession is NOT in fee_patents (which is the authoritative
+          classifier for "this is a fee patent") — meaning treat any
+          rails-only patent that isn't known to be a fee patent as a
+          candidate trust-class scan target.
+    """
     conn = psycopg2.connect(DB_URL)
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("""
         SELECT accession_number, full_name, signature_date, state, authority,
                indian_allotment_number, remarks
-        FROM all_patents
-        WHERE authority IN ('Indian Trust Patent', 'Indian Allotment - General',
-                            'Indian Reissue Trust', 'Indian Homestead Trust',
-                            'Indian Allotment Patent', 'Indian Trust Patent (Wind R)',
-                            'Indian Allotment-Wyandotte')
-          AND remarks IS NOT NULL AND remarks <> ''
+        FROM all_patents ap
+        WHERE remarks IS NOT NULL AND remarks <> ''
+          AND (
+            authority IN ('Indian Trust Patent', 'Indian Allotment - General',
+                          'Indian Reissue Trust', 'Indian Homestead Trust',
+                          'Indian Allotment Patent', 'Indian Trust Patent (Wind R)',
+                          'Indian Allotment-Wyandotte')
+            OR (
+              ap.objectid IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM fee_patents fp
+                WHERE fp.accession_number = ap.accession_number
+              )
+            )
+          )
     """)
     rows = cur.fetchall()
     print(f"Scanning {len(rows)} trust-class patents with non-empty remarks...")
