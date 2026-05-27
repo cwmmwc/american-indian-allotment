@@ -297,6 +297,28 @@ Lookup table mapping raw `glo_tribe_name` values to normalized `preferred_name` 
 
 No ambiguous mappings: each glo_tribe_name maps to exactly one preferred_name.
 
+### `tribe_crosswalk` (1,414 rows, added 2026-05-27)
+
+Authoritative GLO-name → tribe + reservation crosswalk, imported from Christian McMillen's hand-built spreadsheet at `~/Library/CloudStorage/Box-Box/IATH/tribes/Tribes.xlsx`. Each row records the canonical tribe and reservation (or `FRN` = further research needed, or NULL = no applicable value) for one of the 1,414 distinct GLO `glo_tribe_name` strings seen in the BLM patent catalog. The spreadsheet is the archival source of truth; this table mirrors it for queryability.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | serial PK | |
+| glo_name | text | Original GLO tribe name as it appears in `rails_patents.glo_tribe_name` |
+| glo_name_normalized | text | `UPPER(TRIM(glo_name))` — used for JOIN against `rails_patents` |
+| authoritative_tribe | text | Spreadsheet's "Authoritative Tribe Name" column. NULL or 'FRN' for unresolved. |
+| authoritative_reservation | text | Spreadsheet's "Authoritative Reservation Name" column. NULL means no applicable reservation (e.g., small Oregon tribes that never had one) OR vague GLO name with no specific match; 'FRN' means further research needed. |
+| canonical_reservation | text | Same as `authoritative_reservation` after canonicalization (see import script `CANONICAL_OVERRIDES`). NULL when authoritative_reservation is FRN or empty. Example: both `Kiowa, Comanche, Apache Reservation` (no "and") and `Comanche, Kiowa, and Apache Reservation` (wrong order) map to canonical `Kiowa, Comanche, and Apache Reservation`. |
+| alternative_tribe | text | Alternative tribe name (synonym, modern self-name, or `OR`-disjunction for multi-tribe ambiguity). 326 entries. |
+| alternative_reservation | text | Alternative reservation name. 59 entries. |
+| tribe_notes | text | Free-text expert notes on the tribe assignment. 124 entries. |
+| reservation_notes | text | Free-text expert notes on the reservation assignment. 139 entries. |
+| general_notes | text | Free-text general notes. |
+
+**Indexes:** `glo_name_normalized`, `canonical_reservation`.
+
+Loaded by `scripts/build_tribe_crosswalk.py` (idempotent — DROP and rebuild). When the spreadsheet changes, re-run that script to refresh the table.
+
 ### `patent_file_references` (1,300 rows as of 2026-05-19)
 
 Distinct NNNNN-YY archival file references parsed from patent `remarks`. One row per (letter_number, year_raw) pair. See `sql/create_patent_file_references.sql` and the "Data Quality Caveats" section above on why these are NOT all confirmed CCF references.
@@ -391,6 +413,7 @@ Local mirror of a tribal-land-patents-aliquot feature service hosted on **UVA Li
 | objectid | integer PK | ArcGIS OBJECTID |
 | accession_number | text | GLO accession number |
 | preferred_name | text | Standardized tribe name (208 distinct values; 35,706 rows blank) |
+| preferred_reservation | text | **Added 2026-05-27.** Canonical reservation name from `tribe_crosswalk`. Populated only for records where `preferred_name ILIKE 'Frn%'` AND the spreadsheet has a real reservation (2,187 rows so far: Warm Springs Indian reservation, Wind River reservation, Kiowa Comanche and Apache Reservation). Step 2 of the FRN cleanup; the 177,801 non-FRN records that could also gain a reservation value are deferred. |
 | full_name | text | Patentee full name |
 | signature_date | timestamp | Patent signature date |
 | authority | text | Patent authority (e.g., "Indian Fee Patent", "Indian Trust Patent") |
