@@ -162,7 +162,9 @@
     ({{ "{:,}".format(totals.n_vision) }} rows; fee-side patent not identified).
     Within remarks: <span class="badge bg-success">exact</span> {{ "{:,}".format(totals.n_exact) }},
     <span class="badge bg-secondary">normalized</span> {{ "{:,}".format(totals.n_normalized) }},
-    <span class="badge bg-warning">fuzzy</span> {{ "{:,}".format(totals.n_fuzzy) }}.
+    <span class="badge bg-warning">fuzzy</span> {{ "{:,}".format(totals.n_fuzzy) }},
+    <span class="badge bg-light text-dark border">remarks only — no catalog</span> {{ "{:,}".format(totals.n_remarks_only) }}
+    (fee patent number named in remarks but no fee patent record in BLM's catalog).
     Within parcel: <span class="badge bg-primary">parcel+name</span> {{ "{:,}".format(totals.n_parcel) }}.
     A ✓ in the <em>Name</em> column means the trust and fee patentees share at least one name token.
 </div>
@@ -187,6 +189,7 @@
                     <option value="normalized">normalized</option>
                     <option value="fuzzy">fuzzy</option>
                     <option value="parcel_name">parcel+name</option>
+                    <option value="remarks_only_no_catalog">remarks only — no catalog</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -283,6 +286,10 @@ $(function() {
                 return d.toString();
             }},
             { data: 'match_type', render: function(d) {
+                if (d === 'remarks_only_no_catalog')
+                    return '<span class="badge bg-light text-dark border" title="Fee number named in remarks but no fee patent record in BLM\'s catalog">remarks only — no catalog</span>';
+                if (d === 'vision_fee_stamp')
+                    return '<span class="badge bg-warning text-dark">vision stamp</span>';
                 var cls = d === 'exact' ? 'success'
                         : d === 'normalized' ? 'secondary'
                         : d === 'parcel_name' ? 'primary' : 'warning';

@@ -1761,6 +1761,7 @@ def linkages_index():
                 COUNT(*) FILTER (WHERE match_type = 'normalized')            AS n_normalized,
                 COUNT(*) FILTER (WHERE match_type LIKE 'fuzzy%%')            AS n_fuzzy,
                 COUNT(*) FILTER (WHERE match_type = 'parcel_name')           AS n_parcel,
+                COUNT(*) FILTER (WHERE match_type = 'remarks_only_no_catalog') AS n_remarks_only,
                 COUNT(*) FILTER (WHERE source = 'remarks_regex_v2')          AS n_regex,
                 COUNT(*) FILTER (WHERE source = 'parcel_match_v1')           AS n_parcel_src,
                 COUNT(*) FILTER (WHERE source = 'vision_v5')                 AS n_vision,
@@ -1834,6 +1835,8 @@ def api_linkages():
             conditions.append("match_type LIKE 'fuzzy%%'")
         elif match_filter == "parcel_name":
             conditions.append("match_type = 'parcel_name'")
+        elif match_filter == "remarks_only_no_catalog":
+            conditions.append("match_type = 'remarks_only_no_catalog'")
 
         if source_filter in ("remarks_regex_v2", "parcel_match_v1", "vision_v5"):
             conditions.append("source = %s")

@@ -156,7 +156,7 @@ Computed links between trust patents and their corresponding fee patents. Built 
 | trust_glo_url | text | Link to trust patent GLO record |
 | fee_glo_url | text | Link to fee patent GLO record |
 
-### `trust_fee_linkages_recovered` (78,257 rows)
+### `trust_fee_linkages_recovered` (79,124 rows as of 2026-05-27)
 
 A **separate, larger** set of trust→fee linkages recovered from BLM patent records by three independent passes. Kept distinct from the older `trust_fee_linkages` (29,229 rows, allotment-number matching) so each table's provenance stays queryable.
 
@@ -180,7 +180,7 @@ Combined coverage raises trust→fee linkage from ~19% (old table) to ~60% **wit
 | trust_accession | text | Trust patent accession number |
 | fee_accession | text NULL | Fee patent accession number. NULL for `vision_v5` rows where the conversion was confirmed by stamp but the fee patent's own accession is not extractable from the v5 prompt output. |
 | extracted_raw | text | For `remarks_regex_v2`: the raw substring matched. For `parcel_match_v1`: literal `(parcel+name match)`. NULL for `vision_v5`. |
-| match_type | text | `exact` / `normalized` / `fuzzy(d=1)` / `fuzzy(d=2)` / `parcel_name` / `vision_fee_stamp` |
+| match_type | text | `exact` / `normalized` / `fuzzy(d=1)` / `fuzzy(d=2)` / `parcel_name` / `vision_fee_stamp` / `remarks_only_no_catalog` (added 2026-05-27 — fee accession is named in trust patent's transcribed remarks but no fee patent record exists in BLM's catalog; verified by direct lookup that BLM returns "A document does not exist"). 1,458 rows so far. |
 | name_overlap | text | Shared name tokens between trust and fee patentee, if any |
 | name_consistent | boolean | True if trust and fee patentee names share at least one token |
 | date_gap_years | integer | fee_date − trust_date in years; null if either date missing |
@@ -196,7 +196,9 @@ Combined coverage raises trust→fee linkage from ~19% (old table) to ~60% **wit
 - `CHECK (trust_accession <> fee_accession)` — a patent cannot be its own fee patent. The CHECK was added after a corpus-wide audit found 41 self-references produced by the v1 regex (now fixed). With NULL fee_accession the comparison evaluates to UNKNOWN, which passes the CHECK — so vision rows insert cleanly. The loader filters self-refs before insert and the constraint rejects any non-NULL ones that slip through.
 - App-level queries that filter self-references use `IS DISTINCT FROM` rather than `<>` so vision rows (NULL fee_accession) stay visible. Plain `<>` would silently drop them.
 
-Loaded by `scripts/load_trust_fee_linkages_recovered.py` (regex + parcel sources, accepts `--csv` and `--source` flags so both use the same script; idempotent via `ON CONFLICT DO NOTHING`) and `scripts/load_vision_v5_hidden_conversions.py` (vision source; pre-filters trust_accessions already present with `source='vision_v5'` to stay idempotent in the absence of a unique index on NULL fee_accession).
+Loaded by `scripts/load_trust_fee_linkages_recovered.py` (regex + parcel sources, accepts `--csv` and `--source` flags so both use the same script; idempotent via `ON CONFLICT DO NOTHING`), `scripts/load_vision_v5_hidden_conversions.py` (vision source; pre-filters trust_accessions already present with `source='vision_v5'` to stay idempotent in the absence of a unique index on NULL fee_accession), and `scripts/load_remarks_only_linkages.py` (the `remarks_only_no_catalog` rows; reads `data/linkage_unmatched.csv` produced by `validate_remarks_extractions.py`, filters to real-accession-shaped extractions, idempotent via `ON CONFLICT DO NOTHING`).
+
+**Cleanup script (2026-05-27):** `scripts/cleanup_fuzzy_state_mismatch.py` deletes fuzzy match rows where trust and fee states differ — these are false positives created when the truly-correct fee accession isn't in the catalog and the fuzzy validator path substitutes a same-name patentee from a different state. 591 such rows deleted on first run; `validate_remarks_extractions.py` now rejects state-mismatch fuzzy candidates at validation time so future runs don't re-create them.
 
 ### `parcels_patents_by_tribe` (401,811 rows)
 

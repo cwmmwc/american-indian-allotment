@@ -17,7 +17,14 @@ VOL_CLEAN=${VOL_CLEAN%_}
 CSV="data/rescrape_${VOL_CLEAN}.csv"
 
 cd /Users/cwm6W/projects/american-indian-allotment
-./venv/bin/python3 scripts/scrape_blm_volume.py --volume "$VOLUME"
+# Phase 2 default: probe until 50 consecutive not_found, hard ceiling .1500.
+# This terminates on BLM's signal that there are no more records in the volume,
+# rather than a fixed --max cap that might miss records past the chosen ceiling.
+PYTHONUNBUFFERED=1 ./venv/bin/python3 scripts/scrape_blm_volume.py \
+  --volume "$VOLUME" \
+  --min 1 \
+  --max 1500 \
+  --until-empty 50
 
 echo
 echo "=== Authority distribution in $CSV (review before --apply import) ==="

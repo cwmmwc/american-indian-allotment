@@ -281,6 +281,8 @@
     {% if mt == 'exact' %}<span class="badge bg-success">exact</span>
     {% elif mt == 'normalized' %}<span class="badge bg-secondary">normalized</span>
     {% elif mt == 'parcel_name' %}<span class="badge bg-primary">parcel+name</span>
+    {% elif mt == 'vision_fee_stamp' %}<span class="badge bg-warning text-dark">vision stamp</span>
+    {% elif mt == 'remarks_only_no_catalog' %}<span class="badge bg-light text-dark border" title="Fee patent number is named in the trust patent's transcribed remarks but no fee patent record exists in BLM's catalog. The conversion is documented; the fee record itself is missing.">remarks only — no catalog</span>
     {% else %}<span class="badge bg-warning">{{ mt }}</span>
     {% endif %}
 {%- endmacro %}
@@ -303,6 +305,13 @@
             <code>trust_fee_linkages_recovered</code>; see
             <a href="{{ url_for('about_project') }}">project notes</a> for
             provenance details.
+            <br><br>
+            A subset of remarks rows are marked
+            <span class="badge bg-light text-dark border">remarks only — no catalog</span>:
+            the fee patent number is named in the trust patent's transcribed remarks,
+            but no fee patent record exists in BLM's catalog (verified by direct
+            lookup). The conversion happened and is textually documented; the fee
+            record itself is missing from BLM's digital holdings.
         </p>
 
         {% if recovered_as_trust %}

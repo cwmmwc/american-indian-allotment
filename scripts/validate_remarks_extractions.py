@@ -145,6 +145,7 @@ def main():
         trust_acc = row["trust_accession"]
         trust_name = row["allottee"] or ""
         trust_date = row["signature_date"]
+        trust_state = (row.get("state") or "").strip()
         extracted = row["fee_ref_extracted"]
 
         match = None
@@ -192,7 +193,15 @@ def main():
             })
             continue
 
-        # Try fuzzy lookup: same name + low edit distance
+        # Try fuzzy lookup: same name + low edit distance + same state.
+        # State match is required (when both trust and candidate have a state)
+        # because edit-distance + shared-name-token alone produces false
+        # positives like SD2540__.324 (HENRY EMERY, Rosebud Sioux) being
+        # fuzzy-matched to 632488 (LUCY HENRY, CA, Hupa) — the real
+        # extracted target 612458 wasn't in the catalog (SER 600K gap), so
+        # the validator substituted a same-name patentee from a different
+        # state. Trust patents in SD don't get converted to fee patents in
+        # CA; the state mismatch is a strong negative signal.
         t_toks = sorted(name_tokens(trust_name))
         ext_norm = normalize_acc(extracted)
         best = None
@@ -203,6 +212,10 @@ def main():
                 if fr["accession_number"] in candidates_seen:
                     continue
                 candidates_seen.add(fr["accession_number"])
+                # State-mismatch rejection: skip if both have a state and they differ
+                fr_state = (fr.get("state") or "").strip()
+                if trust_state and fr_state and trust_state != fr_state:
+                    continue
                 d = edit_distance(ext_norm, normalize_acc(fr["accession_number"]), cap=MAX_EDIT_DISTANCE)
                 if d <= MAX_EDIT_DISTANCE and d < best_dist:
                     f_toks = name_tokens(fr["full_name"])

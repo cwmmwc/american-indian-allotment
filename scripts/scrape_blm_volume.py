@@ -201,7 +201,14 @@ def main():
     ap.add_argument("--volume",      default="SD2610__",
                     help="Volume prefix, e.g. SD2610__")
     ap.add_argument("--min",         type=int, default=1)
-    ap.add_argument("--max",         type=int, default=550)
+    ap.add_argument("--max",         type=int, default=550,
+                    help="upper bound when --until-empty is NOT set; with --until-empty "
+                         "this is the hard ceiling")
+    ap.add_argument("--until-empty", type=int, default=None,
+                    help="probe upward and stop after this many CONSECUTIVE not_found "
+                         "responses (counting both new probes and stored statuses from "
+                         "previous runs). Replaces the fixed --max range; uses --max as "
+                         "a hard safety ceiling. Recommended: 50.")
     ap.add_argument("--doc-class",   default="STA")
     ap.add_argument("--delay",       type=float, default=3.0,
                     help="seconds between requests")
@@ -223,7 +230,79 @@ def main():
         compare_against_db(out_csv)
         return
 
-    done = already_scraped(out_csv)
+    # Load existing CSV rows so we can both skip already-probed accessions AND
+    # use their stored status for the consecutive-not_found counter when running
+    # in --until-empty mode.
+    done_status = {}
+    if os.path.exists(out_csv):
+        with open(out_csv) as f:
+            for row in csv.DictReader(f):
+                done_status[row["accession_number"]] = row.get("status", "")
+    done = set(done_status)
+
+    if args.until_empty is not None:
+        # Probe upward from --min. Stop after N consecutive not_founds, BUT
+        # only after we've seen at least one 'ok' record — so volumes whose
+        # records start above .001 (e.g. NE2890 starts at .072, NE2870 at
+        # .301) aren't terminated by the leading run of empty accession
+        # numbers before the data begins. The hard ceiling --max bounds the
+        # search if a volume genuinely has no records under this prefix.
+        print(f"=== BLM volume scrape (--until-empty mode) ===")
+        print(f"  Volume:        {args.volume}")
+        print(f"  Start:         .{args.min:03d}")
+        print(f"  Stop after:    {args.until_empty} consecutive not_found AFTER first 'ok'")
+        print(f"  Hard ceiling:  .{args.max:03d}")
+        print(f"  Already done:  {len(done)} accessions (will use stored statuses)")
+        print(f"  Output:        {out_csv}")
+        print(f"  HTML dir:      {html_dir}")
+        print()
+
+        consecutive_nf = 0
+        seen_any_ok = False
+        probed_this_run = 0
+        last_ok_n = None
+        n = args.min
+        while n <= args.max:
+            # Terminate only AFTER seeing at least one ok
+            if seen_any_ok and consecutive_nf >= args.until_empty:
+                break
+            acc = f"{args.volume}.{n:03d}"
+            if acc in done:
+                # Use stored status — don't re-probe
+                status = done_status[acc]
+            else:
+                result = fetch_one(acc, args.doc_class, html_dir)
+                append_row(out_csv, result)
+                probed_this_run += 1
+                status = result.get("status", "?")
+                name = (result.get("full_name") or "")[:30]
+                print(f"  [.{n:03d}] {acc:<14s}  {status:<12s}  consec_nf={consecutive_nf} seen_ok={seen_any_ok}  {name}")
+                time.sleep(args.delay)
+
+            if status == "ok":
+                seen_any_ok = True
+                consecutive_nf = 0
+                last_ok_n = n
+            elif status == "not_found":
+                consecutive_nf += 1
+            # other statuses (http_*, error:*) neither set seen_ok nor count
+            # toward consecutive_nf — they're transient and shouldn't drive
+            # termination either way
+
+            n += 1
+
+        if not seen_any_ok:
+            print(f"\nProbed .{args.min:03d}–.{n-1:03d} and found NO 'ok' records. Either the volume's records start above .{args.max:03d} (extend --max) or this volume has no BLM data under this prefix.")
+        elif consecutive_nf >= args.until_empty:
+            print(f"\nStopped at .{n-1:03d} after {consecutive_nf} consecutive not_founds following first ok.")
+            print(f"Last 'ok' record observed: .{last_ok_n:03d}.")
+        else:
+            print(f"\nHit hard ceiling .{args.max:03d} — extend --max if you want to probe further.")
+        print(f"New probes this run: {probed_this_run}")
+        compare_against_db(out_csv)
+        return
+
+    # Fixed-range mode (original behavior)
     todo = []
     for n in range(args.min, args.max + 1):
         acc = f"{args.volume}.{n:03d}"
