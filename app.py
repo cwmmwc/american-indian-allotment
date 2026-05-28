@@ -1444,6 +1444,18 @@ def patent_detail(objectid):
                     patent = dict(patent)
                     patent["document_code"] = dc_row["document_code"]
 
+        # Document-class metadata: when the doc_code has an entry, surface the
+        # legal-instrument name and (where applicable) the default_tribe_label
+        # used to refine an FRN preferred_name. Currently populates for SS
+        # (Sioux Scrip Patent → Dacotah/Sioux Nation per the 1854 Act recital).
+        doc_class_meta = None
+        if patent and patent.get("document_code"):
+            cur.execute("""
+                SELECT doc_code, legal_instrument_name, default_tribe_label, notes
+                FROM document_class_metadata WHERE doc_code = %s
+            """, (patent["document_code"],))
+            doc_class_meta = cur.fetchone()
+
             # If not found in BLM table, try as a rails_patents id
             if not patent:
                 cur.execute("SELECT * FROM all_patents WHERE id = %s LIMIT 1", (objectid,))
@@ -1582,6 +1594,7 @@ def patent_detail(objectid):
             file_refs=file_refs,
             recovered_as_trust=recovered_as_trust,
             recovered_as_fee=recovered_as_fee,
+            doc_class_meta=doc_class_meta,
             glo_url=glo_url,
             slugify=slugify,
         )

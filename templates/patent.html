@@ -1,13 +1,24 @@
 {% extends "base.html" %}
 {% block title %}{{ patent.full_name }} — Patent {{ patent.accession_number }}{% endblock %}
 
+{# Effective tribe label: when preferred_name is an "Frn..." placeholder AND the
+   patent's document class has a default_tribe_label in document_class_metadata
+   (e.g. SS docClass → "Dacotah/Sioux Nation" per the 1854 MN Act recital
+   identifying recipients as "half breeds or mixed bloods of the Dacotah or
+   Sioux nation of Indians"), prefer the doc-class-specific label. Otherwise
+   use preferred_name as-is. #}
+{% set effective_tribe = patent.preferred_name %}
+{% if doc_class_meta and doc_class_meta.default_tribe_label and patent.preferred_name and (patent.preferred_name|lower).startswith('frn') %}
+    {% set effective_tribe = doc_class_meta.default_tribe_label %}
+{% endif %}
+
 {% block content %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{{ url_for('patents_index') }}">Patents</a></li>
-        {% if patent.preferred_name %}
+        {% if effective_tribe %}
         <li class="breadcrumb-item">
-            <a href="{{ url_for('patents_index', tribe=patent.preferred_name) }}">{{ patent.preferred_name }}</a>
+            <a href="{{ url_for('patents_index', tribe=patent.preferred_name) }}">{{ effective_tribe }}</a>
         </li>
         {% endif %}
         <li class="breadcrumb-item active">{{ patent.accession_number }}</li>
@@ -17,7 +28,7 @@
 <div class="page-header">
     <h1>{{ patent.full_name or 'Unknown' }}</h1>
     <p class="lead">
-        {{ patent.preferred_name or '' }} &middot;
+        {{ effective_tribe or '' }} &middot;
         Accession {{ patent.accession_number or '—' }} &middot;
         Allotment {{ patent.indian_allotment_number or '—' }}
         {% if patent.centroid_lat and patent.centroid_lon %}
@@ -26,6 +37,21 @@
         {% endif %}
     </p>
 </div>
+
+{% if doc_class_meta and doc_class_meta.legal_instrument_name %}
+<div class="alert alert-light border mb-3 small">
+    <strong>Legal Instrument:</strong> {{ doc_class_meta.legal_instrument_name }}
+    {% if doc_class_meta.default_tribe_label and patent.preferred_name and (patent.preferred_name|lower).startswith('frn') %}
+    &middot; tribe shown as <em>{{ doc_class_meta.default_tribe_label }}</em>
+    (nation-level identity documented in patent recital; specific band remains under further research)
+    {% endif %}
+    {% if doc_class_meta.notes %}
+    <details class="mt-2"><summary class="text-muted">More on this document class</summary>
+        <div class="mt-2">{{ doc_class_meta.notes }}</div>
+    </details>
+    {% endif %}
+</div>
+{% endif %}
 
 {% if cancelled_research %}
 <div class="alert alert-warning border mb-4">
@@ -143,7 +169,7 @@
                     <dd>{{ patent.full_name or '—' }}</dd>
 
                     <dt>Tribe</dt>
-                    <dd>{{ patent.preferred_name or '—' }}</dd>
+                    <dd>{{ effective_tribe or '—' }}</dd>
 
                     <dt>Accession Number</dt>
                     <dd>
