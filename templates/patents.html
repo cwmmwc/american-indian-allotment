@@ -2,6 +2,20 @@
 {% block title %}Browse BLM Patents{% endblock %}
 
 {% block content %}
+<style>
+.fuzzy-chip {
+    display: inline-block;
+    margin-left: 0.4em;
+    padding: 0 0.4em;
+    font-size: 0.78em;
+    color: #6c757d;
+    background-color: #f0f0f0;
+    border: 1px solid #e1e1e1;
+    border-radius: 0.25em;
+    font-variant-numeric: tabular-nums;
+    vertical-align: middle;
+}
+</style>
 <div class="page-header">
     <h1>Allotment Patents</h1>
     <p class="lead">Browse 285,870 allotment patent records from the Bureau of Land Management General Land Office.
@@ -152,7 +166,12 @@ $(function() {
                 render: function(data, type, row) {
                     var linkId = row.objectid || row.id;
                     var suffix = row.objectid ? '' : '?src=rails';
-                    return '<a href="/patent/' + linkId + suffix + '">' + (data || '—') + '</a>';
+                    var html = '<a href="/patent/' + linkId + suffix + '">' + (data || '—') + '</a>';
+                    if (row.match_type === 'fuzzy') {
+                        var score = (row.sim_score || 0).toFixed(2);
+                        html += ' <span class="fuzzy-chip" title="Fuzzy match (similarity ' + score + ')">≈' + score + '</span>';
+                    }
+                    return html;
                 }
             },
             { data: 'preferred_name' },

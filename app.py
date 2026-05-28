@@ -123,6 +123,49 @@ def add_claim_type_filter(claim_type, conditions, params):
             params.append(f"%{claim_type}%")
 
 
+# Fuzzy name search (pg_trgm strict_word_similarity). The query is matched
+# against full_name as a phrase — strict_word_similarity finds the best
+# contiguous span in full_name and returns its similarity to the query.
+# Threshold 0.65 catches PHILIP/PHILLIP-style spelling drift while keeping
+# noise tight (e.g. "philip ross" doesn't surface "PHILIP MOSS" or
+# "PHILIP P. ROY"). The tradeoff is that more distant variants like
+# "RENCONTRE" (0.615 against "rencountre") are NOT caught at 0.65.
+NAME_FUZZY_THRESHOLD = 0.65
+
+
+def patent_name_fuzzy_clauses(name_search):
+    """
+    Build SQL pieces for fuzzy name search against all_patents.
+
+    Returns None if name_search is empty/whitespace. Otherwise returns a dict:
+      where_sql/where_params:  predicate to AND into WHERE
+      score_sql/score_params:  extra SELECT columns (literal_match int, sim_score float)
+      order_extras:            ORDER BY columns to PREPEND (literal-first, then sim desc)
+
+    Caller is responsible for SET pg_trgm.strict_word_similarity_threshold and
+    for interleaving score_params before where_params in the final SQL execution.
+    """
+    name_search = (name_search or "").strip()
+    if not name_search:
+        return None
+    q = name_search.lower()
+    ilike_pattern = f"%{name_search}%"
+    where_sql = "(full_name ILIKE %s OR %s <<%% full_name)"
+    where_params = [ilike_pattern, q]
+    score_sql = (
+        "(full_name ILIKE %s)::int AS literal_match, "
+        "strict_word_similarity(%s, full_name) AS sim_score"
+    )
+    score_params = [ilike_pattern, q]
+    return {
+        "where_sql": where_sql,
+        "where_params": where_params,
+        "score_sql": score_sql,
+        "score_params": score_params,
+        "order_extras": ["literal_match DESC", "sim_score DESC"],
+    }
+
+
 # ──────────────────────────────────────────────
 # Routes
 # ──────────────────────────────────────────────
@@ -1223,9 +1266,10 @@ def api_patents():
         conditions = []
         params = []
 
-        if name_search:
-            conditions.append("full_name ILIKE %s")
-            params.append(f"%{name_search}%")
+        fuzzy = patent_name_fuzzy_clauses(name_search)
+        if fuzzy:
+            conditions.append(fuzzy["where_sql"])
+            params.extend(fuzzy["where_params"])
         if allotment:
             conditions.append("indian_allotment_number ILIKE %s")
             params.append(allotment)
@@ -1262,12 +1306,31 @@ def api_patents():
 
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
 
+        if fuzzy:
+            cur.execute(
+                f"SET LOCAL pg_trgm.strict_word_similarity_threshold = {NAME_FUZZY_THRESHOLD}"
+            )
+
         cur.execute("SELECT COUNT(*) as cnt FROM all_patents")
         total = cur.fetchone()["cnt"]
 
         cur.execute(f"SELECT COUNT(*) as cnt FROM all_patents {where}", params)
         filtered = cur.fetchone()["cnt"]
 
+        # When fuzzy name search is active, prepend literal-first / sim-desc
+        # to the user-requested sort so exact hits anchor at the top and
+        # fuzzy hits trail in descending similarity. SELECT also carries
+        # literal_match + sim_score so the frontend can render the ≈chip.
+        score_select = ", " + fuzzy["score_sql"] if fuzzy else ""
+        order_clause_parts = (fuzzy["order_extras"] if fuzzy else []) + [
+            f"{order_col} {order_dir} NULLS LAST"
+        ]
+        order_clause = ", ".join(order_clause_parts)
+        # Params order in main SELECT:
+        #   1. fuzzy score_params (for SELECT scoring expressions)
+        #   2. where params (for WHERE conditions)
+        #   3. length, start (for LIMIT/OFFSET)
+        score_params = fuzzy["score_params"] if fuzzy else []
         cur.execute(f"""
             SELECT id, objectid, full_name, preferred_name, state,
                    indian_allotment_number, authority, signature_date,
@@ -1279,11 +1342,12 @@ def api_patents():
                          AND fr.allottee_name = ffp.fedreg_allottee
                        WHERE fr.claim_type ILIKE '%%FORCED FEE%%'
                    ) as is_forced_fee
+                   {score_select}
             FROM all_patents
             {where}
-            ORDER BY {order_col} {order_dir} NULLS LAST
+            ORDER BY {order_clause}
             LIMIT %s OFFSET %s
-        """, params + [length, start])
+        """, score_params + params + [length, start])
         rows = cur.fetchall()
 
         data = []
@@ -1291,7 +1355,7 @@ def api_patents():
             sig_date = ""
             if r["signature_date"]:
                 sig_date = r["signature_date"].strftime("%Y-%m-%d") if hasattr(r["signature_date"], "strftime") else str(r["signature_date"])
-            data.append({
+            item = {
                 "id": r["id"],
                 "objectid": r["objectid"],
                 "full_name": r["full_name"] or "",
@@ -1302,7 +1366,12 @@ def api_patents():
                 "signature_date": sig_date,
                 "forced_fee": r["is_forced_fee"],
                 "has_plss_geometry": r["has_plss_geometry"],
-            })
+            }
+            if fuzzy:
+                lit = bool(r.get("literal_match"))
+                item["match_type"] = "exact" if lit else "fuzzy"
+                item["sim_score"]  = float(r.get("sim_score") or 0.0)
+            data.append(item)
 
         return jsonify({
             "draw": draw,
@@ -1333,9 +1402,10 @@ def api_patents_csv():
         conditions = []
         params = []
 
-        if name_search:
-            conditions.append("full_name ILIKE %s")
-            params.append(f"%{name_search}%")
+        fuzzy = patent_name_fuzzy_clauses(name_search)
+        if fuzzy:
+            conditions.append(fuzzy["where_sql"])
+            params.extend(fuzzy["where_params"])
         if allotment:
             conditions.append("indian_allotment_number ILIKE %s")
             params.append(allotment)
@@ -1372,32 +1442,50 @@ def api_patents_csv():
 
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
 
+        if fuzzy:
+            cur.execute(
+                f"SET LOCAL pg_trgm.strict_word_similarity_threshold = {NAME_FUZZY_THRESHOLD}"
+            )
+
+        # CSV mirrors the displayed results: when fuzzy name search is active,
+        # exact matches anchor first and similarity columns are included.
+        score_select = ", " + fuzzy["score_sql"] if fuzzy else ""
+        order_clause = (
+            ", ".join(fuzzy["order_extras"]) + ", preferred_name, full_name"
+            if fuzzy else "preferred_name, full_name"
+        )
+        score_params = fuzzy["score_params"] if fuzzy else []
         cur.execute(f"""
             SELECT accession_number, full_name, preferred_name, state, county,
                    indian_allotment_number, authority, signature_date, forced_fee,
                    document_class, total_acres, has_plss_geometry,
                    meridian, township_number, township_direction,
                    range_number, range_direction, section_number, aliquot_parts, remarks
+                   {score_select}
             FROM all_patents
             {where}
-            ORDER BY preferred_name, full_name
-        """, params)
+            ORDER BY {order_clause}
+        """, score_params + params)
         rows = cur.fetchall()
 
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow([
+        header_cols = [
             "Accession Number", "Full Name", "Tribe", "State", "County",
             "Allotment Number", "Authority", "Signature Date", "Forced Fee",
             "Document Class", "Acres", "Mappable",
             "Meridian", "Township", "Township Dir", "Range", "Range Dir",
-            "Section", "Aliquot Parts", "Remarks"
-        ])
+            "Section", "Aliquot Parts", "Remarks",
+        ]
+        if fuzzy:
+            header_cols.extend(["Match Type", "Similarity"])
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(header_cols)
         for r in rows:
             sig_date = ""
             if r["signature_date"]:
                 sig_date = r["signature_date"].strftime("%Y-%m-%d") if hasattr(r["signature_date"], "strftime") else str(r["signature_date"])
-            writer.writerow([
+            row_out = [
                 r["accession_number"], r["full_name"], r["preferred_name"],
                 r["state"], r["county"], r["indian_allotment_number"],
                 r["authority"], sig_date, r["forced_fee"],
@@ -1406,7 +1494,12 @@ def api_patents_csv():
                 r["meridian"], r["township_number"], r["township_direction"],
                 r["range_number"], r["range_direction"], r["section_number"],
                 r["aliquot_parts"], r["remarks"],
-            ])
+            ]
+            if fuzzy:
+                lit = bool(r.get("literal_match"))
+                row_out.append("exact" if lit else "fuzzy")
+                row_out.append(f"{float(r.get('sim_score') or 0.0):.3f}")
+            writer.writerow(row_out)
 
         return Response(
             output.getvalue(),
