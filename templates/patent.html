@@ -103,13 +103,28 @@
 </div>
 {% endif %}
 
-{% if linked_claim %}
-<div class="alert alert-info d-flex align-items-center mb-4">
-    <strong class="me-2">Federal Register Claim:</strong>
-    This patent is linked to a forced fee claim —
-    <a href="{{ url_for('claim_detail', claim_id=linked_claim.id) }}" class="alert-link ms-1">
-        {{ linked_claim.allottee_name }}, Case {{ linked_claim.case_number }} ({{ linked_claim.tribe_identified }})
-    </a>
+{% if linked_claims %}
+<div class="alert {% if is_dispossession_claim %}alert-warning{% else %}alert-info{% endif %} mb-4">
+    <strong class="me-2">Federal Register Claim{% if linked_claims|length > 1 %}s{% endif %}:</strong>
+    {% if is_dispossession_claim %}
+        This patent is linked to a <strong>Forced Fee &amp; Related</strong> dispossession claim
+        (forced fee, secretarial transfer, unapproved land sale, tax forfeiture, taxation, or recovery
+        of trust/restricted land).
+    {% else %}
+        This patent is linked to a Federal Register claim. The claim type is not in the
+        Forced Fee &amp; Related dispossession set — review the type below for context.
+    {% endif %}
+    <ul class="mb-0 mt-2">
+        {% for c in linked_claims %}
+        <li>
+            <a href="{{ url_for('claim_detail', claim_id=c.id) }}" class="alert-link">
+                {{ c.allottee_name }}, Case {{ c.case_number }} ({{ c.tribe_identified }})
+            </a>
+            — <em>{{ c.claim_type }}</em>
+            {% if c.is_dispossession %}<span class="badge bg-warning text-dark ms-1">Dispossession</span>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
 </div>
 {% elif name_matched_claims %}
 <div class="alert alert-light border mb-4">
@@ -155,8 +170,9 @@
             <div class="card-header">
                 <h2 class="h5 mb-0">
                     Patent Details
-                    {% if patent.forced_fee == 'True' %}
-                    <span class="badge bg-warning text-dark ms-2">Forced Fee</span>
+                    {% if is_dispossession_claim %}
+                    <span class="badge bg-warning text-dark ms-2"
+                          title="Linked to a Federal Register dispossession claim (forced fee, secretarial transfer, unapproved land sale, tax forfeiture, taxation, or recovery of trust/restricted land)">Forced Fee &amp; Related</span>
                     {% endif %}
                     {% if patent.cancelled_doc == 'True' %}
                     <span class="badge bg-danger ms-2">Cancelled</span>

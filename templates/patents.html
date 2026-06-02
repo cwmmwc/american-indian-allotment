@@ -23,7 +23,7 @@
         <a href="{{ url_for('allotment_map') }}">View on Map</a>
     </p>
     <p class="text-muted small">Of these, 239,845 patents are <strong>mappable</strong> — matched to Public Land Survey System parcels and visible on the <a href="{{ url_for('allotment_map') }}">allotment map</a>. The remaining 46,025 patents could not be geocoded, primarily because they are on reservations that use non-rectangular surveys (Navajo, Gila River, Colorado River in Arizona/New Mexico) or predate the PLSS (Chickasaw/Choctaw in Alabama/Mississippi). These patents are searchable here but do not appear on the map. <a href="{{ url_for('about') }}#data-coverage">Read more</a></p>
-    <p class="text-muted small">Note: The "Forced Fee" filter shows patents linked to forced fee claims in the <a href="{{ url_for('claims_search') }}">Federal Register dataset</a> (9,649 claims from two 1983 publications). Linkage between FR claims and BLM patent records is ongoing — not all claims have been matched to patents yet, so some tribes may show fewer forced fee patents than expected.</p>
+    <p class="text-muted small">Note: The "Forced Fee &amp; Related Claims" filter shows patents linked to dispossession claims in the <a href="{{ url_for('claims_search') }}">Federal Register dataset</a>: forced fee patents (9,649) plus the thematically adjacent categories — secretarial transfer (1,327), unapproved land sale (980), taxation (1,057), tax forfeiture (688), claim for recovery of trust/restricted land (935), and land sold without approval (264). The narrower forced-fee-only view is still available on the <a href="{{ url_for('claims_search') }}">claims page</a> dropdown. Linkage between FR claims and BLM patent records is ongoing — not all claims have been matched to patents yet, so some tribes may show fewer flagged patents than expected.</p>
 </div>
 
 <div class="card filter-card mb-4">
@@ -64,7 +64,7 @@
                         <option value="">All Types</option>
                         <option value="fee">Fee Patents</option>
                         <option value="trust">Trust Patents</option>
-                        <option value="forced">Forced Fee Only</option>
+                        <option value="forced">Forced Fee &amp; Related Claims</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -104,7 +104,7 @@
             <th>Allotment #</th>
             <th>Authority</th>
             <th>Date</th>
-            <th>Forced Fee</th>
+            <th>Forced Fee &amp; Related</th>
             <th>Map</th>
         </tr>
     </thead>
@@ -180,9 +180,9 @@ $(function() {
             { data: 'authority' },
             { data: 'signature_date' },
             {
-                data: 'forced_fee',
+                data: 'dispossession_claim',
                 render: function(data) {
-                    if (data) return '<span class="badge bg-warning text-dark">Forced Fee</span>';
+                    if (data) return '<span class="badge bg-warning text-dark" title="Linked to a Federal Register claim of type: forced fee, secretarial transfer, unapproved land sale, tax forfeiture, taxation, recovery of trust/restricted land, or land sold without approval">Forced Fee &amp; Related</span>';
                     return '';
                 }
             },

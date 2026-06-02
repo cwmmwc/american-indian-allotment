@@ -386,6 +386,28 @@ LEFT JOIN forced_fee_patents_rails ffp
 - ~2,539 claims remain unlinked
 - Case numbers have leading zeros in `federal_register_claims` but not always in `forced_fee_patents_rails`
 
+### Patents → "Forced Fee & Related" dispossession claims
+
+The patents page filter "Forced Fee & Related Claims" and the JSON `dispossession_claim` flag both expand the forced-fee join to seven thematically-related FR `claim_type` buckets — all of which represent loss of trust title:
+
+```sql
+accession_number IN (
+    SELECT ffp.patents_accession_number FROM forced_fee_patents_rails ffp
+    JOIN federal_register_claims fr
+      ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
+     AND fr.allottee_name = ffp.fedreg_allottee
+    WHERE fr.claim_type ILIKE '%FORCED FEE%'           -- 9,649
+       OR fr.claim_type ILIKE '%SECRETARIAL TRANSFER%' -- 1,327
+       OR fr.claim_type ILIKE '%UNAPPROVED%'           -- 980
+       OR fr.claim_type ILIKE '%WITHOUT APPROVAL%'     -- 264 (subset of UNAPPROVED)
+       OR fr.claim_type ILIKE '%TAX FORFEITURE%'       -- 688
+       OR fr.claim_type ILIKE '%TAXATION%'             -- 1,057
+       OR fr.claim_type ILIKE '%RECOVERY%'             -- 935
+)
+```
+
+Trespass, welfare, timber, old-age-assistance, allotment-never-issued, and questionable-cancellation claims are intentionally excluded. The list lives in `DISPOSSESSION_CLAIM_PATTERNS` in `app.py`. Adopted 2026-06-02 after the Ponca Agency case — `B07813` submitted **zero** forced-fee claims but **fourteen** recovery-of-trust claims, so the narrow forced-fee filter rendered Ponca dispossession invisible on the patents page.
+
 ### Trust → Fee Patent Conversion
 
 ```sql

@@ -83,6 +83,27 @@ When showing forced fee data:
 - Never say "forced fee patents" based on the BLM flag
 - Never conflate FR claims with the total number of trust-to-fee conversions
 
+## RULE: Patent-side "Forced Fee & Related" is a wider FR bucket
+The patents page (`/patents`, `/patent/<id>`, `/api/patents`, `/api/patents/csv`) flags patents linked to any of seven thematically-related FR `claim_type` buckets, not just `%FORCED FEE%`. The seven patterns live in `DISPOSSESSION_CLAIM_PATTERNS` in `app.py` and are reused by the patents filter, the JSON `is_dispossession_claim` flag, the patent-detail banner, and the CSV export:
+
+```
+%FORCED FEE%             (forced fee patent — 9,649)
+%SECRETARIAL TRANSFER%   (1,327)
+%UNAPPROVED%             (unapproved land sale — 980)
+%WITHOUT APPROVAL%       (land sold without approval — 264; covered by UNAPPROVED-ILIKE but kept for clarity)
+%TAX FORFEITURE%         (688)
+%TAXATION%               (1,057)
+%RECOVERY%               (claim for recovery of trust/restricted land — 935)
+```
+
+Per the 2026-06-02 decision: these buckets share the same historical phenomenon (loss of trust title), even when the FR's 1983 enumeration filed them under different administrative labels. The Ponca Agency `B07813` filed zero forced-fee claims but fourteen recovery-of-trust claims — under the narrow filter, Ponca dispossession is invisible. Trespass, welfare, timber, old-age-assistance, allotment-never-issued, and questionable-cancellation claims are NOT in this set — they don't represent loss of trust title.
+
+When adding a new patents-page feature that filters or labels patents by FR linkage:
+- Use `DISPOSSESSION_CLAIM_PATTERNS` / `DISPOSSESSION_WHERE_SQL`, never re-derive the list
+- The JSON field is `dispossession_claim` (boolean); the template flag is `is_dispossession_claim`
+- The badge/column label is "Forced Fee & Related" (table column header) or "Forced Fee & Related Claims" (dropdown / lead paragraph)
+- The patent-detail page renders ALL linked claims; dispossession ones get the warning-style banner and a "Dispossession" badge inline; non-dispossession ones get the info-style banner with the actual claim type shown
+
 ## Templates
 Most extend `base.html`. Navigation: Claims | Patents | Map | Tribes | Visualizations (dropdown) | About | Main Site.
 Exception: `map.html` is standalone (does not extend `base.html`) — it has its own thin nav bar and full-viewport layout for the Leaflet map SPA. Map assets live in `static/map/js/` and `static/map/css/`.

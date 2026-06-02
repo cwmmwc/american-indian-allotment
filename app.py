@@ -123,6 +123,28 @@ def add_claim_type_filter(claim_type, conditions, params):
             params.append(f"%{claim_type}%")
 
 
+# FR claim_type buckets treated as "Forced Fee & Related Claims" on the
+# patents page — forced fee plus the six adjacent dispossession categories
+# (recovery of trust/restricted land, secretarial transfer, unapproved land
+# sale incl. "land sold without approval", tax forfeiture, taxation).
+# Trespass, welfare, timber, old-age-assistance, allotment-never-issued, and
+# questionable-cancellation claims are intentionally excluded — they're not
+# about loss of trust title.
+DISPOSSESSION_CLAIM_PATTERNS = (
+    "%FORCED FEE%",
+    "%SECRETARIAL TRANSFER%",
+    "%UNAPPROVED%",
+    "%WITHOUT APPROVAL%",
+    "%TAX FORFEITURE%",
+    "%TAXATION%",
+    "%RECOVERY%",
+)
+
+DISPOSSESSION_WHERE_SQL = " OR ".join(
+    ["fr.claim_type ILIKE %s"] * len(DISPOSSESSION_CLAIM_PATTERNS)
+)
+
+
 # Fuzzy name search (pg_trgm strict_word_similarity). The query is matched
 # against full_name as a phrase — strict_word_similarity finds the best
 # contiguous span in full_name and returns its similarity to the query.
@@ -1258,7 +1280,7 @@ def api_patents():
         order_col_idx = request.args.get("order[0][column]", 0, type=int)
         order_dir = request.args.get("order[0][dir]", "asc")
         order_cols = ["full_name", "preferred_name", "state",
-                      "indian_allotment_number", "authority", "signature_date", "forced_fee", "has_plss_geometry"]
+                      "indian_allotment_number", "authority", "signature_date", "is_dispossession_claim", "has_plss_geometry"]
         order_col = order_cols[min(order_col_idx, len(order_cols) - 1)]
         if order_dir not in ("asc", "desc"):
             order_dir = "asc"
@@ -1286,13 +1308,14 @@ def api_patents():
             conditions.append("authority IN %s")
             params.append(TRUST_AUTHORITIES)
         elif patent_type == "forced":
-            conditions.append("""accession_number IN (
+            conditions.append(f"""accession_number IN (
                 SELECT ffp.patents_accession_number FROM forced_fee_patents_rails ffp
                 JOIN federal_register_claims fr
                   ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
                   AND fr.allottee_name = ffp.fedreg_allottee
-                WHERE fr.claim_type ILIKE '%%FORCED FEE%%'
+                WHERE {DISPOSSESSION_WHERE_SQL}
             )""")
+            params.extend(DISPOSSESSION_CLAIM_PATTERNS)
         if date_from:
             conditions.append("signature_date >= %s")
             params.append(date_from)
@@ -1340,14 +1363,14 @@ def api_patents():
                        JOIN federal_register_claims fr
                          ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
                          AND fr.allottee_name = ffp.fedreg_allottee
-                       WHERE fr.claim_type ILIKE '%%FORCED FEE%%'
-                   ) as is_forced_fee
+                       WHERE {DISPOSSESSION_WHERE_SQL}
+                   ) as is_dispossession_claim
                    {score_select}
             FROM all_patents
             {where}
             ORDER BY {order_clause}
             LIMIT %s OFFSET %s
-        """, score_params + params + [length, start])
+        """, list(DISPOSSESSION_CLAIM_PATTERNS) + score_params + params + [length, start])
         rows = cur.fetchall()
 
         data = []
@@ -1364,7 +1387,7 @@ def api_patents():
                 "allotment_number": r["indian_allotment_number"] or "",
                 "authority": r["authority"] or "",
                 "signature_date": sig_date,
-                "forced_fee": r["is_forced_fee"],
+                "dispossession_claim": r["is_dispossession_claim"],
                 "has_plss_geometry": r["has_plss_geometry"],
             }
             if fuzzy:
@@ -1422,13 +1445,14 @@ def api_patents_csv():
             conditions.append("authority IN %s")
             params.append(TRUST_AUTHORITIES)
         elif patent_type == "forced":
-            conditions.append("""accession_number IN (
+            conditions.append(f"""accession_number IN (
                 SELECT ffp.patents_accession_number FROM forced_fee_patents_rails ffp
                 JOIN federal_register_claims fr
                   ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
                   AND fr.allottee_name = ffp.fedreg_allottee
-                WHERE fr.claim_type ILIKE '%%FORCED FEE%%'
+                WHERE {DISPOSSESSION_WHERE_SQL}
             )""")
+            params.extend(DISPOSSESSION_CLAIM_PATTERNS)
         if date_from:
             conditions.append("signature_date >= %s")
             params.append(date_from)
@@ -1457,7 +1481,14 @@ def api_patents_csv():
         score_params = fuzzy["score_params"] if fuzzy else []
         cur.execute(f"""
             SELECT accession_number, full_name, preferred_name, state, county,
-                   indian_allotment_number, authority, signature_date, forced_fee,
+                   indian_allotment_number, authority, signature_date,
+                   accession_number IN (
+                       SELECT ffp.patents_accession_number FROM forced_fee_patents_rails ffp
+                       JOIN federal_register_claims fr
+                         ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
+                         AND fr.allottee_name = ffp.fedreg_allottee
+                       WHERE {DISPOSSESSION_WHERE_SQL}
+                   ) as is_dispossession_claim,
                    document_class, total_acres, has_plss_geometry,
                    meridian, township_number, township_direction,
                    range_number, range_direction, section_number, aliquot_parts, remarks
@@ -1465,12 +1496,12 @@ def api_patents_csv():
             FROM all_patents
             {where}
             ORDER BY {order_clause}
-        """, score_params + params)
+        """, list(DISPOSSESSION_CLAIM_PATTERNS) + score_params + params)
         rows = cur.fetchall()
 
         header_cols = [
             "Accession Number", "Full Name", "Tribe", "State", "County",
-            "Allotment Number", "Authority", "Signature Date", "Forced Fee",
+            "Allotment Number", "Authority", "Signature Date", "Forced Fee & Related Claim",
             "Document Class", "Acres", "Mappable",
             "Meridian", "Township", "Township Dir", "Range", "Range Dir",
             "Section", "Aliquot Parts", "Remarks",
@@ -1488,7 +1519,8 @@ def api_patents_csv():
             row_out = [
                 r["accession_number"], r["full_name"], r["preferred_name"],
                 r["state"], r["county"], r["indian_allotment_number"],
-                r["authority"], sig_date, r["forced_fee"],
+                r["authority"], sig_date,
+                "Yes" if r["is_dispossession_claim"] else "",
                 r["document_class"], r["total_acres"],
                 "Yes" if r["has_plss_geometry"] else "No",
                 r["meridian"], r["township_number"], r["township_direction"],
@@ -1556,19 +1588,39 @@ def patent_detail(objectid):
             if not patent:
                 abort(404)
 
-        # Cross-link: check if this patent's accession_number is in forced_fee_patents_rails
-        linked_claim = None
+        # Cross-link: every FR claim linked to this patent via forced_fee_patents_rails.
+        # Each row carries its claim_type so the template can distinguish dispossession
+        # claims (forced fee + secretarial transfer + unapproved sale + tax forfeiture +
+        # taxation + recovery) from adjacent claim types (trespass, welfare, timber, etc.).
+        linked_claims = []
+        is_dispossession_claim = False
         if patent.get("accession_number"):
+            dispossession_re = re.compile(
+                r"FORCED FEE|SECRETARIAL TRANSFER|UNAPPROVED|WITHOUT APPROVAL|"
+                r"TAX FORFEITURE|TAXATION|RECOVERY",
+                re.IGNORECASE,
+            )
             cur.execute("""
-                SELECT fr.id, fr.allottee_name, fr.case_number, fr.tribe_identified
+                SELECT fr.id, fr.allottee_name, fr.case_number, fr.tribe_identified,
+                       fr.claim_type
                 FROM forced_fee_patents_rails ffp
                 JOIN federal_register_claims fr
                     ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
                     AND fr.allottee_name = ffp.fedreg_allottee
                 WHERE ffp.patents_accession_number = %s
-                LIMIT 1
+                ORDER BY fr.id
             """, (patent["accession_number"],))
-            linked_claim = cur.fetchone()
+            for row in cur.fetchall():
+                row = dict(row)
+                row["is_dispossession"] = bool(
+                    row.get("claim_type") and dispossession_re.search(row["claim_type"])
+                )
+                if row["is_dispossession"]:
+                    is_dispossession_claim = True
+                linked_claims.append(row)
+            # Sort dispossession claims first so the warning banner uses one of them.
+            linked_claims.sort(key=lambda r: (not r["is_dispossession"], r["id"]))
+        linked_claim = linked_claims[0] if linked_claims else None
 
         # Name-based claim search: when no verified linkage exists,
         # search federal_register_claims by the patentee's name.
@@ -1682,6 +1734,8 @@ def patent_detail(objectid):
             "patent.html",
             patent=patent,
             linked_claim=linked_claim,
+            linked_claims=linked_claims,
+            is_dispossession_claim=is_dispossession_claim,
             name_matched_claims=name_matched_claims,
             cancelled_research=cancelled_research,
             file_refs=file_refs,

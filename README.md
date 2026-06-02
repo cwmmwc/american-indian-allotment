@@ -34,7 +34,7 @@ Full-text search across 10,976 Federal Register claims (9,649 forced fee, 1,327 
 Detailed view of each FR claim including linked BLM patents, trust-to-fee conversion details, PLSS land descriptions, and direct links to GLO patent images.
 
 ### Patent Search (`/patents`)
-Browse and search 285,870 BLM allotment patent records. Filter by name, tribe, state, patent type, date range, and map status (mappable vs. not mappable). Server-side pagination and CSV export. Each patent links to its detail page and, if mappable, directly to its parcel on the allotment map.
+Browse and search 285,870 BLM allotment patent records. Filter by name, tribe, state, patent type, date range, and map status (mappable vs. not mappable). The patent-type filter offers **Fee Patents**, **Trust Patents**, and **Forced Fee & Related Claims**. The last bucket covers the seven Federal Register `claim_type` categories that represent loss of trust title: forced fee patent, secretarial transfer, unapproved land sale (incl. land sold without approval), tax forfeiture, taxation, and claim for recovery of trust/restricted land. Trespass, welfare, timber, old-age-assistance, allotment-never-issued, and questionable-cancellation claims are intentionally excluded — they're not about loss of trust title. Server-side pagination and CSV export. Each patent links to its detail page and, if mappable, directly to its parcel on the allotment map.
 
 ### Individual Patent Pages (`/patent/<id>`)
 Full patent detail with legal land descriptions, authority citations, and links to the allotment map.
@@ -85,6 +85,8 @@ In 1983, the Bureau of Indian Affairs published two Federal Register notices lis
 - ~7,110 linked to BLM patent records; ~2,539 unlinked
 
 **The Federal Register is the sole authoritative source for forced fee counts.** The BLM `forced_fee` flag inflates numbers through one-to-many patent matching and must not be used for this purpose.
+
+The patents page exposes the broader **Forced Fee & Related Claims** view — forced fee plus secretarial transfer, unapproved land sale, tax forfeiture, taxation, and claim for recovery of trust/restricted land. These are the FR `claim_type` buckets that all represent loss of trust title. For some agencies (notably the Ponca Agency `B07813`, which submitted **zero** forced-fee claims and **fourteen** recovery-of-trust claims), the broader view is the only way to surface dispossession at all. The strict forced-fee-only view remains available via the claims page dropdown.
 
 ### BLM Allotment Patents
 **285,870** General Land Office patent records from the Bureau of Land Management, covering trust patents, fee patents, and other allotment-related patents across all tribes. Of these, **239,845** are matched to PLSS parcels and displayed on the interactive allotment map; the remaining **46,025** are searchable on the patents page but cannot be geocoded.
