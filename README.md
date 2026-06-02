@@ -399,6 +399,55 @@ The IATH export data has not yet been loaded into `allotment_research` to replac
 
 This is an improvement to data quality, not a structural change. The app code, views, and routes continue to work as-is with the scraped data until the reload happens.
 
+## Forced Fee & Related Claims Filter (June 2026)
+
+The patents page used to expose a "Forced Fee Only" filter that matched a single `claim_type` pattern — `ILIKE '%FORCED FEE%'`. That collapsed the historical question ("which allotments were taken from their owners under the General Allotment Act?") onto a single 1983 administrative label, and missed the allotments that the BIA enumerated under thematically equivalent but differently-named claim types.
+
+The clearest case is the Ponca Agency. Of the 1,881 Ponca allotment patents in the database, **463 are fee patents** — yet under the old filter, *zero* showed as Forced Fee. The Ponca Agency (`B07813`) submitted only 18 claims to the 1983 Federal Register notices: 14 under `RECOVERY OF TRUST OR RESTRICTED LAND`, 4 under various trespass types, and **none** under any "forced fee" label. The legal mechanism the BIA used to recover Ponca land was procedurally different — but the underlying phenomenon (loss of trust title) is the same as a forced fee patent. Tonkawa and Quapaw show the same pattern at smaller scale.
+
+As of June 2026, the patents-page filter is **Forced Fee & Related Claims**, spanning seven thematically-related FR `claim_type` buckets — all of which represent loss of trust title:
+
+| Bucket (FR `claim_type` ILIKE) | Rows | What it captures |
+|---|---:|---|
+| `%FORCED FEE%` | 9,649 | Fee patents issued without the allottee's consent |
+| `%SECRETARIAL TRANSFER%` | 1,327 | Trust land transferred by Secretary's order |
+| `%UNAPPROVED%` | 980 | Unapproved restricted land sale (incl. `%WITHOUT APPROVAL%` variants) |
+| `%TAX FORFEITURE%` | 688 | Restricted land forfeited for unpaid taxes |
+| `%TAXATION%` | 1,057 | Wrongful taxation of trust/restricted land |
+| `%RECOVERY%` | 935 | Claim for recovery of trust/restricted land — the Ponca bucket |
+| `%LAND SOLD WITHOUT APPROVAL%` | 264 | (subset of UNAPPROVED, kept explicit for clarity) |
+
+Trespass (ROW, road, agricultural, grazing, building, fence, etc.), welfare payments, timber wrongfully removed, old-age-assistance, allotment-never-issued, and questionable-cancellation claims are **not** in this set — they describe use of allotment land or unrelated administrative actions, not loss of trust title.
+
+The expansion adds **172 net new patents** flagged corpus-wide vs. the strict forced-fee-only filter. The tribes most affected:
+
+| Tribe | Patents gained |
+|---|---:|
+| Kickapoo | 52 |
+| Pawnee | 47 |
+| Ponca | 43 |
+| Wichita | 13 |
+| Otoe and Missouria | 7 |
+| Tonkawa | 3 |
+| (others) | 7 |
+
+The strict forced-fee-only view remains available on the claims page (`/claims`) dropdown ("Forced Fee Patent (all variants)").
+
+### Implementation
+
+The seven `ILIKE` patterns live in `DISPOSSESSION_CLAIM_PATTERNS` (and the `OR`-joined `DISPOSSESSION_WHERE_SQL`) in `app.py`, used by:
+
+- `api_patents` — the patent-type=forced filter and the `is_dispossession_claim` SELECT subquery returned as the JSON `dispossession_claim` field
+- `api_patents_csv` — the CSV export's "Forced Fee & Related Claim" column
+- `patent_detail` — the route that returns all linked FR claims (not just one, as before), with per-row `is_dispossession` booleans
+
+On `/patent/<id>` the banner now distinguishes the two cases:
+
+- **Dispossession claim** linked → `alert-warning` banner reading "linked to a Forced Fee & Related dispossession claim", with a "Dispossession" pill next to each qualifying claim type
+- **Non-dispossession claim** linked (e.g. trespass, welfare) → `alert-info` banner noting the claim type isn't in the dispossession set, with the actual `claim_type` printed in italics
+
+The Patent Details card header badge previously rendered from the BLM `forced_fee` transcribed flag — explicitly forbidden as a source of truth by the rule in `CLAUDE.md`. It now renders from the same FR-derived `is_dispossession_claim` value, so the badge, the column flag, and the filter are all driven by one source.
+
 ## GitHub
 
 https://github.com/cwmmwc/federal-register-forced-fee
