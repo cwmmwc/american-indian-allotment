@@ -267,8 +267,6 @@ def main() -> None:
                     help=f"Directory of *.json files (default: {DEFAULT_SOURCE})")
     ap.add_argument("--dry-run", action="store_true",
                     help="Parse and resolve tribes but don't write to the DB")
-    ap.add_argument("--no-refresh", action="store_true",
-                    help="Skip REFRESH MATERIALIZED VIEW at end")
     args = ap.parse_args()
 
     if not args.source.is_dir():
@@ -332,13 +330,6 @@ def main() -> None:
         print(f"\nLoaded {len(records)} documents, {record_count} records")
         print(f"  resolved authoritative_tribe: {resolved_count}")
         print(f"  unresolved (NULL):            {sum(unresolved.values())}")
-
-        if not args.no_refresh:
-            print("\nRefreshing materialized view...")
-            with conn.cursor() as cur:
-                cur.execute("REFRESH MATERIALIZED VIEW circular_2464_allotment_matches;")
-            conn.commit()
-            print("  done")
 
         print("\nUnresolved tribe labels (for historian triage):")
         for label, n in unresolved.most_common():

@@ -1,25 +1,22 @@
 -- Circular 2464 corpus integration — Phase 1 schema (Layer 1 only)
 --
--- Adds three objects to the existing `allotment_research` database, all
+-- Adds two tables to the existing `allotment_research` database, both
 -- prefixed `circular_2464_` so they sit alongside the existing 25 tables
 -- without colliding:
 --
---   circular_2464_documents          one row per source extraction JSON
---   circular_2464_records            one row per allottee, the 18 flat fields
---                                    plus authoritative_tribe resolved at load
---                                    time via tribe_crosswalk
---   circular_2464_allotment_matches  materialized view joining records to
---                                    blm_allotment_patents and
---                                    federal_register_claims on
---                                    (allotment_number, authoritative_tribe)
+--   circular_2464_documents   one row per source extraction JSON
+--   circular_2464_records     one row per allottee, the 18 flat fields
+--                             plus authoritative_tribe resolved at load
+--                             time via tribe_crosswalk
+--
+-- The BLM ↔ FR linkage for testimony records is intentionally NOT
+-- precomputed here. The Flask routes that surface testimony will join
+-- `circular_2464_records` to `blm_allotment_patents` and
+-- `forced_fee_patents_rails` inline, matching the pattern `app.py`
+-- already uses everywhere for BLM↔FR linkages.
 --
 -- Strictly additive. No DROP, ALTER, or UPDATE against any existing table.
 -- Idempotent: IF NOT EXISTS on every CREATE. Safe to re-run.
---
--- Layer 2/3 enrichment (Kimi v5 entities, Sonnet vision fee_patents, mortgages,
--- testimony, taxes, financial_transactions) is deferred to a later phase and
--- will add additional tables alongside these. The schema below is the
--- minimum needed to expose the corpus in the Flask app.
 --
 -- Run with:  psql -d allotment_research -f sql/create_circular_2464_tables.sql
 
@@ -104,63 +101,9 @@ CREATE INDEX IF NOT EXISTS idx_c2464_rec_name ON circular_2464_records(name);
 CREATE INDEX IF NOT EXISTS idx_c2464_rec_fee_date ON circular_2464_records(fee_patent_date);
 CREATE INDEX IF NOT EXISTS idx_c2464_rec_fts ON circular_2464_records USING gin(search_vector);
 
--- Composite (allotment_number, authoritative_tribe) is the materialized
--- view's join key — make it cheap.
+-- Composite (allotment_number, authoritative_tribe) is the join key the
+-- Flask routes use when looking up matching BLM patents — make it cheap.
 CREATE INDEX IF NOT EXISTS idx_c2464_rec_join
     ON circular_2464_records(allotment_number, authoritative_tribe);
-
--- ─────────────────────────────────────────────────────────────────
--- circular_2464_allotment_matches  (materialized view)
---
---   Pre-computes the bridge between the 1928 testimony corpus and the
---   existing patent / claim universe. One row per
---   (testimony_record × BLM patent × FR claim) combination. LEFT JOINs
---   so testimony records with no BLM or FR match still appear with
---   NULL on those columns — absence is data.
---
---   Refreshed by the loader at the end of every run:
---       REFRESH MATERIALIZED VIEW circular_2464_allotment_matches;
--- ─────────────────────────────────────────────────────────────────
-
-CREATE MATERIALIZED VIEW IF NOT EXISTS circular_2464_allotment_matches AS
-SELECT
-    r.id                            AS record_id,
-    r.document_id                   AS document_id,
-    r.name                          AS testimony_name,
-    r.allotment_number              AS allotment_number,
-    r.authoritative_tribe           AS authoritative_tribe,
-    r.tribe_reservation             AS testimony_tribe_label,
-    r.fee_patent_date               AS testimony_fee_patent_date,
-
-    bap.objectid                    AS blm_patent_objectid,
-    bap.accession_number            AS blm_accession,
-    bap.full_name                   AS blm_patentee,
-    bap.signature_date              AS blm_signature_date,
-    bap.authority                   AS blm_authority,
-    bap.preferred_name              AS blm_preferred_name,
-
-    fr.id                           AS fr_claim_id,
-    fr.case_number                  AS fr_case_number,
-    fr.claim_type                   AS fr_claim_type,
-    fr.allottee_name                AS fr_allottee_name,
-    fr.bia_agency_code              AS fr_bia_agency_code
-FROM circular_2464_records r
-LEFT JOIN blm_allotment_patents bap
-    ON r.allotment_number IS NOT NULL
-    AND r.allotment_number <> ''
-    AND r.allotment_number = bap.indian_allotment_number
-    AND r.authoritative_tribe IS NOT NULL
-    AND r.authoritative_tribe = bap.preferred_name
-LEFT JOIN federal_register_claims fr
-    ON r.allotment_number IS NOT NULL
-    AND r.allotment_number <> ''
-    AND r.allotment_number = fr.allotment_number
-    AND r.authoritative_tribe IS NOT NULL
-    AND r.authoritative_tribe = fr.tribe_identified;
-
-CREATE INDEX IF NOT EXISTS idx_c2464_matches_record ON circular_2464_allotment_matches(record_id);
-CREATE INDEX IF NOT EXISTS idx_c2464_matches_allot ON circular_2464_allotment_matches(allotment_number);
-CREATE INDEX IF NOT EXISTS idx_c2464_matches_blm ON circular_2464_allotment_matches(blm_patent_objectid);
-CREATE INDEX IF NOT EXISTS idx_c2464_matches_fr ON circular_2464_allotment_matches(fr_claim_id);
 
 COMMIT;
