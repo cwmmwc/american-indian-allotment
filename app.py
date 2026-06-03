@@ -870,19 +870,21 @@ def claim_detail(claim_id):
         )
         if accessions:
             # forced_fee_patents_rails.patents_accession_number is integer in
-            # this DB while blm_allotment_patents.accession_number is text — cast
-            # the rails-side tuple to text for the IN-list comparison.
+            # this DB while patent accession_number is text — cast the
+            # rails-side tuple to text for the IN-list comparison.
+            # Query the all_patents view (not blm_allotment_patents alone) so
+            # rails-only non-mappable patents also surface the testimony.
             cur.execute("""
                 SELECT DISTINCT r.id, r.name, r.fee_patent_date, r.notes,
                        d.document_type, d.part_number, d.source_pages
                 FROM circular_2464_records r
                 JOIN circular_2464_documents d ON d.id = r.document_id
                 WHERE (r.allotment_number, r.authoritative_tribe) IN (
-                    SELECT bap.indian_allotment_number, bap.preferred_name
-                    FROM blm_allotment_patents bap
-                    WHERE bap.accession_number IN %s
-                      AND bap.indian_allotment_number IS NOT NULL
-                      AND bap.preferred_name IS NOT NULL
+                    SELECT ap.indian_allotment_number, ap.preferred_name
+                    FROM all_patents ap
+                    WHERE ap.accession_number IN %s
+                      AND ap.indian_allotment_number IS NOT NULL
+                      AND ap.preferred_name IS NOT NULL
                 )
                 ORDER BY d.part_number, r.id
             """, (tuple(str(a) for a in accessions),))
@@ -1906,17 +1908,18 @@ def api_testimony():
         """, params)
         filtered = cur.fetchone()["cnt"]
 
-        # has_blm flag — does any BLM patent match this record's (allotment, tribe)?
-        # Computed inline with EXISTS so the testimony list can badge matches
-        # without precomputing anything.
+        # has_blm flag — does any patent in the catalog match this record's
+        # (allotment, tribe)? Queries the all_patents view (UNION of mappable
+        # blm_allotment_patents + rails-only non-mappable patents) so the
+        # badge reflects any cross-link, not just mappable ones.
         cur.execute(f"""
             SELECT r.id, r.name, r.authoritative_tribe, r.tribe_reservation,
                    r.allotment_number, r.fee_patent_date,
                    d.document_type, d.part_number, d.source_pages, d.document_id AS doc_string_id,
                    EXISTS (
-                       SELECT 1 FROM blm_allotment_patents bap
-                       WHERE bap.indian_allotment_number = r.allotment_number
-                         AND bap.preferred_name = r.authoritative_tribe
+                       SELECT 1 FROM all_patents ap
+                       WHERE ap.indian_allotment_number = r.allotment_number
+                         AND ap.preferred_name = r.authoritative_tribe
                          AND r.allotment_number IS NOT NULL AND r.allotment_number <> ''
                          AND r.authoritative_tribe IS NOT NULL
                    ) AS has_blm
@@ -2023,15 +2026,17 @@ def testimony_detail(record_id):
         if not record:
             abort(404)
 
-        # Cross-link: matching BLM patents on (allotment_number, preferred_name).
-        # Only runs when both fields are populated on the testimony record.
+        # Cross-link: matching patents on (allotment_number, preferred_name).
+        # Queries the all_patents view to include both mappable (BLM-imported)
+        # and non-mappable (rails-only) patents. For non-mappable rows the
+        # objectid column is NULL and the template links to /patent/<id>?src=rails.
         blm_patents = []
         if record["allotment_number"] and record["authoritative_tribe"]:
             cur.execute("""
-                SELECT objectid, accession_number, full_name, signature_date,
+                SELECT id, objectid, accession_number, full_name, signature_date,
                        authority, preferred_name, indian_allotment_number,
-                       forced_fee, cancelled_doc
-                FROM blm_allotment_patents
+                       forced_fee, cancelled_doc, has_plss_geometry
+                FROM all_patents
                 WHERE indian_allotment_number = %s
                   AND preferred_name = %s
                 ORDER BY signature_date NULLS LAST, authority

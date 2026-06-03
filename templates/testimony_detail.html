@@ -33,10 +33,20 @@
     <ul class="mb-0 mt-2">
         {% for p in blm_patents %}
         <li>
+            {# all_patents returns objectid (NULL for non-mappable rails-only
+               patents) and id (always present). Mappable rows link to
+               /patent/<objectid>; non-mappable need /patent/<rails_id>?src=rails. #}
+            {% if p.objectid %}
             <a href="{{ url_for('patent_detail', objectid=p.objectid) }}" class="alert-link">
+            {% else %}
+            <a href="{{ url_for('patent_detail', objectid=p.id) }}?src=rails" class="alert-link">
+            {% endif %}
                 {{ p.full_name }} — {{ p.authority }}{% if p.signature_date %}, {{ p.signature_date.strftime('%Y-%m-%d') if p.signature_date.strftime is defined else p.signature_date }}{% endif %}
             </a>
             (accession {{ p.accession_number }})
+            {% if not p.has_plss_geometry %}
+            <span class="badge bg-light text-muted ms-1" title="Not on the allotment map — no PLSS geometry available">Not mappable</span>
+            {% endif %}
             {% if p.cancelled_doc and p.cancelled_doc|string|lower == 'true' %}
             <span class="badge bg-warning text-dark ms-1">Cancelled</span>
             {% endif %}
