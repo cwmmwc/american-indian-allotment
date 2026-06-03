@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}{{ record.name or 'Testimony' }} — {{ record.source_document_id }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('testimony_index') }}">1928 Testimony</a></li>
+        {% if record.authoritative_tribe %}
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('testimony_index', tribe=record.authoritative_tribe) }}">{{ record.authoritative_tribe }}</a>
+        </li>
+        {% endif %}
+        <li class="breadcrumb-item active">{{ record.source_document_id }}</li>
+    </ol>
+</nav>
+
+<div class="page-header">
+    <h1>{{ record.name or 'Unknown allottee' }}</h1>
+    <p class="lead">
+        {% if record.authoritative_tribe %}{{ record.authoritative_tribe }}
+        {% elif record.tribe_reservation %}<span class="text-muted">{{ record.tribe_reservation }}</span>
+        {% endif %}
+        {% if record.allotment_number %}&middot; Allotment {{ record.allotment_number }}{% endif %}
+        &middot; {{ record.document_type.replace('_', ' ').title() }}
+        {% if record.part_number %}&middot; RG 75 Part {{ record.part_number }}{% endif %}
+        {% if record.source_pages %}, p. {{ record.source_pages }}{% endif %}
+    </p>
+</div>
+
+{% if blm_patents %}
+<div class="alert alert-info mb-4">
+    <strong class="me-2">BLM Patent{% if blm_patents|length > 1 %}s{% endif %} for this allotment:</strong>
+    <ul class="mb-0 mt-2">
+        {% for p in blm_patents %}
+        <li>
+            <a href="{{ url_for('patent_detail', objectid=p.objectid) }}" class="alert-link">
+                {{ p.full_name }} — {{ p.authority }}{% if p.signature_date %}, {{ p.signature_date.strftime('%Y-%m-%d') if p.signature_date.strftime is defined else p.signature_date }}{% endif %}
+            </a>
+            (accession {{ p.accession_number }})
+            {% if p.cancelled_doc and p.cancelled_doc|string|lower == 'true' %}
+            <span class="badge bg-warning text-dark ms-1">Cancelled</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if fr_claims %}
+<div class="alert alert-warning mb-4">
+    <strong class="me-2">1983 Federal Register Claim{% if fr_claims|length > 1 %}s{% endif %} on this allotment:</strong>
+    <ul class="mb-0 mt-2">
+        {% for c in fr_claims %}
+        <li>
+            <a href="{{ url_for('claim_detail', claim_id=c.id) }}" class="alert-link">
+                {{ c.allottee_name }}, Case {{ c.case_number }} ({{ c.tribe_identified }})
+            </a>
+            — <em>{{ c.claim_type }}</em>
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="small text-muted mt-2">
+        Linked via the same <code>forced_fee_patents_rails</code> hand-verified
+        bridge the patents and claims pages use throughout the app.
+    </div>
+</div>
+{% endif %}
+
+<h3 class="mt-4">Record fields</h3>
+<table class="table table-sm">
+    <tbody>
+        <tr><th class="w-25">Name</th><td>{{ record.name or '—' }}</td></tr>
+        <tr><th>Tribe / Reservation (as extracted)</th><td>{{ record.tribe_reservation or '—' }}</td></tr>
+        <tr><th>Tribe (resolved)</th>
+            <td>
+                {% if record.authoritative_tribe %}{{ record.authoritative_tribe }}
+                {% else %}<span class="text-muted">unresolved — record will not surface BLM/FR matches</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr><th>Allotment number</th><td>{{ record.allotment_number or '—' }}</td></tr>
+        <tr><th>Post office address</th><td>{{ record.post_office_address or '—' }}</td></tr>
+        <tr><th>Trust patent date</th><td>{{ record.trust_patent_date or '—' }}</td></tr>
+        <tr><th>Fee patent date</th><td>{{ record.fee_patent_date or '—' }}</td></tr>
+        <tr><th>Cancelled</th><td>{{ record.cancelled or '—' }}</td></tr>
+        <tr><th>Refused / Protested</th><td>{{ record.refused_protested or '—' }}</td></tr>
+        <tr><th>Recorded patent</th><td>{{ record.recorded_patent or '—' }}</td></tr>
+        <tr><th>Sold / Mortgaged</th><td>{{ record.sold_mortgaged or '—' }}</td></tr>
+        <tr><th>Buyer</th><td>{{ record.buyer or '—' }}</td></tr>
+        <tr><th>Tax burden / forced sale</th><td>{{ record.tax_burden or '—' }}</td></tr>
+        <tr><th>Gender</th><td>{{ record.gender or '—' }}</td></tr>
+        <tr><th>Age</th><td>{{ record.age or '—' }}</td></tr>
+        <tr><th>Occupation / Income</th><td>{{ record.occupation_income or '—' }}</td></tr>
+        <tr><th>Literate / Illiterate</th><td>{{ record.literate_illiterate or '—' }}</td></tr>
+    </tbody>
+</table>
+
+{% if record.notes %}
+<h3 class="mt-4">Notes</h3>
+<div class="card mb-4">
+    <div class="card-body" style="white-space: pre-wrap;">{{ record.notes }}</div>
+</div>
+{% endif %}
+
+{% if record.recovery_notes_json %}
+<h3 class="mt-4">Recovery / audit trail</h3>
+<p class="text-muted small">
+    Edits made to this record during the cleanup campaign. Each entry records
+    the date, the correction type, and (where applicable) what changed.
+</p>
+<ul class="list-group mb-4">
+    {% for entry in record.recovery_notes_json %}
+    <li class="list-group-item">
+        <div class="d-flex justify-content-between">
+            <strong>{{ entry.type or 'edit' }}</strong>
+            <span class="text-muted small">{{ entry.date or '' }}</span>
+        </div>
+        {% if entry.method %}<div class="small">Method: {{ entry.method }}</div>{% endif %}
+        {% if entry.source_url %}<div class="small">Source: <a href="{{ entry.source_url }}">{{ entry.source_url }}</a></div>{% endif %}
+        {% if entry.fields_corrected %}
+        <div class="small mt-1">
+            <strong>Fields changed:</strong> {{ entry.fields_corrected|join(', ') }}
+        </div>
+        {% endif %}
+        {% if entry.previous_values %}
+        <details class="mt-1 small">
+            <summary class="text-muted">Previous values</summary>
+            <ul class="mb-0">
+                {% for k, v in entry.previous_values.items() %}
+                <li><code>{{ k }}</code>: {{ v }}</li>
+                {% endfor %}
+            </ul>
+        </details>
+        {% endif %}
+        {% if entry.extra_note %}<div class="small mt-1 fst-italic">{{ entry.extra_note }}</div>{% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if sibling_records %}
+<h3 class="mt-4">Other testimony for this allottee</h3>
+<ul class="mb-4">
+    {% for s in sibling_records %}
+    <li>
+        <a href="{{ url_for('testimony_detail', record_id=s.id) }}">{{ s.name }}</a>
+        — {{ s.document_type.replace('_', ' ').title() }}
+        {% if s.part_number %}(Part {{ s.part_number }}{% if s.source_pages %}, p. {{ s.source_pages }}{% endif %}){% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<div class="text-muted small mt-5">
+    Source: Circular 2464 (RG 75), 1928 BIA investigation of forced fee patents.
+    Document ID <code>{{ record.source_document_id }}</code>
+    {% if record.record_index and record.record_index > 0 %}(row {{ record.record_index }} of multi-record file){% endif %}.
+    Extracted by {{ record.extraction_model or 'unknown model' }}{% if record.source_pdf %}; source PDF: <em>{{ record.source_pdf }}</em>{% endif %}.
+</div>
+{% endblock %}

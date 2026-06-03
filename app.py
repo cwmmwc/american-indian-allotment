@@ -859,6 +859,35 @@ def claim_detail(claim_id):
                         if p.get("objectid"):
                             blm_patent_ids[acc] = p["objectid"]
 
+        # 1928 Circular 2464 testimony for this allotment, reached via the
+        # rails-routed path: claim → BLM patent(s) (already loaded above) →
+        # testimony match on (allotment_number, preferred_name). Same chain
+        # logic the rest of app.py uses for BLM↔FR linkages.
+        testimony_records = []
+        accessions = tuple(
+            p["patents_accession_number"] for p in patents
+            if p.get("patents_accession_number")
+        )
+        if accessions:
+            # forced_fee_patents_rails.patents_accession_number is integer in
+            # this DB while blm_allotment_patents.accession_number is text — cast
+            # the rails-side tuple to text for the IN-list comparison.
+            cur.execute("""
+                SELECT DISTINCT r.id, r.name, r.fee_patent_date, r.notes,
+                       d.document_type, d.part_number, d.source_pages
+                FROM circular_2464_records r
+                JOIN circular_2464_documents d ON d.id = r.document_id
+                WHERE (r.allotment_number, r.authoritative_tribe) IN (
+                    SELECT bap.indian_allotment_number, bap.preferred_name
+                    FROM blm_allotment_patents bap
+                    WHERE bap.accession_number IN %s
+                      AND bap.indian_allotment_number IS NOT NULL
+                      AND bap.preferred_name IS NOT NULL
+                )
+                ORDER BY d.part_number, r.id
+            """, (tuple(str(a) for a in accessions),))
+            testimony_records = cur.fetchall()
+
         return render_template(
             "claim.html",
             claim=claim,
@@ -868,6 +897,7 @@ def claim_detail(claim_id):
             parcels=parcels,
             trust_links=trust_links,
             blm_patent_ids=blm_patent_ids,
+            testimony_records=testimony_records,
             slugify=slugify,
             glo_url=glo_url,
             linkify_remarks=linkify_remarks,
@@ -1730,6 +1760,23 @@ def patent_detail(objectid):
             """, (patent["accession_number"],))
             recovered_as_fee = cur.fetchall()
 
+        # 1928 Circular 2464 testimony for this allottee, matched on
+        # (allotment_number, preferred_name). Same join logic the testimony
+        # page uses going the other direction.
+        testimony_records = []
+        if patent.get("indian_allotment_number") and patent.get("preferred_name"):
+            cur.execute("""
+                SELECT r.id, r.name, r.fee_patent_date,
+                       r.notes,
+                       d.document_type, d.part_number, d.source_pages
+                FROM circular_2464_records r
+                JOIN circular_2464_documents d ON d.id = r.document_id
+                WHERE r.allotment_number = %s
+                  AND r.authoritative_tribe = %s
+                ORDER BY d.part_number, d.id
+            """, (patent["indian_allotment_number"], patent["preferred_name"]))
+            testimony_records = cur.fetchall()
+
         return render_template(
             "patent.html",
             patent=patent,
@@ -1742,8 +1789,298 @@ def patent_detail(objectid):
             recovered_as_trust=recovered_as_trust,
             recovered_as_fee=recovered_as_fee,
             doc_class_meta=doc_class_meta,
+            testimony_records=testimony_records,
             glo_url=glo_url,
             slugify=slugify,
+        )
+    finally:
+        conn.close()
+
+
+# ─────────────────────────────────────────────────────────────────
+# Circular 2464 testimony — 1928 sworn statements, BIA questionnaires,
+# agency narratives, and the Fort Berthold fee patent ledger.
+# 1,048 source documents → 1,319 per-allottee records loaded into
+# circular_2464_documents + circular_2464_records.
+# ─────────────────────────────────────────────────────────────────
+
+TESTIMONY_DOC_TYPES = ("affidavit", "questionnaire", "agency_narrative", "ledger")
+
+
+@app.route("/testimony")
+def testimony_index():
+    """Browse / search 1928 Circular 2464 testimony records."""
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DISTINCT authoritative_tribe
+            FROM circular_2464_records
+            WHERE authoritative_tribe IS NOT NULL
+            ORDER BY authoritative_tribe
+        """)
+        tribes = [r[0] for r in cur.fetchall()]
+        cur.execute("""
+            SELECT DISTINCT part_number
+            FROM circular_2464_documents
+            WHERE part_number IS NOT NULL
+            ORDER BY part_number
+        """)
+        parts = [r[0] for r in cur.fetchall()]
+        return render_template(
+            "testimony.html",
+            tribes=tribes,
+            parts=parts,
+            doc_types=TESTIMONY_DOC_TYPES,
+        )
+    finally:
+        conn.close()
+
+
+def _testimony_filter_sql(args):
+    """Build (where_clause, params) for testimony queries from request args.
+    Shared by /api/testimony and /api/testimony/csv so both use the same filters.
+    """
+    name = args.get("name", "").strip()
+    allotment = args.get("allotment", "").strip()
+    tribe = args.get("tribe", "").strip()
+    doc_type = args.get("doc_type", "").strip()
+    part = args.get("part", "").strip()
+
+    conditions = []
+    params = []
+    if name:
+        conditions.append("r.name ILIKE %s")
+        params.append(f"%{name}%")
+    if allotment:
+        conditions.append("r.allotment_number ILIKE %s")
+        params.append(allotment)
+    if tribe:
+        conditions.append("r.authoritative_tribe = %s")
+        params.append(tribe)
+    if doc_type:
+        conditions.append("d.document_type = %s")
+        params.append(doc_type)
+    if part:
+        try:
+            conditions.append("d.part_number = %s")
+            params.append(int(part))
+        except ValueError:
+            pass
+
+    where = "WHERE " + " AND ".join(conditions) if conditions else ""
+    return where, params
+
+
+@app.route("/api/testimony")
+def api_testimony():
+    """JSON API for testimony search (DataTables server-side)."""
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        draw = request.args.get("draw", 1, type=int)
+        start = request.args.get("start", 0, type=int)
+        length = request.args.get("length", 25, type=int)
+
+        order_col_idx = request.args.get("order[0][column]", 0, type=int)
+        order_dir = request.args.get("order[0][dir]", "asc")
+        order_cols = [
+            "r.name", "r.authoritative_tribe", "r.allotment_number",
+            "r.fee_patent_date", "d.document_type", "d.part_number",
+        ]
+        order_col = order_cols[min(order_col_idx, len(order_cols) - 1)]
+        if order_dir not in ("asc", "desc"):
+            order_dir = "asc"
+
+        where, params = _testimony_filter_sql(request.args)
+
+        cur.execute("SELECT COUNT(*) AS cnt FROM circular_2464_records")
+        total = cur.fetchone()["cnt"]
+
+        cur.execute(f"""
+            SELECT COUNT(*) AS cnt
+            FROM circular_2464_records r
+            JOIN circular_2464_documents d ON d.id = r.document_id
+            {where}
+        """, params)
+        filtered = cur.fetchone()["cnt"]
+
+        # has_blm flag — does any BLM patent match this record's (allotment, tribe)?
+        # Computed inline with EXISTS so the testimony list can badge matches
+        # without precomputing anything.
+        cur.execute(f"""
+            SELECT r.id, r.name, r.authoritative_tribe, r.tribe_reservation,
+                   r.allotment_number, r.fee_patent_date,
+                   d.document_type, d.part_number, d.source_pages, d.document_id AS doc_string_id,
+                   EXISTS (
+                       SELECT 1 FROM blm_allotment_patents bap
+                       WHERE bap.indian_allotment_number = r.allotment_number
+                         AND bap.preferred_name = r.authoritative_tribe
+                         AND r.allotment_number IS NOT NULL AND r.allotment_number <> ''
+                         AND r.authoritative_tribe IS NOT NULL
+                   ) AS has_blm
+            FROM circular_2464_records r
+            JOIN circular_2464_documents d ON d.id = r.document_id
+            {where}
+            ORDER BY {order_col} {order_dir} NULLS LAST, r.id ASC
+            LIMIT %s OFFSET %s
+        """, params + [length, start])
+        rows = cur.fetchall()
+
+        data = []
+        for r in rows:
+            data.append({
+                "id": r["id"],
+                "name": r["name"] or "",
+                "authoritative_tribe": r["authoritative_tribe"] or "",
+                "tribe_reservation": r["tribe_reservation"] or "",
+                "allotment_number": r["allotment_number"] or "",
+                "fee_patent_date": r["fee_patent_date"] or "",
+                "document_type": r["document_type"] or "",
+                "part_number": r["part_number"],
+                "source_pages": r["source_pages"] or "",
+                "doc_string_id": r["doc_string_id"] or "",
+                "has_blm": bool(r["has_blm"]),
+            })
+
+        return jsonify({
+            "draw": draw,
+            "recordsTotal": total,
+            "recordsFiltered": filtered,
+            "data": data,
+        })
+    finally:
+        conn.close()
+
+
+@app.route("/api/testimony/csv")
+def api_testimony_csv():
+    """CSV download of testimony search results."""
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        where, params = _testimony_filter_sql(request.args)
+        cur.execute(f"""
+            SELECT r.id AS record_id, d.document_id AS source_document_id,
+                   d.document_type, d.part_number, d.source_pages, d.source_pdf,
+                   r.record_index,
+                   r.name, r.tribe_reservation, r.authoritative_tribe,
+                   r.allotment_number, r.post_office_address,
+                   r.cancelled, r.refused_protested, r.recorded_patent,
+                   r.sold_mortgaged, r.buyer, r.tax_burden,
+                   r.trust_patent_date, r.fee_patent_date,
+                   r.gender, r.age, r.occupation_income, r.literate_illiterate,
+                   r.notes
+            FROM circular_2464_records r
+            JOIN circular_2464_documents d ON d.id = r.document_id
+            {where}
+            ORDER BY d.part_number, d.document_id, r.record_index
+        """, params)
+
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        columns = [
+            "record_id", "source_document_id", "document_type", "part_number",
+            "source_pages", "source_pdf", "record_index",
+            "name", "tribe_reservation", "authoritative_tribe", "allotment_number",
+            "post_office_address", "cancelled", "refused_protested",
+            "recorded_patent", "sold_mortgaged", "buyer", "tax_burden",
+            "trust_patent_date", "fee_patent_date", "gender", "age",
+            "occupation_income", "literate_illiterate", "notes",
+        ]
+        writer.writerow(columns)
+        for row in cur:
+            writer.writerow([row[c] for c in columns])
+
+        return Response(
+            buf.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment; filename=circular_2464_testimony.csv"},
+        )
+    finally:
+        conn.close()
+
+
+@app.route("/testimony/<int:record_id>")
+def testimony_detail(record_id):
+    """Detail page for one testimony record. Shows the 18 flat fields,
+    the recovery_notes audit trail (if any), and cross-links to BLM
+    patents and FR claims via the same rails-routed path /patent/<id>
+    and /claim/<id> already use."""
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT r.*, d.document_id AS source_document_id,
+                   d.document_type, d.source_pdf, d.source_pages,
+                   d.part_number, d.extraction_model
+            FROM circular_2464_records r
+            JOIN circular_2464_documents d ON d.id = r.document_id
+            WHERE r.id = %s
+        """, (record_id,))
+        record = cur.fetchone()
+        if not record:
+            abort(404)
+
+        # Cross-link: matching BLM patents on (allotment_number, preferred_name).
+        # Only runs when both fields are populated on the testimony record.
+        blm_patents = []
+        if record["allotment_number"] and record["authoritative_tribe"]:
+            cur.execute("""
+                SELECT objectid, accession_number, full_name, signature_date,
+                       authority, preferred_name, indian_allotment_number,
+                       forced_fee, cancelled_doc
+                FROM blm_allotment_patents
+                WHERE indian_allotment_number = %s
+                  AND preferred_name = %s
+                ORDER BY signature_date NULLS LAST, authority
+            """, (record["allotment_number"], record["authoritative_tribe"]))
+            blm_patents = cur.fetchall()
+
+        # Cross-link: FR claims reached through forced_fee_patents_rails. Same
+        # path as patent_detail and claim_detail use throughout app.py — the
+        # rails table is the hand-verified BLM↔FR bridge.
+        fr_claims = []
+        if blm_patents:
+            accessions = tuple(p["accession_number"] for p in blm_patents if p.get("accession_number"))
+            if accessions:
+                cur.execute("""
+                    SELECT DISTINCT fr.id, fr.case_number, fr.allottee_name,
+                           fr.tribe_identified, fr.claim_type,
+                           fr.bia_agency_code
+                    FROM forced_fee_patents_rails ffp
+                    JOIN federal_register_claims fr
+                        ON LTRIM(fr.case_number, '0') = LTRIM(ffp.case_number, '0')
+                        AND fr.allottee_name = ffp.fedreg_allottee
+                    WHERE ffp.patents_accession_number IN %s
+                    ORDER BY fr.id
+                """, (accessions,))
+                fr_claims = cur.fetchall()
+
+        # Other testimony records for the same (allotment, tribe) — surfaces
+        # the case where multiple documents (affidavit + agency narrative + ...)
+        # describe the same allottee. Charging Iron Shooter has two; Henry
+        # Young has one; many records have none.
+        sibling_records = []
+        if record["allotment_number"] and record["authoritative_tribe"]:
+            cur.execute("""
+                SELECT r.id, r.name, d.document_type, d.part_number, d.source_pages
+                FROM circular_2464_records r
+                JOIN circular_2464_documents d ON d.id = r.document_id
+                WHERE r.allotment_number = %s
+                  AND r.authoritative_tribe = %s
+                  AND r.id <> %s
+                ORDER BY d.part_number, d.id
+            """, (record["allotment_number"], record["authoritative_tribe"], record_id))
+            sibling_records = cur.fetchall()
+
+        return render_template(
+            "testimony_detail.html",
+            record=record,
+            blm_patents=blm_patents,
+            fr_claims=fr_claims,
+            sibling_records=sibling_records,
         )
     finally:
         conn.close()

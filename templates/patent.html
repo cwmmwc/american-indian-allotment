@@ -163,6 +163,27 @@
 </div>
 {% endif %}
 
+{% if testimony_records %}
+<div class="alert alert-secondary mb-4">
+    <strong class="me-2">1928 Testimony for this allottee:</strong>
+    Circular 2464 contains {{ testimony_records|length }}
+    record{% if testimony_records|length > 1 %}s{% endif %} for this allotment.
+    <ul class="mb-0 mt-2">
+        {% for t in testimony_records %}
+        <li>
+            <a href="{{ url_for('testimony_detail', record_id=t.id) }}" class="alert-link">
+                {{ t.name or 'Unnamed' }} — {{ t.document_type.replace('_', ' ').title() }}
+            </a>
+            {% if t.part_number %}<span class="text-muted small">(RG 75 Part {{ t.part_number }}{% if t.source_pages %}, p. {{ t.source_pages }}{% endif %})</span>{% endif %}
+            {% if t.notes %}
+            <div class="small mt-1">{{ t.notes[:240] }}{% if t.notes|length > 240 %}…{% endif %}</div>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <div class="row">
     <!-- Patent Details -->
     <div class="col-lg-6 mb-4">

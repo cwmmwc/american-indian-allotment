@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Browse 1928 Testimony{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>1928 Testimony</h1>
+    <p class="lead">
+        Search 1,319 records from Circular 2464 — sworn affidavits, BIA
+        investigation questionnaires, agency narratives, and the Fort
+        Berthold fee patent ledger documenting allottees' experiences of
+        forced fee patenting.
+    </p>
+    <p class="text-muted small">
+        Records that share an allotment number and tribe with a BLM patent
+        are flagged with the <strong>BLM Match</strong> badge. From any
+        record's detail page you can follow the linkage out to the matching
+        patent and any Federal Register claim filed on that allotment.
+        Tribe names shown here are resolved against the <em>tribe_crosswalk</em>;
+        records where the source label did not resolve (e.g., "Otoe Agency"
+        or "not stated") show a blank tribe column and won't surface BLM
+        matches until the label is reconciled.
+    </p>
+</div>
+
+<div class="card filter-card mb-4">
+    <div class="card-body">
+        <form id="searchForm">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="nameSearch" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="nameSearch"
+                           placeholder="Search by name (partial match)">
+                </div>
+                <div class="col-md-2">
+                    <label for="allotmentSearch" class="form-label">Allotment #</label>
+                    <input type="text" class="form-control" id="allotmentSearch"
+                           placeholder="e.g. 156">
+                </div>
+                <div class="col-md-3">
+                    <label for="tribeFilter" class="form-label">Tribe</label>
+                    <select class="form-select" id="tribeFilter">
+                        <option value="">All Resolved Tribes ({{ tribes|length }})</option>
+                        {% for t in tribes %}
+                        <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="docTypeFilter" class="form-label">Document Type</label>
+                    <select class="form-select" id="docTypeFilter">
+                        <option value="">All Types</option>
+                        {% for t in doc_types %}
+                        <option value="{{ t }}">{{ t.replace('_', ' ').title() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="partFilter" class="form-label">RG 75 Part</label>
+                    <select class="form-select" id="partFilter">
+                        <option value="">All Parts</option>
+                        {% for p in parts %}
+                        <option value="{{ p }}">Part {{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-12 d-flex align-items-end">
+                    <button type="button" class="btn btn-primary me-2" id="searchBtn">Search</button>
+                    <button type="button" class="btn btn-outline-secondary me-2" id="clearBtn">Clear</button>
+                    <button type="button" class="btn btn-outline-dark" id="csvBtn">Download CSV</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<table id="testimonyTable" class="table table-striped table-hover" style="width:100%">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Tribe</th>
+            <th>Allotment #</th>
+            <th>Fee Patent Date</th>
+            <th>Document Type</th>
+            <th>Source</th>
+            <th>BLM Match</th>
+        </tr>
+    </thead>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('name')) $('#nameSearch').val(urlParams.get('name'));
+    if (urlParams.get('allotment')) $('#allotmentSearch').val(urlParams.get('allotment'));
+    if (urlParams.get('tribe')) $('#tribeFilter').val(urlParams.get('tribe'));
+    if (urlParams.get('doc_type')) $('#docTypeFilter').val(urlParams.get('doc_type'));
+    if (urlParams.get('part')) $('#partFilter').val(urlParams.get('part'));
+
+    function updateURL() {
+        var params = new URLSearchParams();
+        var fields = {
+            name: $('#nameSearch').val(),
+            allotment: $('#allotmentSearch').val(),
+            tribe: $('#tribeFilter').val(),
+            doc_type: $('#docTypeFilter').val(),
+            part: $('#partFilter').val()
+        };
+        for (var key in fields) {
+            if (fields[key]) params.set(key, fields[key]);
+        }
+        var qs = params.toString();
+        history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+    }
+
+    var table = $('#testimonyTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '{{ url_for("api_testimony") }}',
+            data: function(d) {
+                d.name = $('#nameSearch').val();
+                d.allotment = $('#allotmentSearch').val();
+                d.tribe = $('#tribeFilter').val();
+                d.doc_type = $('#docTypeFilter').val();
+                d.part = $('#partFilter').val();
+            }
+        },
+        columns: [
+            {
+                data: 'name',
+                render: function(data, type, row) {
+                    return '<a href="/testimony/' + row.id + '">' + (data || '—') + '</a>';
+                }
+            },
+            {
+                data: 'authoritative_tribe',
+                render: function(data, type, row) {
+                    if (data) return data;
+                    if (row.tribe_reservation) {
+                        return '<span class="text-muted small">' + row.tribe_reservation + '</span>';
+                    }
+                    return '';
+                }
+            },
+            { data: 'allotment_number' },
+            { data: 'fee_patent_date' },
+            {
+                data: 'document_type',
+                render: function(data) {
+                    if (!data) return '';
+                    return data.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+                }
+            },
+            {
+                data: null,
+                render: function(_, _type, row) {
+                    var parts = [];
+                    if (row.part_number) parts.push('Part ' + row.part_number);
+                    if (row.source_pages) parts.push('p. ' + row.source_pages);
+                    return parts.join(', ');
+                }
+            },
+            {
+                data: 'has_blm',
+                render: function(data) {
+                    if (data) return '<span class="badge bg-success">Yes</span>';
+                    return '<span class="badge bg-secondary">No</span>';
+                }
+            }
+        ],
+        order: [[0, 'asc']],
+        pageLength: 25,
+        language: {
+            info: "Showing _START_ to _END_ of _TOTAL_ testimony records",
+            infoFiltered: "(filtered from _MAX_ total)",
+            search: "",
+            searchPlaceholder: "Quick search..."
+        },
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6">>rtip'
+    });
+
+    $('#searchBtn').on('click', function() {
+        updateURL();
+        table.ajax.reload();
+    });
+
+    $('#searchForm input').on('keypress', function(e) {
+        if (e.which === 13) { e.preventDefault(); $('#searchBtn').click(); }
+    });
+
+    $('#clearBtn').on('click', function() {
+        $('#nameSearch, #allotmentSearch').val('');
+        $('#tribeFilter, #docTypeFilter, #partFilter').val('');
+        updateURL();
+        table.ajax.reload();
+    });
+
+    $('#csvBtn').on('click', function() {
+        var params = new URLSearchParams({
+            name: $('#nameSearch').val(),
+            allotment: $('#allotmentSearch').val(),
+            tribe: $('#tribeFilter').val(),
+            doc_type: $('#docTypeFilter').val(),
+            part: $('#partFilter').val()
+        });
+        window.location = '{{ url_for("api_testimony_csv") }}?' + params.toString();
+    });
+});
+</script>
+{% endblock %}
