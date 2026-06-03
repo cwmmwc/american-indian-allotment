@@ -22,10 +22,10 @@ App.init = async function() {
         App._skipFitBounds = true;
       }
       await App.runAnalysis();
-      if (accession) {
-        await App.zoomToAccession(accession);
-      }
     }
+  }
+  if (accession) {
+    await App.zoomToAccession(accession);
   }
 };
 

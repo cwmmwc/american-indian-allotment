@@ -22,7 +22,7 @@
         <a href="{{ url_for('patents_timeline') }}">View Patent Timeline</a> ·
         <a href="{{ url_for('allotment_map') }}">View on Map</a>
     </p>
-    <p class="text-muted small">Of these, 239,845 patents are <strong>mappable</strong> — matched to Public Land Survey System parcels and visible on the <a href="{{ url_for('allotment_map') }}">allotment map</a>. The remaining 46,025 patents could not be geocoded, primarily because they are on reservations that use non-rectangular surveys (Navajo, Gila River, Colorado River in Arizona/New Mexico) or predate the PLSS (Chickasaw/Choctaw in Alabama/Mississippi). These patents are searchable here but do not appear on the map. <a href="{{ url_for('about') }}#data-coverage">Read more</a></p>
+    <p class="text-muted small">Some patents are not mappable for a variety of reasons. <a href="{{ url_for('about') }}#data-coverage">See here for more information.</a></p>
     <p class="text-muted small">Note: The "Forced Fee &amp; Related Claims" filter shows patents linked to dispossession claims in the <a href="{{ url_for('claims_search') }}">Federal Register dataset</a>: forced fee patents (9,649) plus the thematically adjacent categories — secretarial transfer (1,327), unapproved land sale (980), taxation (1,057), tax forfeiture (688), claim for recovery of trust/restricted land (935), and land sold without approval (264). The narrower forced-fee-only view is still available on the <a href="{{ url_for('claims_search') }}">claims page</a> dropdown. Linkage between FR claims and BLM patent records is ongoing — not all claims have been matched to patents yet, so some tribes may show fewer flagged patents than expected.</p>
 </div>
 

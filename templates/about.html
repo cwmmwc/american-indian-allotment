@@ -257,6 +257,22 @@
                 </tbody>
             </table>
             <p><strong>Key implication:</strong> Arizona and New Mexico reservations are significantly underrepresented on the map. Navajo allotments in particular are almost entirely absent because the reservation's survey system is incompatible with PLSS. Similarly, southeastern removal-era patents (Alabama, Mississippi) are largely missing. Any analysis of national allotment patterns should account for this southwestern and southeastern gap.</p>
+
+            <h3 class="mt-4">Anatomy of an unmappable patent</h3>
+            <p>The clearest way to see why the same person can have one patent on the map and another not is to compare two issued to the same allottee for the same allotment a few years apart. Lizzie Anderson received a fee patent in 1912 (accession 299002) and a separate patent in 1919 (accession 715724). Both are Serial Land Patents for allotment 22 in Pottawatomie County, Oklahoma. One is on the map; the other is not.</p>
+            <table class="table table-sm" style="max-width: 700px;">
+                <thead><tr><th></th><th>1912 (mapped)</th><th>1919 (not mapped)</th></tr></thead>
+                <tbody>
+                    <tr><td>Accession</td><td>299002</td><td>715724</td></tr>
+                    <tr><td>Total acres</td><td>40.0</td><td>38.0</td></tr>
+                    <tr><td>Section / Township / Range</td><td>S34, T10, R3</td><td>S26, T10, R3</td></tr>
+                    <tr><td>Legal description</td><td><code>NESW</code> (NE¼ of SW¼)</td><td><code>Lot 1 NE</code>, <code>Lot 3 NW</code></td></tr>
+                </tbody>
+            </table>
+            <p>The 1912 patent describes a clean <strong>aliquot subdivision</strong>: the NE quarter of the SW quarter of Section 34. That is exactly 40 acres, a regular PLSS quarter-quarter. The BLM aliquot layer that drives the map includes a polygon for it.</p>
+            <p>The 1919 patent describes <strong>government lots</strong> — Lot 1 NE and Lot 3 NW of Section 26. Government lots are the PLSS surveyors' way of handling fractional parcels: when a section is cut by a river, lake, state line, or earlier survey, the leftover land gets numbered (Lot 1, Lot 2…) rather than fitting the clean ¼-of-¼ grid. They carry <strong>irregular acreage</strong>, which is why this patent totals 38 acres instead of 40. The aliquot-keyed map layer doesn't carry lot-based polygons in the same form, so this patent never matched a parcel and was excluded.</p>
+            <p>The underlying pattern across all 46,025 unmappable patents: most describe land through <strong>government lots, fractional sections, or metes-and-bounds</strong> — survey constructs that exist precisely <em>because</em> the rectangular PLSS aliquot grid could not accommodate them (rivers, lakes, Mexican land-grant boundaries in the Southwest, removal-era Indian land in the Southeast that predates the Public Land Survey). The land is real, surveyed, and on file with BLM. It simply lives in a different sub-layer than the one the map uses.</p>
+
             <p>The <a href="{{ url_for('patents_index') }}?mappable=no">patents page can be filtered</a> to show only the 46,025 non-mappable patents, or use the "Map Status" dropdown to see both together.</p>
         </section>
 
