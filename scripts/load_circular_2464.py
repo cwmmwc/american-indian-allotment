@@ -212,6 +212,15 @@ def upsert_record(cur, document_pk: int, record_index: int, extraction: dict,
 
     raw_tribe = cols.get("tribe_reservation")
     auth = resolve_tribe(raw_tribe, resolver)
+    # Honor a per-record historian-arbitrated override when present. Set by
+    # one-shot patch scripts in the pipeline repo (e.g. patch_potawatami_blm_merge.py)
+    # to record cross-vocabulary merges — testimony where the corpus's
+    # tribe_reservation resolves through tribe_crosswalk to one authoritative
+    # tribe but the historian has confirmed the matching BLM patent lives
+    # under a different tribe label.
+    override = rec.get("manual_authoritative_tribe")
+    if override:
+        auth = override
     cols["authoritative_tribe"] = auth
 
     # recovery_notes lives on the top-level document. For 1:N docs every
