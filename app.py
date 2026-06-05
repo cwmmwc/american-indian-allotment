@@ -1261,7 +1261,12 @@ def patents_index():
         tribes = [r[0] for r in cur.fetchall()]
         cur.execute("SELECT DISTINCT state FROM all_patents WHERE state IS NOT NULL AND state != '' ORDER BY state")
         states = [r[0] for r in cur.fetchall()]
-        return render_template("patents.html", tribes=tribes, states=states)
+        # Live counts for the Map Status dropdown labels (BLM aliquot + recovered).
+        cur.execute("SELECT COUNT(*) FILTER (WHERE is_mappable), COUNT(*) FILTER (WHERE NOT is_mappable) FROM all_patents")
+        mappable_count, not_mappable_count = cur.fetchone()
+        return render_template("patents.html", tribes=tribes, states=states,
+                               mappable_count=mappable_count,
+                               not_mappable_count=not_mappable_count)
     finally:
         conn.close()
 
@@ -1312,7 +1317,7 @@ def api_patents():
         order_col_idx = request.args.get("order[0][column]", 0, type=int)
         order_dir = request.args.get("order[0][dir]", "asc")
         order_cols = ["full_name", "preferred_name", "state",
-                      "indian_allotment_number", "authority", "signature_date", "is_dispossession_claim", "has_plss_geometry"]
+                      "indian_allotment_number", "authority", "signature_date", "is_dispossession_claim", "is_mappable"]
         order_col = order_cols[min(order_col_idx, len(order_cols) - 1)]
         if order_dir not in ("asc", "desc"):
             order_dir = "asc"
@@ -1355,9 +1360,9 @@ def api_patents():
             conditions.append("signature_date <= %s")
             params.append(date_to)
         if mappable == "yes":
-            conditions.append("has_plss_geometry = true")
+            conditions.append("is_mappable = true")
         elif mappable == "no":
-            conditions.append("has_plss_geometry = false")
+            conditions.append("is_mappable = false")
 
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
 
@@ -1389,7 +1394,7 @@ def api_patents():
         cur.execute(f"""
             SELECT id, objectid, full_name, preferred_name, state,
                    indian_allotment_number, authority, signature_date,
-                   has_plss_geometry,
+                   is_mappable,
                    accession_number IN (
                        SELECT ffp.patents_accession_number FROM forced_fee_patents_rails ffp
                        JOIN federal_register_claims fr
@@ -1420,7 +1425,7 @@ def api_patents():
                 "authority": r["authority"] or "",
                 "signature_date": sig_date,
                 "dispossession_claim": r["is_dispossession_claim"],
-                "has_plss_geometry": r["has_plss_geometry"],
+                "is_mappable": r["is_mappable"],
             }
             if fuzzy:
                 lit = bool(r.get("literal_match"))
@@ -1434,6 +1439,59 @@ def api_patents():
             "recordsFiltered": filtered,
             "data": data,
         })
+    finally:
+        conn.close()
+
+
+@app.route("/api/recovered/<accession>")
+def api_recovered_patent(accession):
+    """Return a GeoJSON Feature for a patent whose geometry was recovered
+    from BLM CadNSDI rather than the standard tribal_land_patents_aliquot
+    layer. Shape matches the Esri Feature Service response so the map's
+    zoomToAccession can consume it as a drop-in fallback."""
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT accession_number, full_name, preferred_name, signature_date,
+                   authority, document_class, state, county, indian_allotment_number,
+                   centroid_lat, centroid_lon, geometry_geojson, cadnsdi_source,
+                   township_number, township_direction, range_number, range_direction,
+                   section_number, aliquot_parts, meridian_code,
+                   granularity
+            FROM cadnsdi_recovered_patents
+            WHERE accession_number = %s
+        """, (accession,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"features": []})
+
+        feature = {
+            "type": "Feature",
+            "geometry": row["geometry_geojson"],
+            "properties": {
+                "accession_number": row["accession_number"],
+                "full_name": row["full_name"],
+                "preferred_name": row["preferred_name"],
+                "signature_date": (row["signature_date"].isoformat()
+                                   if row["signature_date"] else None),
+                "authority": row["authority"],
+                "state": row["state"],
+                "county": row["county"],
+                "indian_allotment_number": row["indian_allotment_number"],
+                "township_number": row["township_number"],
+                "township_direction": row["township_direction"],
+                "range_number": row["range_number"],
+                "range_direction": row["range_direction"],
+                "section_number": row["section_number"],
+                "aliquot_parts": row["aliquot_parts"],
+                "centroid_lat": float(row["centroid_lat"]) if row["centroid_lat"] is not None else None,
+                "centroid_lon": float(row["centroid_lon"]) if row["centroid_lon"] is not None else None,
+                "_recovered_from": row["cadnsdi_source"],
+                "_granularity": row["granularity"],
+            }
+        }
+        return jsonify({"type": "FeatureCollection", "features": [feature]})
     finally:
         conn.close()
 
@@ -1492,9 +1550,9 @@ def api_patents_csv():
             conditions.append("signature_date <= %s")
             params.append(date_to)
         if mappable == "yes":
-            conditions.append("has_plss_geometry = true")
+            conditions.append("is_mappable = true")
         elif mappable == "no":
-            conditions.append("has_plss_geometry = false")
+            conditions.append("is_mappable = false")
 
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
 
@@ -1521,7 +1579,7 @@ def api_patents_csv():
                          AND fr.allottee_name = ffp.fedreg_allottee
                        WHERE {DISPOSSESSION_WHERE_SQL}
                    ) as is_dispossession_claim,
-                   document_class, total_acres, has_plss_geometry,
+                   document_class, total_acres, is_mappable,
                    meridian, township_number, township_direction,
                    range_number, range_direction, section_number, aliquot_parts, remarks
                    {score_select}
@@ -1554,7 +1612,7 @@ def api_patents_csv():
                 r["authority"], sig_date,
                 "Yes" if r["is_dispossession_claim"] else "",
                 r["document_class"], r["total_acres"],
-                "Yes" if r["has_plss_geometry"] else "No",
+                "Yes" if r["is_mappable"] else "No",
                 r["meridian"], r["township_number"], r["township_direction"],
                 r["range_number"], r["range_direction"], r["section_number"],
                 r["aliquot_parts"], r["remarks"],

@@ -71,8 +71,8 @@
                     <label for="mappableFilter" class="form-label">Map Status</label>
                     <select class="form-select" id="mappableFilter">
                         <option value="">All Patents</option>
-                        <option value="yes">Mappable (239,845)</option>
-                        <option value="no">Not Mappable (46,025)</option>
+                        <option value="yes">Mappable ({{ "{:,}".format(mappable_count) }})</option>
+                        <option value="no">Not Mappable ({{ "{:,}".format(not_mappable_count) }})</option>
                     </select>
                 </div>
             </div>
@@ -187,7 +187,7 @@ $(function() {
                 }
             },
             {
-                data: 'has_plss_geometry',
+                data: 'is_mappable',
                 render: function(data) {
                     if (data) return '<span class="badge bg-success">Yes</span>';
                     return '<span class="badge bg-secondary">No</span>';

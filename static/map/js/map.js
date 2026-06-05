@@ -280,7 +280,10 @@ App.renderMap = function(fitBounds) {
   document.getElementById('map-stat').innerHTML = '<strong>' + App.currentData.length.toLocaleString() + '</strong> patents displayed (' + modeLabel + ')';
 };
 
-// Zoom to a specific patent by accession number (for deep-linking)
+// Zoom to a specific patent by accession number (for deep-linking).
+// Tries the BLM Esri aliquot layer first; if nothing is found, falls back
+// to /api/recovered/<accession> for patents whose geometry was sourced
+// from BLM CadNSDI rather than the standard aliquot service.
 App.zoomToAccession = async function(accession) {
   App._skipFitBounds = false;
 
@@ -290,6 +293,21 @@ App.zoomToAccession = async function(accession) {
     returnGeometry: true,
     f: 'geojson'
   });
+
+  if (!res.features || res.features.length === 0) {
+    // Fallback: ask the Flask app for a CadNSDI-recovered patent
+    try {
+      var fallbackResp = await fetch('/api/recovered/' + encodeURIComponent(accession));
+      if (fallbackResp.ok) {
+        var fallback = await fallbackResp.json();
+        if (fallback.features && fallback.features.length > 0) {
+          res = fallback;
+        }
+      }
+    } catch (e) {
+      console.warn('Recovered-patent fallback failed:', e);
+    }
+  }
 
   if (!res.features || res.features.length === 0) {
     document.getElementById('status').textContent += ' | Patent ' + accession + ' not found in map data.';
@@ -325,21 +343,21 @@ App.zoomToAccession = async function(accession) {
   }
 };
 
-// Add the saved highlight parcel to the map
+// Add the saved highlight parcel to the map.
+// Recovered patents tagged section-level (CadNSDI section-perimeter
+// approximation, ~640 acres) get a dashed border + lighter fill so they
+// read as approximate; parcel-level patents and the original BLM aliquot
+// patents keep the solid yellow/red highlight.
 App._addHighlight = function(openPopup) {
   if (!App._highlight) return;
   if (App._highlightLayer) {
     App.map.removeLayer(App._highlightLayer);
   }
-  App._highlightLayer = L.geoJSON(App._highlight.geometry, {
-    style: {
-      fillColor: '#ffff00',
-      color: '#d00',
-      weight: 4,
-      fillOpacity: 0.6,
-      opacity: 1
-    }
-  });
+  var isSectionLevel = App._highlight.props && App._highlight.props._granularity === 'section';
+  var style = isSectionLevel
+    ? { fillColor: '#ffff00', color: '#d00', weight: 3, fillOpacity: 0.25, opacity: 1, dashArray: '6,4' }
+    : { fillColor: '#ffff00', color: '#d00', weight: 4, fillOpacity: 0.6,  opacity: 1 };
+  App._highlightLayer = L.geoJSON(App._highlight.geometry, { style: style });
   App._highlightLayer.bindPopup(App.makePopup(App._highlight.props));
   App._highlightLayer.addTo(App.map);
   if (openPopup) App._highlightLayer.openPopup();
@@ -387,6 +405,7 @@ App.makePopup = function(p) {
     '<div class="popup-row"><span class="k">Location</span><span class="v">T' + (p.township_number || '?') + ' R' + (p.range_number || '?') + ' \u00a7' + (p.section_number || '?') + ' ' + (p.aliquot_parts || '') + '</span></div>' +
     '<div class="popup-row"><span class="k">Accession</span><span class="v">' + (p.accession_number || '\u2014') + '</span></div>' +
     (p.cancelled_doc === 'True' ? '<div style="color:var(--text-faint);font-style:italic;margin-top:4px;">Cancelled</div>' : '') +
+    (p._granularity === 'section' ? '<div style="margin-top:6px;padding:4px 6px;background:rgba(212,160,23,0.08);border-left:3px solid #d4a017;font-size:10px;color:var(--text-dim);line-height:1.4;">Section-level approximation. CadNSDI does not publish sub-section detail for this township; the actual parcel lies within this 1-square-mile section.</div>' : '') +
     sectionContext +
     '</div>';
 };
