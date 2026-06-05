@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Bulk recovery of allotment patents from BLM CadNSDI Intersected layer.
 
+For the architectural background — what CadNSDI is, who maintains it,
+why per-state coverage varies, and the per-meridian recovery pattern —
+see the "CadNSDI Patent Recovery (June 2026)" section of the project
+README. This script is the implementation; the README is the
+explanation.
+
 Generalizes recover_lizzie_smoke_test.py to ~15,168 accessions across two
 input sources, with per-accession granularity tagging and a run log.
 

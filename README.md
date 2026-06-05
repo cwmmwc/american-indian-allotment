@@ -89,7 +89,87 @@ In 1983, the Bureau of Indian Affairs published two Federal Register notices lis
 The patents page exposes the broader **Forced Fee & Related Claims** view — forced fee plus secretarial transfer, unapproved land sale, tax forfeiture, taxation, and claim for recovery of trust/restricted land. These are the FR `claim_type` buckets that all represent loss of trust title. For some agencies (notably the Ponca Agency `B07813`, which submitted **zero** forced-fee claims and **fourteen** recovery-of-trust claims), the broader view is the only way to surface dispossession at all. The strict forced-fee-only view remains available via the claims page dropdown.
 
 ### BLM Allotment Patents
-**285,870** General Land Office patent records from the Bureau of Land Management, covering trust patents, fee patents, and other allotment-related patents across all tribes. Of these, **239,845** are matched to PLSS parcels and displayed on the interactive allotment map; the remaining **46,025** are searchable on the patents page but cannot be geocoded.
+**285,870** General Land Office patent records from the Bureau of Land Management, covering trust patents, fee patents, and other allotment-related patents across all tribes. Of these, **239,845** were originally matched to PLSS parcels via BLM's published `tribal_land_patents_aliquot` Esri layer. In June 2026 a separate recovery pipeline brought another **12,907** patents onto the map via BLM CadNSDI (see [next section](#cadnsdi-patent-recovery-june-2026)), so the current mappable total is **252,752** of 285,870. The remaining **33,690** patents (down from 46,025) are still searchable on the patents page but cannot be geocoded — these are dominated by metes-and-bounds Navajo / Pueblo / Apache allotments in the Southwest and pre-PLSS removal-era patents in Alabama and Mississippi.
+
+### CadNSDI Patent Recovery (June 2026)
+
+**12,907** previously-unmappable Serial Land Patents and State Land Patents were brought onto the map by extending the project beyond the original BLM aliquot Esri service to the **BLM National PLSS CadNSDI** service. Of the recovered records, **1,676 render at parcel-level precision** (the actual ~40-acre government lot or quarter-quarter subdivision) and **11,231 render at section-level precision** (a 1-square-mile section box containing the actual parcel). Section-level records are visually distinct on the map — dashed border, lighter fill — and the popup carries an explanatory note.
+
+#### What CadNSDI is
+
+The **Cadastral National Spatial Data Infrastructure** is the federal program that publishes the United States Public Land Survey System as standardized vector geometry. "Cadastre" is the old surveyors' term for a registry of land parcels; "NSDI" is the broader federal effort to coordinate geospatial data across agencies. CadNSDI is the cadastral piece of that effort.
+
+#### Who maintains it
+
+The **Federal Geographic Data Committee (FGDC)** coordinates federal geospatial themes; each theme has a lead steward. The **Bureau of Land Management (BLM)** is the federal steward for the cadastral theme, which in the public-land states means the PLSS. State PLSS stewards (typically state geological surveys or land offices) submit their data upward to BLM, which aggregates and republishes nationally. **The depth of detail each state submits varies** — this is the load-bearing fact for why the recovery yields different precision in different states.
+
+#### What's published
+
+BLM's National PLSS CadNSDI service exposes the PLSS as a public Esri ArcGIS REST API at:
+
+```
+https://gis.blm.gov/arcgis/rest/services/Cadastral/BLM_Natl_PLSS_CadNSDI/MapServer
+```
+
+with four nested layers:
+
+| layer | name | resolution |
+|---|---|---|
+| 0 | State Boundaries | very coarse |
+| 1 | PLSS Township | 6 mi × 6 mi (~23,040 acres) |
+| 2 | PLSS Section (First Division) | 1 mi × 1 mi (~640 acres) |
+| 3 | **PLSS Intersected** | **atomic — aliquots, government lots, special-survey tracts** |
+
+The recovery pipeline queries **layer 3** for parcel-level matches and falls back to **layer 2** for section-perimeter approximations. Layer 3 returns the atomic non-overlapping polygons for everything below the section level: quarter-sections (`QSEC`), quarter-quarter sections (`QQSEC`), government lots (`GOVLOT`), and non-rectangular special surveys (`SURVTYP` / `SURVNO`). Each polygon carries the full PLSS keys (`PRINMERCD`, `TWNSHPNO`, `TWNSHPDIR`, `RANGENO`, `RANGEDIR`, `FRSTDIVNO`) plus whichever sub-section identifier applies.
+
+#### How the recovery joins to our data
+
+The other half of the join sits in our own Postgres: `parcels_patents_by_tribe` (401,811 rows, sourced from BLM GLO bulk data) records the meridian/township/range/section/aliquot for each patent, keyed on `indian_allotment_number + state + signature_date`. The recovery pipeline pulls a patent's PLSS keys from that table (or from the IATH GLO Bulk Data CSVs for patents without allotment numbers — KS treaty-era cases, etc.) and constructs the matching CadNSDI query.
+
+A sample query for Lizzie Anderson's 1919 patent (Lot 1 NE¼ + Lot 3 NW¼ of Section 26, T10N R3E, Indian Meridian, Pottawatomie OK):
+
+```
+GET https://gis.blm.gov/arcgis/rest/services/Cadastral/BLM_Natl_PLSS_CadNSDI/MapServer/3/query
+    ?where=PRINMERCD='17' AND TWNSHPNO='010' AND TWNSHPDIR='N'
+           AND RANGENO='003' AND RANGEDIR='E'
+           AND FRSTDIVNO='26' AND GOVLOT='1'
+    &outFields=SECDIVID,SECDIVNO,SECDIVSUF,GOVLOT,SURVTYP,SECDIVTYP
+    &returnGeometry=true
+    &f=geojson
+```
+
+The response is a standard GeoJSON FeatureCollection with the lot's polygon and metadata. For records described by a standard aliquot like `NESW`, the filter is `QQSEC='NESW'` instead of `GOVLOT=`. Multiple polygons sharing a SECDIVID are dissolved (a lot can be split into adjacent pieces by an internal survey line).
+
+#### Per-meridian coverage variation
+
+Sub-section detail isn't uniform across CadNSDI. The state stewards decide how far down they publish. Empirically:
+
+| Principal Meridian | states it covers | sub-section detail | typical recovery granularity |
+|---|---|---|---|
+| PM05 (5th) | MN, parts of MO/AR/SD | mostly published | parcel-level |
+| PM06 (6th) | KS, NE, parts of CO/WY/SD | NOT published | section-level (640 acres) |
+| PM17 (Indian) | OK | mostly published | parcel-level |
+| PM34 (Wind River) | WY | published | parcel-level |
+| PM46 (4th) | WI | private claims, different schema | deferred |
+
+Kansas and Nebraska records dominate the section-level recovered set (~2,500 + ~464 records respectively) because the 6th Principal Meridian state stewards never pushed sub-section detail to the national index. The underlying surveys exist as paper tract books and survey plats in BLM GLO bulk data; converting those to vector polygons would be a separate project.
+
+#### Recovery yield
+
+| outcome | count | share |
+|---|---|---|
+| Recovered, parcel-level | 1,676 | 12.4% |
+| Recovered, section-level | 11,231 | 83.3% |
+| Not in CadNSDI (genuine gaps) | 571 | 4.2% |
+| **Total recovery rate** | **12,907 / 13,478 attempted** | **95.8%** |
+
+#### Files
+
+- `scripts/recover_lizzie_smoke_test.py` — single-record proof of concept for accession 715724 (the first record recovered).
+- `scripts/recover_patents_bulk.py` — full bulk pipeline. Parallel HTTP queries (6 workers default), resumable, idempotent via `ON CONFLICT DO UPDATE`. Run log streamed to `data/cadnsdi_bulk_run_<timestamp>.csv` with per-accession outcome.
+- `sql/update_all_patents_view_with_recovered.sql` — additive view extension that surfaces recovered patents through the `all_patents` view via a new `is_mappable` column.
+- `deploy_cadnsdi_recovery_to_cloud_sql.sh` — coordinated Cloud SQL deploy.
+- `fix_view_owner_and_retry.sh` — companion that applies the view DDL as `appuser` (the role that owns `all_patents` on Cloud SQL — Cloud SQL's `postgres` role isn't a true superuser and can't override object ownership).
 
 ### Wilson Report (1934)
 The Wilson Report documented the state of **212 Indian reservations** as of 1934, when the Indian Reorganization Act ended general allotment. Records original reservation areas, allotments made, and **23.2 million acres alienated** through sales and fee patents — the cumulative land loss of the allotment era.
@@ -160,6 +240,7 @@ The app runs at http://127.0.0.1:5001.
 | `murray_agency_removal` | 41 | Murray total acres removed by agency |
 | `murray_lands_acquired` | 23 | Federal lands acquired since 1930 |
 | `parcels_patents_by_tribe` | 401,811 | PLSS legal land descriptions |
+| `cadnsdi_recovered_patents` | 12,907 | Patents whose geometry was recovered from BLM CadNSDI (1,676 parcel-level, 11,231 section-level). Sourced via `scripts/recover_patents_bulk.py`. Joined into `all_patents` via the `is_mappable` column. |
 | `patent_file_references` | 66,840 | Distinct BIA NNNNN-YY archival file references with I.O. rollup + cluster aggregates |
 | `patent_file_ref_links` | 182,446 | Many-to-many between patents and file references, with per-link I.O. label evidence |
 | `cancelled_patent_research` | 439 | McMillen-compiled cancelled-patent metadata (legal authority, dates, CCF numbers) |

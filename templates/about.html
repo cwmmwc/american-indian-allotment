@@ -245,8 +245,8 @@
 
         <section class="mb-5" id="data-coverage">
             <h2>Data Coverage: Patents and the Map</h2>
-            <p>The research database contains <strong>285,870 allotment patents</strong> from the Bureau of Land Management General Land Office. Of these, <strong>239,845</strong> are displayed on the <a href="{{ url_for('allotment_map') }}">allotment map</a> — matched to parcels in the Public Land Survey System (PLSS). The remaining <strong>46,025 patents</strong> are searchable on the <a href="{{ url_for('patents_index') }}">patents page</a> but cannot be shown on the map.</p>
-            <p>The gap exists because the map was built by joining patent records to PLSS polygon geometry. Patents that could not be matched to a physical parcel were excluded. The largest gaps are:</p>
+            <p>The research database contains <strong>285,870 allotment patents</strong> from the Bureau of Land Management General Land Office. As of June 2026, <strong>252,752</strong> are displayed on the <a href="{{ url_for('allotment_map') }}">allotment map</a>: 239,845 from the original BLM aliquot Esri layer plus 12,907 recovered from BLM CadNSDI (see <a href="#cadnsdi-recovery">CadNSDI Recovery</a> below). The remaining <strong>33,690 patents</strong> are searchable on the <a href="{{ url_for('patents_index') }}">patents page</a> but still cannot be shown on the map.</p>
+            <p>The original gap of 46,025 patents existed because the map was built by joining patent records to PLSS polygon geometry. Patents that could not be matched to a physical parcel were excluded. The historical breakdown of the gap was:</p>
             <table class="table table-sm" style="max-width: 700px;">
                 <thead><tr><th>Category</th><th>Missing</th><th>Reason</th></tr></thead>
                 <tbody>
@@ -273,9 +273,40 @@
             <p>The 1919 patent describes <strong>government lots</strong> — Lot 1 NE and Lot 3 NW of Section 26. Government lots are the PLSS surveyors' way of handling fractional parcels: when a section is cut by a river, lake, state line, or earlier survey, the leftover land gets numbered (Lot 1, Lot 2…) rather than fitting the clean ¼-of-¼ grid. They carry <strong>irregular acreage</strong>, which is why this patent totals 38 acres instead of 40. The aliquot-keyed map layer doesn't carry lot-based polygons in the same form, so this patent never matched a parcel and was excluded.</p>
             <p>The underlying pattern across all 46,025 unmappable patents: most describe land through <strong>government lots, fractional sections, or metes-and-bounds</strong> — survey constructs that exist precisely <em>because</em> the rectangular PLSS aliquot grid could not accommodate them (rivers, lakes, Mexican land-grant boundaries in the Southwest, removal-era Indian land in the Southeast that predates the Public Land Survey). The land is real, surveyed, and on file with BLM. It simply lives in a different sub-layer than the one the map uses.</p>
 
-            <p><strong>Update (June 2026):</strong> This patent has now been recovered. BLM publishes a separate, more granular service called the <strong>PLSS CadNSDI Intersected layer</strong> that does carry government-lot polygons. We added a parallel pipeline that queries that layer for patents excluded from the aliquot mirror, dissolves the resulting polygons by their canonical lot identifier, and surfaces them on the map alongside the original aliquot-mapped patents. Lizzie's 1919 patent is the first record recovered through this pipeline — you can now <a href="{{ url_for('allotment_map') }}?accession=715724">view it on the map</a>. A bulk run for the remaining ~12,000 recoverable patents is planned.</p>
+            <p><strong>Update (June 2026):</strong> 12,907 of those originally unmappable patents have now been recovered through a separate, more granular BLM service called <strong>PLSS CadNSDI</strong>. Lizzie's 1919 patent is now on the map — you can <a href="{{ url_for('allotment_map') }}?accession=715724">view it here</a>. The remaining 33,690 patents stay unmappable: roughly 12,000 metes-and-bounds Southwest reservations, 7,900 pre-PLSS removal-era state patents from Alabama and Mississippi, and ~13,000 other special cases that need different geometry sources.</p>
 
             <p>The <a href="{{ url_for('patents_index') }}?mappable=no">patents page can be filtered</a> to show only the non-mappable patents, or use the "Map Status" dropdown to see both together.</p>
+        </section>
+
+        <section class="mb-5" id="cadnsdi-recovery">
+            <h2>CadNSDI Recovery: How 12,907 patents reached the map</h2>
+
+            <p>The original allotment map was built on a single BLM published feature service, the <em>tribal lands aliquot</em> layer, which renders patents matched to standard ¼-of-¼ aliquot subdivisions. That layer covered 239,845 of 285,870 patents. The 46,025-patent gap mostly consisted of records whose legal descriptions used government lots, fractional sections, or half-quarters — survey constructs that the aliquot-only layer doesn't carry.</p>
+
+            <p>In June 2026 a separate recovery pipeline reached past the aliquot layer to BLM's deeper authoritative source: the <strong>Cadastral National Spatial Data Infrastructure</strong>, or <strong>CadNSDI</strong>. This is the federal program (administered by BLM as the federal steward, with state stewards contributing data upward) that publishes the full Public Land Survey System as standardized vector geometry. The full PLSS at the atomic polygon level — every quarter-quarter, every government lot, every special-survey tract — is exposed as a public Esri ArcGIS REST API. The recovery pipeline queries that API per patent, pulls the matching polygons, and stores them in a separate parallel table that the map composes alongside the original aliquot layer.</p>
+
+            <h3 class="mt-4">Two precision levels: parcel and section</h3>
+
+            <p>The recovered records render at two different levels of precision depending on what CadNSDI publishes for that part of the country:</p>
+
+            <ul>
+                <li><strong>Parcel-level (1,676 records):</strong> the actual ~40-acre government lot or quarter-quarter subdivision. Rendered with the same solid yellow-fill / red-border highlight as the original aliquot-mapped patents. Lizzie's 1919 is in this bucket.</li>
+                <li><strong>Section-level (11,231 records):</strong> a 1-square-mile section box containing the actual parcel. Rendered with a dashed border and lighter fill, and the popup carries a note explaining the approximation. The actual parcel is somewhere inside the rendered square; the precise sub-section polygon isn't published.</li>
+            </ul>
+
+            <p>The reason for the split is structural, not arbitrary. State PLSS stewards (typically state geological surveys or land offices) submit their data to BLM at whatever depth of detail they choose. Oklahoma's Indian Meridian, Minnesota's 5th Principal Meridian, and Wyoming's Wind River Meridian generally publish full sub-section detail to the national index. Kansas and Nebraska under the 6th Principal Meridian generally do not — only the section perimeter is in the federal index, even though the underlying surveys obviously exist (the patents themselves prove that). So for KS and NE records, the best honest rendering is the section square that contains the parcel.</p>
+
+            <h3 class="mt-4">What's still not on the map</h3>
+
+            <p>33,690 patents remain unmappable. The three large groups are:</p>
+
+            <ul>
+                <li><strong>~12,000 Southwest metes-and-bounds reservations</strong> — Navajo, Gila River, Colorado River, Pueblo, Apache. These use non-rectangular surveys outside the PLSS grid, and their parcel geometry isn't in CadNSDI at all. Mapping them would require a different geometry source (BIA cadastral surveys, possibly individual reservation surveys).</li>
+                <li><strong>~7,900 pre-PLSS removal-era patents in Alabama and Mississippi</strong> — Chickasaw and Choctaw allotments from the 1830s–1850s, before the rectangular survey reached the Southeast. The relevant survey plats are paper artifacts; no vector polygon source exists.</li>
+                <li><strong>~13,000 other special cases</strong> — Wisconsin private claims (French/English-era grants that became Indian allotments), state-issued patents without standard allotment numbers, and edge cases where the legal description references something the national CadNSDI doesn't carry.</li>
+            </ul>
+
+            <p>For the technical detail of how the recovery works — the API endpoint, the query shape, the per-meridian coverage pattern — see the <a href="https://github.com/cwmmwc/american-indian-allotment#cadnsdi-patent-recovery-june-2026" target="_blank">CadNSDI Patent Recovery section of the README</a>.</p>
         </section>
 
         <section class="mb-5">
