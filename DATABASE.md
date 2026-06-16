@@ -288,6 +288,20 @@ Full patent catalog exported from the Rails admin application (land-sales.iath.v
 | Miscellaneous Volume Patent | ~1,000 | Various |
 | Other (Sioux Scrip, Chippewa Treaty, etc.) | ~325 | Specialized document types |
 
+### `people` / `patent_persons` / `patent_roles` (IATH person tables, loaded 2026-06-16)
+
+Imported from the IATH `land-sales` database export (`~/Desktop/iath_export/`, snapshot dated 2023-12-08). These decompose each patentee into structured first/last/middle name fields — the structure BLM's concatenated `full_name` lacks — and back the per-person name search in `patent_name_fuzzy_clauses()`. Schema and load: `sql/create_iath_people_tables.sql`. FK orphan check at load was clean (0 of 371,582 links unmatched).
+
+| Table | Rows | Key columns |
+|-------|-----:|-------------|
+| `people` | 316,776 | `id` PK; `glo_first_name`, `glo_last_name`, `glo_middle_name` (varchar); `tribe_id`, `gender_id` (source FKs, not enforced here) |
+| `patent_persons` | 371,582 | `id` PK; `patent_id` → `rails_patents(id)`; `person_id` → `people(id)`; `patent_role_id` → `patent_roles(id)`; `patentee_sequence_number` |
+| `patent_roles` | 1 | `id` PK; `name` (only value: `patentee`) |
+
+**Coverage:** 93.3% of `rails_patents` have at least one `patent_persons` row; the ~6.7% without one fall back to `full_name ILIKE` in search.
+
+**Indexes:** btree on `glo_first_name`, `glo_last_name`, `glo_middle_name`, `tribe_id`, `gender_id` (people) and on `patent_id`, `person_id`, `patent_role_id`, `patentee_sequence_number` (patent_persons). **Plus `gin_trgm_ops` GIN indexes** on `people.glo_first_name` and `people.glo_last_name` — required for the `%` similarity operator in name search (btree cannot serve a trigram predicate; without the GIN indexes a search seq-scans all 316k people).
+
 ### `tribe_name_map` (1,286 rows)
 
 Lookup table mapping raw `glo_tribe_name` values to normalized `preferred_name` values. Built by extracting the known mappings from records that appear in both `rails_patents` and `blm_allotment_patents`. Used by the `all_patents` view to normalize tribe names for the 46,025 non-BLM patents.

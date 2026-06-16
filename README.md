@@ -469,16 +469,27 @@ The May 2026 patentee name fix scraped `land-sales.iath.virginia.edu` to populat
 
 3. **Authoritative Federal Register data.** The `fedreg` table (35,686 rows) is the canonical source for forced fee claims. Our `federal_register_claims` table was imported separately and may have diverged. The IATH version is the authoritative copy maintained by the legacy site.
 
-### Pending work
+### Per-person name search (June 2026)
 
-The IATH export data has not yet been loaded into `allotment_research` to replace the scraped approximation. When done, this would involve:
+The IATH person tables are now loaded into `allotment_research` and drive patent name search. Schema and load script: `sql/create_iath_people_tables.sql`.
 
-- Importing `people` and `patent_persons` as new tables in `allotment_research`
-- Updating the `all_patents` view to join through `patent_persons` → `people` for names (replacing the scraped `full_name` column on `rails_patents`)
-- Comparing `fedreg` against `federal_register_claims` for any discrepancies
-- Updating Cloud SQL with the same changes
+| Table | Rows | Role |
+|---|---:|---|
+| `people` | 316,776 | One row per patentee, with structured `glo_first_name` / `glo_last_name` / `glo_middle_name` |
+| `patent_persons` | 371,582 | Links `patent_id` (→ `rails_patents.id`) to `person_id` (→ `people.id`); preserves multi-patentee structure |
+| `patent_roles` | 1 | Role lookup (everyone is `patentee`) |
 
-This is an improvement to data quality, not a structural change. The app code, views, and routes continue to work as-is with the scraped data until the reload happens.
+**Why it matters.** BLM's `full_name` mashes every allottee on a patent into one string (`MARY CARTER; WILLIAM CARTER; CALEB CARTER`), so the old fuzzy search (trigram on `full_name`) let a single common word carry a multi-word query: "rush roberts" returned **302** results because every `<x> ROBERTS` cleared the surname trigram alone. `patent_name_fuzzy_clauses()` in `app.py` now matches first and last name *separately, against the same person*, via an `EXISTS` over `patent_persons`/`people` (not a JOIN, so a patent with two matching people is counted once), OR'd with a `full_name ILIKE %query%` universal fallback. The per-person predicates use the `%` operator so the `gin_trgm_ops` indexes on the name columns are usable. Verified against the IATH source site: **rush roberts → 6, caleb carter → 2**.
+
+Search-box parsing: one token matches first OR last; two tokens match first AND last; three or more take the first token as the given name and the rest joined as the surname.
+
+**Deliberately deferred** — handled only by the `full_name ILIKE` fallback for now, *not* by structured matching: non-Western name order, particles (`van` / `de` / `la`), and bracketed/hyphenated surname clusters such as `VANDERVART` / `VANDERWART`. A search like "mary little bear" routes "little bear" to the surname field, which matches the hyphenated `LITTLE-BEAR` form well enough but is not guaranteed complete for every particle case.
+
+**Still pending:**
+- **Cloud SQL is not updated.** The load and code change are local only; production (Cloud SQL + Cloud Run) is unchanged pending review and an explicit deploy.
+- The `all_patents` view still exposes the scraped `full_name`; the rewrite reaches the person tables through the query's `EXISTS`, not through a view change. A future view-level join is optional, not required.
+- `fedreg` has not been compared against `federal_register_claims` for discrepancies.
+- The residual ~340–380 ms query latency is the `all_patents` view materialization (two seq-scan/hash-join branches over the full corpus), a pre-existing cost independent of name search — a separate optional optimization, not addressed here.
 
 ## Forced Fee & Related Claims Filter (June 2026)
 

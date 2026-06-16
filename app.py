@@ -145,13 +145,37 @@ DISPOSSESSION_WHERE_SQL = " OR ".join(
 )
 
 
-# Fuzzy name search (pg_trgm strict_word_similarity). The query is matched
-# against full_name as a phrase — strict_word_similarity finds the best
-# contiguous span in full_name and returns its similarity to the query.
-# Threshold 0.65 catches PHILIP/PHILLIP-style spelling drift while keeping
-# noise tight (e.g. "philip ross" doesn't surface "PHILIP MOSS" or
-# "PHILIP P. ROY"). The tradeoff is that more distant variants like
-# "RENCONTRE" (0.615 against "rencountre") are NOT caught at 0.65.
+# Fuzzy name search routes through the IATH person tables (people / patent_persons),
+# which decompose each patentee into glo_first_name / glo_last_name — structure that
+# BLM's concatenated full_name lacks. Matching first and last name SEPARATELY, against
+# the SAME person, is what keeps "rush roberts" to his 6 patents instead of the 302 the
+# old trigram-on-full_name approach returned (there, any "<x> ROBERTS" cleared the
+# surname trigram on its own). Verified against the IATH source site: rush roberts -> 6,
+# caleb carter -> 2.
+#
+# Predicate shape (the two halves are OR'd):
+#   1. full_name ILIKE %query%  — universal fallback. Precise because it matches the
+#      contiguous query string; this is NOT the source of the old noise (that was the
+#      removed <<% trigram half). Covers the ~6.7% of patents with no patent_persons
+#      row, plus any query the token parser cannot split (multi-word given names,
+#      particles, non-Western order).
+#   2. EXISTS over patent_persons/people — per-person, so first and last must match the
+#      SAME person. EXISTS (not a JOIN) so a patent with two matching people is counted
+#      once, not twice.
+#
+# Token parsing of the search box:
+#   1 token   -> match it against glo_first_name OR glo_last_name
+#   2 tokens  -> glo_first_name AND glo_last_name (the proven rush/caleb case)
+#   3+ tokens -> first token = given name, remaining tokens joined = surname
+#
+# Per-person predicates use the % operator (glo_first_name % %s) so a gin_trgm_ops index
+# on each name column CAN be used. An explicit similarity(...) >= 0.65 would force a
+# sequential scan even with the index present. The 0.65 cutoff is applied by SETting
+# pg_trgm.similarity_threshold per request at the call sites (see api_patents).
+#
+# DELIBERATELY DEFERRED to the ILIKE fallback for now, NOT handled: non-Western name
+# order, particles (van / de / la), and bracketed surname clusters such as VANDERVART /
+# VANDERWART. Tracked in README IATH "Pending work".
 NAME_FUZZY_THRESHOLD = 0.65
 
 
@@ -160,20 +184,45 @@ def patent_name_fuzzy_clauses(name_search):
     Build SQL pieces for fuzzy name search against all_patents.
 
     Returns None if name_search is empty/whitespace. Otherwise returns a dict:
-      where_sql/where_params:  predicate to AND into WHERE
+      where_sql/where_params:  predicate to AND into WHERE (correlates on all_patents.id)
       score_sql/score_params:  extra SELECT columns (literal_match int, sim_score float)
-      order_extras:            ORDER BY columns to PREPEND (literal-first, then sim desc)
+      order_extras:            ORDER BY columns to PREPEND (exact-first, then sim desc)
 
-    Caller is responsible for SET pg_trgm.strict_word_similarity_threshold and
-    for interleaving score_params before where_params in the final SQL execution.
+    The EXISTS predicate keys on all_patents.id, which the all_patents view defines as
+    rails_patents.id in both UNION branches; patent_persons.patent_id FKs to that id.
+    Caller must SET pg_trgm.similarity_threshold = NAME_FUZZY_THRESHOLD (for the %
+    operator) and interleave score_params before where_params at execution.
     """
     name_search = (name_search or "").strip()
     if not name_search:
         return None
     q = name_search.lower()
     ilike_pattern = f"%{name_search}%"
-    where_sql = "(full_name ILIKE %s OR %s <<%% full_name)"
-    where_params = [ilike_pattern, q]
+
+    tokens = name_search.split()
+    if len(tokens) == 1:
+        # one token: match it as either given name or surname
+        person_sql = "(pe.glo_first_name %% %s OR pe.glo_last_name %% %s)"
+        person_params = [tokens[0], tokens[0]]
+    elif len(tokens) == 2:
+        # two tokens: given AND surname must both match the same person
+        person_sql = "(pe.glo_first_name %% %s AND pe.glo_last_name %% %s)"
+        person_params = [tokens[0], tokens[1]]
+    else:
+        # 3+ tokens: first is the given name, the rest joined is the surname
+        person_sql = "(pe.glo_first_name %% %s AND pe.glo_last_name %% %s)"
+        person_params = [tokens[0], " ".join(tokens[1:])]
+
+    where_sql = (
+        "(full_name ILIKE %s OR EXISTS ("
+        "SELECT 1 FROM patent_persons pp JOIN people pe ON pe.id = pp.person_id "
+        "WHERE pp.patent_id = all_patents.id AND " + person_sql + "))"
+    )
+    where_params = [ilike_pattern] + person_params
+
+    # Scoring is display/ordering only and never widens the result set: literal_match
+    # anchors exact (contiguous) hits at the top; sim_score orders the fuzzy tail. The
+    # strict_word_similarity() function form needs no threshold GUC.
     score_sql = (
         "(full_name ILIKE %s)::int AS literal_match, "
         "strict_word_similarity(%s, full_name) AS sim_score"
@@ -1368,7 +1417,7 @@ def api_patents():
 
         if fuzzy:
             cur.execute(
-                f"SET LOCAL pg_trgm.strict_word_similarity_threshold = {NAME_FUZZY_THRESHOLD}"
+                f"SET LOCAL pg_trgm.similarity_threshold = {NAME_FUZZY_THRESHOLD}"
             )
 
         cur.execute("SELECT COUNT(*) as cnt FROM all_patents")
@@ -1558,7 +1607,7 @@ def api_patents_csv():
 
         if fuzzy:
             cur.execute(
-                f"SET LOCAL pg_trgm.strict_word_similarity_threshold = {NAME_FUZZY_THRESHOLD}"
+                f"SET LOCAL pg_trgm.similarity_threshold = {NAME_FUZZY_THRESHOLD}"
             )
 
         # CSV mirrors the displayed results: when fuzzy name search is active,
