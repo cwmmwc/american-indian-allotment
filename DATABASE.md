@@ -290,7 +290,7 @@ Full patent catalog exported from the Rails admin application (land-sales.iath.v
 
 ### `people` / `patent_persons` / `patent_roles` (IATH person tables, loaded 2026-06-16)
 
-Imported from the IATH `land-sales` database export (`~/Desktop/iath_export/`, snapshot dated 2023-12-08). These decompose each patentee into structured first/last/middle name fields — the structure BLM's concatenated `full_name` lacks — and back the per-person name search in `patent_name_fuzzy_clauses()`. Schema and load: `sql/create_iath_people_tables.sql`. FK orphan check at load was clean (0 of 371,582 links unmatched).
+Imported from the IATH `land-sales` database export (snapshot dated 2023-12-08; loose CSVs archived 2026-06-16 at `data/iath_export_2026-06-16.tar.gz`, extract to `~/Desktop/iath_export/` to reload). These decompose each patentee into structured first/last/middle name fields — the structure BLM's concatenated `full_name` lacks — and back the per-person name search in `patent_name_fuzzy_clauses()`. Schema and load: `sql/create_iath_people_tables.sql`. FK orphan check at load was clean (0 of 371,582 links unmatched).
 
 | Table | Rows | Key columns |
 |-------|-----:|-------------|

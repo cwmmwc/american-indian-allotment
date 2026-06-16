@@ -9,9 +9,11 @@
 #   1. cloud-sql-proxy running on 127.0.0.1:5433, e.g.:
 #        cloud-sql-proxy lunar-mercury-397321:us-east1:allotment-db --port 5433 &
 #      (The CadNSDI deploy used port 5433; adjust CONN below if yours differs.)
-#   2. The IATH export CSVs are on this machine at ~/Desktop/iath_export/
-#      (people.csv, patent_persons.csv, patent_roles.csv) — the paths the
-#      committed sql/create_iath_people_tables.sql \copy's from.
+#   2. The IATH export CSVs must be at ~/Desktop/iath_export/ (people.csv,
+#      patent_persons.csv, patent_roles.csv) — the paths the committed
+#      sql/create_iath_people_tables.sql \copy's from. They were archived
+#      2026-06-16 to data/iath_export_2026-06-16.tar.gz; restore them first:
+#        tar xzf data/iath_export_2026-06-16.tar.gz -C ~/Desktop
 #   3. Cloud SQL allotment_research already has rails_patents (it does); the
 #      patent_persons FK to rails_patents(id) must resolve. If Cloud SQL's
 #      rails_patents diverges from local, the load transaction aborts cleanly.

@@ -443,7 +443,7 @@ Direct PostgreSQL access to the IATH Rails database at `land-sales.iath.virginia
 psql "host=land-sales.iath.virginia.edu port=5432 user=cwm6w password=land-sales-access dbname=land-sales"
 ```
 
-**Exported tables** (CSV, at `~/Desktop/iath_export/`):
+**Exported tables** (full 36-table IATH source snapshot, archived in-repo at `data/iath_export_2026-06-16.tar.gz` — gitignored, 212 MB → 37 MB):
 
 | Table | Rows | Description |
 |-------|-----:|-------------|
@@ -457,7 +457,7 @@ psql "host=land-sales.iath.virginia.edu port=5432 user=cwm6w password=land-sales
 | `authorities` | 21 | Patent authority types |
 | `glo_tribes` | 1,412 | GLO tribe name variants |
 
-Export script: `export_iath_tables.sh`. User has read-only access (`SELECT` on tables; no `pg_dump` due to sequence permissions).
+Export script: `export_iath_tables.sh`. User has read-only access (`SELECT` on tables; no `pg_dump` due to sequence permissions). The loose CSVs were archived 2026-06-16 into `data/iath_export_2026-06-16.tar.gz`; to restore the `~/Desktop/iath_export/` tree the load scripts read from, run `tar xzf data/iath_export_2026-06-16.tar.gz -C ~/Desktop`. Verified redundant with the working DB before archiving — every large table is already loaded (`rails_patents`, `people`, `patent_persons`, `parcels_patents_by_tribe`, `federal_register_claims`, murray_*/wilson_* reshapes); only small lookups + the 255-row IATH `tribes` table are net-new and unloaded.
 
 ### What this improves over the scrape
 
