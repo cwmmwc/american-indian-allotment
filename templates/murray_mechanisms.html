@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}How Indian Land Left Trust Status (1948–57){% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>How Indian Land Left Trust Status, 1948–57</h1>
+    <p class="lead">During the termination decade, individual Indian land left trust status through many different legal mechanisms — sale, fee patent, public taking, removal of restrictions, and others. Murray Memorandum <strong>Table XII</strong> recorded the volume of these transactions by type, agency by agency. This page breaks that record down by mechanism.</p>
+</div>
+
+<!-- Summary stat cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" style="color:#8b0000;">{{ '{:,}'.format(dispossession) }}</div>
+            <div class="stat-card-label">Dispossession transactions (1948–57)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" style="color:#708090;">{{ '{:,}'.format(inheritance) }}</div>
+            <div class="stat-card-label">Inheritance / heirship <span class="text-muted">(set apart)</span></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ agencies_total }}</div>
+            <div class="stat-card-label">BIA agencies reported</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ families|selectattr('set_apart','equalto',false)|list|length }}</div>
+            <div class="stat-card-label">Distinct dispossession mechanisms</div>
+        </div>
+    </div>
+</div>
+
+<!-- Overall mechanism mix -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Mechanisms of Dispossession, All Agencies (1948–57)</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Total transactions removing individual Indian land from trust status, by mechanism, ranked by volume. Inheritance and heirship are shown separately below — they move land out of trust through a death/devise channel rather than dispossession, and are not part of this total. Source: Table XII (pp. 81–87).</p>
+        <canvas id="overallChart" height="120"></canvas>
+    </div>
+</div>
+
+<!-- Inheritance, set apart -->
+<div class="card mb-4 border-secondary">
+    <div class="card-header bg-light">
+        <h2 class="h5 mb-0">Set apart: Inheritance, Heirship & Probate</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-2">Land that left individual trust status through inheritance, devise, heirship determination, or probate — a distinct phenomenon kept separate from the dispossession mechanisms above. {{ '{:,}'.format(inheritance) }} transactions across the agencies that reported this channel.</p>
+        <canvas id="inheritanceChart" height="60"></canvas>
+    </div>
+</div>
+
+<!-- Per-agency drill-down -->
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h2 class="h5 mb-0">Mechanism Profile by Agency</h2>
+        <select id="agencySelect" class="form-select form-select-sm" style="max-width: 360px;"></select>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Each BIA agency lost trust land through a different mix of mechanisms — Crow's profile is not Fort Berthold's. Pick an agency to see its breakdown. Agencies that map to a tribe link through to that tribe's patents.</p>
+        <div id="agencyMeta" class="mb-3 small"></div>
+        <canvas id="agencyChart" height="90"></canvas>
+    </div>
+</div>
+
+<!-- Data caveats -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Reading This Data</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h3 class="h6" style="color: var(--brand-medium);">Agency-reported categories</h3>
+                <p class="text-muted small">The mechanism names are as each agency reported them in 1958. Agencies used different labels for the same act — one wrote "sales to fee status," another "sales to fee status or to non-Indians." These have been grouped into the families shown, but the grouping is an interpretive choice, not the document's own.</p>
+                <h3 class="h6" style="color: var(--brand-medium);">Reconciliation gap</h3>
+                <p class="text-muted small">The itemized mechanism counts do <strong>not</strong> always sum to an agency's reported gross total — the columns are not a mutually-exclusive partition, and {{ gap_count }} of {{ agencies_total }} agencies show a gap. Per-agency totals below report both figures so the discrepancy is visible.</p>
+            </div>
+            <div class="col-md-6">
+                <h3 class="h6" style="color: var(--brand-medium);">Agencies reporting no disposal</h3>
+                <p class="text-muted small mb-1">{{ zero_agencies|length }} agencies reported zero individual-trust disposal in Table XII for 1948–57. Their absence from the breakdown is itself a finding:</p>
+                <p class="small">{{ zero_agencies|join(', ') }}.</p>
+            </div>
+        </div>
+        <hr>
+        <p class="text-muted small mb-0">Source: Senator James E. Murray, <em>Indian Land Transactions</em> (1958), Table XII (pp. 81–87), <a href="https://land-sales.iath.virginia.edu/murray_p081-87_t12.php" target="_blank">digitized at IATH</a>. Derived table: <code>murray_trust_exit_mechanisms</code>.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    var families   = {{ families|tojson }};
+    var byAgency   = {{ by_agency|tojson }};
+
+    // Stable color per family (dispossession = warm; inheritance = neutral gray)
+    var FAMILY_COLORS = {
+        "Sale out of trust":                  "#8b0000",
+        "Fee patent":                         "#b22222",
+        "Public taking / condemnation":       "#cd5c5c",
+        "Removal of restrictions":            "#d2691e",
+        "Certificates of competency":         "#daa520",
+        "Exchange":                           "#4682b4",
+        "Partition":                          "#5f9ea0",
+        "Gift":                               "#708090",
+        "Other / removal":                    "#a9a9a9",
+        "Inheritance / heirship / probate":   "#9e9e9e"
+    };
+    function colorFor(fam) { return FAMILY_COLORS[fam] || "#777"; }
+    function fmt(n) { return Math.round(n).toLocaleString(); }
+
+    // ─── Overall dispossession mechanisms (horizontal bar, ranked) ───
+    var disp = families.filter(function(f){ return !f.set_apart; })
+                       .sort(function(a,b){ return b.txns - a.txns; });
+    new Chart(document.getElementById('overallChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: disp.map(function(f){ return f.family; }),
+            datasets: [{
+                label: 'Transactions',
+                data: disp.map(function(f){ return f.txns; }),
+                backgroundColor: disp.map(function(f){ return colorFor(f.family); }),
+                borderWidth: 0
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: function(ctx){
+                    var f = disp[ctx.dataIndex];
+                    return fmt(ctx.parsed.x) + ' transactions  (' + f.agencies + ' agencies)';
+                } } }
+            },
+            scales: { x: { beginAtZero: true, title: { display: true, text: 'Transactions' } } }
+        }
+    });
+
+    // ─── Inheritance, set apart ───
+    var inh = families.filter(function(f){ return f.set_apart; });
+    new Chart(document.getElementById('inheritanceChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: inh.map(function(f){ return f.family; }),
+            datasets: [{
+                data: inh.map(function(f){ return f.txns; }),
+                backgroundColor: inh.map(function(f){ return colorFor(f.family); }),
+                borderWidth: 0
+            }]
+        },
+        options: {
+            indexAxis: 'y', responsive: true,
+            plugins: { legend: { display: false },
+                tooltip: { callbacks: { label: function(ctx){ return fmt(ctx.parsed.x) + ' transactions'; } } } },
+            scales: { x: { beginAtZero: true } }
+        }
+    });
+
+    // ─── Per-agency drill-down ───
+    var sel = document.getElementById('agencySelect');
+    // only agencies with an itemized breakdown populate the selector
+    var pickable = byAgency.filter(function(a){ return a.families.length > 0; });
+    pickable.forEach(function(a, i) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = a.agency + (a.blm_tribe_name ? '  →  ' + a.blm_tribe_name : '')
+                          + '   (' + fmt(a.itemized_total || 0) + ')';
+        sel.appendChild(opt);
+    });
+
+    var agencyChart = new Chart(document.getElementById('agencyChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0 }] },
+        options: {
+            indexAxis: 'y', responsive: true,
+            plugins: { legend: { display: false },
+                tooltip: { callbacks: { label: function(ctx){ return fmt(ctx.parsed.x) + ' transactions'; } } } },
+            scales: { x: { beginAtZero: true, title: { display: true, text: 'Transactions' } } }
+        }
+    });
+
+    function drawAgency(i) {
+        var a = pickable[i];
+        var fams = a.families.slice().sort(function(x,y){ return y.txns - x.txns; });
+        agencyChart.data.labels = fams.map(function(f){ return f.family; });
+        agencyChart.data.datasets[0].data = fams.map(function(f){ return f.txns; });
+        agencyChart.data.datasets[0].backgroundColor = fams.map(function(f){ return colorFor(f.family); });
+        agencyChart.update();
+
+        var meta = '<strong>' + a.agency + '</strong>';
+        if (a.blm_tribe_name) {
+            meta += ' &nbsp;·&nbsp; <a href="{{ url_for("patents_index") }}?tribe='
+                  + encodeURIComponent(a.blm_tribe_name) + '">' + a.blm_tribe_name + ' patents →</a>';
+        }
+        meta += ' &nbsp;·&nbsp; reported total: ' + (a.reported_total != null ? fmt(a.reported_total) : '—')
+              + ' &nbsp;·&nbsp; itemized: ' + fmt(a.itemized_total || 0);
+        if (a.gap != null && a.gap !== 0) {
+            var dir = a.gap > 0 ? 'reported but not itemized by type' : 'itemized exceeds reported total (overlapping categories)';
+            meta += ' &nbsp;·&nbsp; <span style="color:#b22222;">gap ' + fmt(a.gap) + ' — ' + dir + '</span>';
+        }
+        document.getElementById('agencyMeta').innerHTML = meta;
+    }
+
+    sel.addEventListener('change', function(){ drawAgency(parseInt(this.value, 10)); });
+    if (pickable.length) drawAgency(0);
+});
+</script>
+{% endblock %}

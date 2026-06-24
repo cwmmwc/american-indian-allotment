@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Indian Land by State, to 1934{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+    #wilsonMap { height: 520px; border-radius: 6px; background: #f3f1ec; }
+    .wilson-legend { background: rgba(255,255,255,0.92); padding: 8px 10px; border-radius: 4px;
+                     font-size: 0.8rem; line-height: 1.4; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+    .wilson-legend i { width: 16px; height: 16px; display: inline-block; margin-right: 6px;
+                       opacity: 0.85; vertical-align: -3px; }
+    .metric-btn.active { background: var(--brand-medium, #8b0000); color: #fff; border-color: var(--brand-medium, #8b0000); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Indian Land by State, to 1934</h1>
+    <p class="lead">By 1934, of <strong>{{ '{:,.0f}'.format(national.gross_acres) }}</strong> gross acres of Indian tribal land nationwide, <strong>{{ '{:,.0f}'.format(national.deductions_total) }}</strong> had been deducted through cession, surplus-land sales, and other losses. A further <strong>{{ '{:,.0f}'.format(national.allotments_acres) }}</strong> acres had been allotted to individuals, of which <strong>{{ '{:,.0f}'.format(national.allotments_alienated_acres) }}</strong> were already alienated. Senator Wilson's report recorded the arithmetic state by state.</p>
+</div>
+
+<!-- Summary stat cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ '{:,.0f}'.format(national.original_acres) }}</div>
+            <div class="stat-card-label">Original tribal acres</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" style="color:#8b0000;">{{ '{:,.0f}'.format(national.deductions_total) }}</div>
+            <div class="stat-card-label">Tribal acres deducted (ceded, surplus, misc.)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number">{{ '{:,.0f}'.format(national.allotments_acres) }}</div>
+            <div class="stat-card-label">Allotted to individuals</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 text-center p-3">
+            <div class="stat-card-number" style="color:#b22222;">{{ '{:,.0f}'.format(national.allotments_alienated_acres) }}</div>
+            <div class="stat-card-label">Allotted acres alienated</div>
+        </div>
+    </div>
+</div>
+
+<!-- Choropleth map -->
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h2 class="h5 mb-0">Where Tribal Land Was Lost, by State</h2>
+        <div class="btn-group btn-group-sm" role="group" id="metricToggle">
+            <button type="button" class="btn btn-outline-dark metric-btn active" data-metric="deductions_total">Acres removed</button>
+            <button type="button" class="btn btn-outline-dark metric-btn" data-metric="pct">Share removed</button>
+            <button type="button" class="btn btn-outline-dark metric-btn" data-metric="alienated">Allotted alienated</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Each state shaded by the selected measure of tribal land loss up to September 1934. States with no recorded reservation land are left blank. Hover a state for its full breakdown. Source: Table VII.</p>
+        <div id="wilsonMap"></div>
+    </div>
+</div>
+
+<!-- The deduction arc, by state -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">How Tribal Land Was Removed, by State</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Tribal land deducted from trust, broken into the three categories Wilson tracked — land ceded by treaty/agreement, "surplus" land opened to non-Indian settlement after allotment, and miscellaneous losses. Source: Table VII.</p>
+        <canvas id="deductChart" height="200"></canvas>
+    </div>
+</div>
+
+<!-- 1934 ownership composition -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Who Held the Remaining Reservation Land in 1934, by State</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">The reservation acreage still in trust in 1934, by holder: land allotted to living individuals, land of deceased allottees (held in heirship), tribally-held land, and government land. Source: Table V.</p>
+        <canvas id="ownershipChart" height="200"></canvas>
+    </div>
+</div>
+
+<!-- Data notes -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Reading This Data</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-2">Tables V and VII reconcile internally (the deduction categories sum to the deduction total; ownership categories sum to the 1934 total). The two tables measure different things and are not additive with each other: Table VII is the cumulative <em>loss arc</em> of tribal land up to 1934, while Table V is the <em>composition</em> of what remained in trust in 1934.</p>
+        <p class="text-muted small mb-2">"Allotted" acreage (Table VII) is land carved out of tribal holdings and assigned to individuals; "alienated" is the portion of that already passed out of Indian ownership. Allotment is a separate channel from the ceded/surplus/miscellaneous tribal-land deductions, so the two should not be summed.</p>
+        <p class="text-muted small mb-0">Source: Bureau of Indian Affairs land statistics compiled for the 1934 Wilson Report, Tables V (p. 5) and VII (p. 7), <a href="https://land-sales.iath.virginia.edu/" target="_blank">digitized at IATH</a>. Derived tables: <code>wilson_land_loss_by_state</code>, <code>wilson_ownership_1934_by_state</code>.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    var loss      = {{ loss|tojson }};
+    var ownership = {{ ownership|tojson }};
+    var lossByState = {}; loss.forEach(function(d){ lossByState[d.state] = d; });
+
+    function fmtAcres(v) { return Math.round(v).toLocaleString() + ' acres'; }
+    function fmtPct(v)   { return v.toFixed(1) + '%'; }
+
+    var METRICS = {
+        deductions_total: { label: 'Tribal acres removed', fmt: fmtAcres,
+            val: function(d){ return d.deductions_total; } },
+        pct: { label: 'Share of tribal land removed', fmt: fmtPct,
+            val: function(d){ return d.gross_acres ? d.deductions_total / d.gross_acres * 100 : 0; } },
+        alienated: { label: 'Allotted acres alienated', fmt: fmtAcres,
+            val: function(d){ return d.allotments_alienated_acres; } }
+    };
+    var metric = 'deductions_total';
+
+    // ─── Leaflet choropleth ───
+    var map = L.map('wilsonMap', { scrollWheelZoom: false, attributionControl: false })
+               .setView([39.5, -98.35], 4);
+
+    var REDS = ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15','#67000d'];
+    function maxFor(m) {
+        return Math.max.apply(null, loss.map(function(d){ return METRICS[m].val(d); }));
+    }
+    function colorFor(value, m) {
+        if (value == null || value === 0) return '#e8e6e1';
+        var frac = value / (maxFor(m) || 1);
+        var i = Math.min(REDS.length - 1, Math.floor(frac * REDS.length));
+        return REDS[i];
+    }
+    function styleFn(feature) {
+        var d = lossByState[feature.properties.name];
+        return {
+            fillColor: d ? colorFor(METRICS[metric].val(d), metric) : '#f3f1ec',
+            weight: 1, opacity: 1, color: '#bbb', fillOpacity: d ? 0.85 : 0.3
+        };
+    }
+    function tipHtml(name, d) {
+        if (!d) return '<strong>' + name + '</strong><br><span class="text-muted">No reservation land recorded (1934)</span>';
+        var pct = d.gross_acres ? (d.deductions_total / d.gross_acres * 100).toFixed(1) : '—';
+        return '<strong>' + name + '</strong><br>'
+             + 'Original tribal: ' + Math.round(d.original_acres).toLocaleString() + ' ac<br>'
+             + 'Deducted: ' + Math.round(d.deductions_total).toLocaleString() + ' ac (' + pct + '%)<br>'
+             + '&nbsp;&nbsp;ceded ' + Math.round(d.ceded_acres).toLocaleString()
+             + ' · surplus ' + Math.round(d.surplus_acres).toLocaleString()
+             + ' · misc ' + Math.round(d.miscellaneous_acres).toLocaleString() + '<br>'
+             + 'Allotted: ' + Math.round(d.allotments_acres).toLocaleString()
+             + ' ac (alienated ' + Math.round(d.allotments_alienated_acres).toLocaleString() + ')';
+    }
+
+    var geoLayer;
+    var legend = L.control({ position: 'bottomright' });
+    legend.onAdd = function() { this._div = L.DomUtil.create('div', 'wilson-legend'); return this._div; };
+    legend.addTo(map);
+    function updateLegend() {
+        var mx = maxFor(metric), html = '<strong>' + METRICS[metric].label + '</strong><br>';
+        for (var i = 0; i < REDS.length; i++) {
+            var lo = (mx * i / REDS.length);
+            html += '<i style="background:' + REDS[i] + '"></i>' +
+                    (metric === 'pct' ? (lo*1).toFixed(0)+'%' : Math.round(lo).toLocaleString()) +
+                    (i < REDS.length - 1 ? '+' : '+') + '<br>';
+        }
+        html += '<i style="background:#e8e6e1"></i>none recorded';
+        legend._div.innerHTML = html;
+    }
+
+    fetch("{{ url_for('static', filename='data/us-states.geojson') }}")
+      .then(function(r){ return r.json(); })
+      .then(function(gj){
+          geoLayer = L.geoJSON(gj, {
+              style: styleFn,
+              onEachFeature: function(feature, layer) {
+                  var d = lossByState[feature.properties.name];
+                  layer.bindTooltip(tipHtml(feature.properties.name, d), { sticky: true });
+                  layer.on('mouseover', function(){ this.setStyle({ weight: 2.5, color: '#333' }); });
+                  layer.on('mouseout',  function(){ geoLayer.resetStyle(this); });
+              }
+          }).addTo(map);
+          try { map.fitBounds(geoLayer.getBounds(), { padding: [10,10] }); } catch(e) {}
+          updateLegend();
+      });
+
+    $('#metricToggle .metric-btn').on('click', function() {
+        $('#metricToggle .metric-btn').removeClass('active');
+        $(this).addClass('active');
+        metric = $(this).data('metric');
+        if (geoLayer) geoLayer.setStyle(styleFn);
+        updateLegend();
+    });
+
+    // ─── Deduction arc stacked bar (by state) ───
+    new Chart(document.getElementById('deductChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: loss.map(function(d){ return d.state; }),
+            datasets: [
+                { label: 'Ceded',         data: loss.map(function(d){ return d.ceded_acres; }),         backgroundColor: '#8b0000' },
+                { label: 'Surplus opened',data: loss.map(function(d){ return d.surplus_acres; }),       backgroundColor: '#cd5c5c' },
+                { label: 'Miscellaneous', data: loss.map(function(d){ return d.miscellaneous_acres; }), backgroundColor: '#daa520' }
+            ]
+        },
+        options: {
+            indexAxis: 'y', responsive: true,
+            plugins: { tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtAcres(ctx.parsed.x); } } } },
+            scales: {
+                x: { stacked: true, beginAtZero: true, title: { display: true, text: 'Acres deducted' },
+                     ticks: { callback: function(v){ return (v/1e6).toFixed(0) + 'M'; } } },
+                y: { stacked: true }
+            }
+        }
+    });
+
+    // ─── 1934 ownership composition stacked bar (by state) ───
+    new Chart(document.getElementById('ownershipChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ownership.map(function(d){ return d.state; }),
+            datasets: [
+                { label: 'Living allottee',   data: ownership.map(function(d){ return d.living_allottee_acres; }),   backgroundColor: '#4682b4' },
+                { label: 'Deceased (heirship)',data: ownership.map(function(d){ return d.deceased_allottee_acres; }), backgroundColor: '#5f9ea0' },
+                { label: 'Tribal',            data: ownership.map(function(d){ return d.tribal_acres; }),            backgroundColor: '#2e6a2e' },
+                { label: 'Government',        data: ownership.map(function(d){ return d.government_acres; }),        backgroundColor: '#a9a9a9' }
+            ]
+        },
+        options: {
+            indexAxis: 'y', responsive: true,
+            plugins: { tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtAcres(ctx.parsed.x); } } } },
+            scales: {
+                x: { stacked: true, beginAtZero: true, title: { display: true, text: 'Acres in trust, 1934' },
+                     ticks: { callback: function(v){ return (v/1e6).toFixed(0) + 'M'; } } },
+                y: { stacked: true }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

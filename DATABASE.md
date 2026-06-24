@@ -489,6 +489,88 @@ Local mirror of a tribal-land-patents-aliquot feature service hosted on **UVA Li
 
 **Top tribes by forced fee count:** Blackfeet (2,886), Crow (1,645), Cheyenne River Sioux (1,407), Oglala Lakota (1,316), Standing Rock Sioux (1,253), Rosebud Sioux (1,236).
 
+## The `iath` schema — raw source research layer
+
+A separate Postgres schema, `iath`, holds **verbatim transcriptions of the Murray Memorandum
+and Wilson Report source tables** from the upstream IATH `land-sales` database, loaded by
+`scripts/load_iath_source_tables.sh` (streams directly from
+`land-sales.iath.virginia.edu`, types read from the IATH catalog).
+
+**Layering rule:** the Flask app reads `public` only; it **never queries `iath`**. The
+`public` working tables (`murray_*`, `wilson_*` that power `/murray`, `/wilson`, `/dubois`,
+`/patents/timeline`, tribe pages) are *derived from* this layer. `iath` exists for (a) doing
+history against the original figures with their footnotes and methodology intact, and
+(b) auditing the derived working tables by re-deriving and diffing against source.
+
+Why this exists: the original `public` `murray_*`/`wilson_*` tables were built by scraping the
+rendered HTML of the IATH website — an accurate but **partial and lossy** re-transcription of
+data that lives cleanly in the IATH database. `iath` makes that database the single source of
+truth; the scrape scripts (`scripts/scrape_murray_*.py`, `scrape_wilson_*.py`) are retired as
+the pipeline.
+
+**Scope / production:** `iath` is a **local-only research layer** — it is *not* pushed to
+Cloud SQL. Only the derived `public` working tables reach production.
+
+| `iath` table | Rows | What it adds over the old scrape |
+|---|---:|---|
+| `murray_p081_87_t12` | 52 | ~40-way breakdown of *how* land left trust (fee patents, competency certs, partition, public takings, escheat…) — never scraped |
+| `murray_p046_48_t17_25` | 52 | acres taken for public purposes vs. sold to tribe — never scraped |
+| `murray_p041_45_t05_13` | 52 | trust removed, **agency × year** 1948–57 (scrape kept only area-office × year) |
+| `murray_p078_80_t02_10` | 52 | disposal transaction counts, agency × year (faithfully in `murray_transactions`) |
+| `murray_p096_98_t02_10` | 52 | federal lands acquired since 1930, by agency |
+| `murray_p100_112_q1_2_3` | 52 | comparative trust acres 1947 vs 1957 (faithfully in `murray_comparative`) |
+| `murray_titles` / `murray_footnotes` | 6 / 10 | table titles + caveat footnotes |
+| `wilson_t05` | 24 | 1934 acreage by state, ownership/character — never scraped |
+| `wilson_t06` | 215 | per-reservation 1934 stats incl. ceded/surplus/miscellaneous land-loss split |
+| `wilson_t07` | 24 | original tribal acreage + deductions, by state — never scraped |
+| `wilson_t08` | 33 | annual allotted-land sales 1903–34 (faithfully in `wilson_annual_sales`) |
+| `wilson_t06_grand_totals` | 24 | national grand totals |
+| `wilson_titles` / `wilson_footnotes` | 4 / 66 | table titles/methodology + caveat footnotes |
+
+**Derived working tables built from `iath` so far:**
+
+- `public.murray_trust_exit_mechanisms` (194 rows) — long-format breakdown of *how* individual
+  Indian land left trust status, 1948–57, per agency, from `iath.murray_p081_87_t12`
+  (Table XII). Built by `scripts/build_trust_exit_mechanisms.py`. One row per
+  agency × reported mechanism; carries `mechanism_raw`, `mechanism_family` (the
+  historian-agreed taxonomy — fee patent / removal of restrictions / certificates of
+  competency are **separate** families; `set_apart=TRUE` marks inheritance/heirship as
+  distinct from dispossession), `transactions`, `blm_tribe_name` (reused from
+  `map_murray_to_blm.MURRAY_TO_BLM`), and per-agency `reported_total` / `itemized_total` /
+  `reconciliation_gap`. Source caveat: the raw columns are agency-chosen synonyms and do **not**
+  cleanly partition the reported total (30 of 52 agencies reconcile; the gap is a column, not
+  hidden). Zero-disposal agencies are kept as rows. Family totals: Sale out of trust 9,979 ·
+  Fee patent 4,467 · Public taking/condemnation 1,928 · Removal of restrictions 597 ·
+  Certificates of competency 280 · Exchange 330 · Partition 84 · Gift 46 · Other 63 ·
+  Inheritance (set apart) 564.
+
+- `public.wilson_land_loss_by_state` (24 rows) and `public.wilson_ownership_1934_by_state`
+  (24 rows) — state-level Wilson Report tables from `iath.wilson_t07` (Table VII — original
+  tribal acreage and the deductions from it: ceded / surplus-opened / miscellaneous, plus
+  allotted acreage and acres alienated) and `iath.wilson_t05` (Table V — 1934 reservation
+  acreage by ownership: living allottee / deceased-heirship / tribal / government). Built by
+  `sql/build_wilson_state_tables.sql` (straight typed copy + clearer names + `is_national_total`
+  flag for the source "All" row; both tables reconcile internally, so no taxonomy/gap handling).
+  Power the `/wilson/states` page (US choropleth + per-state stacked bars). National totals:
+  130,730,190 original tribal acres · 64,468,984 deducted · 40,848,172 allotted · 23,225,472
+  alienated.
+
+**Consolidation status:** the five Murray working tables (`murray_comparative`,
+`murray_transactions`, `murray_lands_acquired`, `murray_trust_removal`, `murray_agency_removal`)
+are now **rebuilt from `iath`** by `scripts/rebuild_murray_from_iath.py`; the Murray scrape
+scripts are retired to `scripts/archive/`. The rebuild restored 4 `tribal_acres_1947` values the
+HTML scrape had silently dropped (Hopi 2,472,166; San Carlos 1,622,484; Uintah and Ouray
+983,010.83; Western Washington 29,552). The two Wilson working tables are now **also rebuilt from `iath`**:
+`wilson_annual_sales` (`scripts/rebuild_wilson_annual_sales.py`, drops the wilson_t08 grand-total
+row) and `wilson_table_vi` (`scripts/rebuild_wilson_table_vi.py`). The wilson_table_vi rebuild
+restored 3 reservations the scrape dropped and **corrected corrupted totals** from the HTML
+parser (e.g. Mission/Capitan Grande tribal acres 159,903,940 → 19,930; Fort Apache govt
+230,327 → 2,330) and a footnote-mangled date. **All IATH-website scrape scripts are now retired
+to `scripts/archive/`** (`scrape_murray_*`, `scrape_wilson_*`); `map_murray_to_blm.py` and
+`map_wilson_to_blm.py` stay (their dicts are reused by the rebuilds). The single-source-of-truth
+consolidation (iath → public working tables) is complete. See
+`pending_work/iath_murray_wilson_consolidation.md`.
+
 ## Backup
 
 The complete database is preserved as `allotment_research.sql` (110 MB), a `pg_dump` export. To restore:

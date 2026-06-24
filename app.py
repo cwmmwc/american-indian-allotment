@@ -3495,6 +3495,118 @@ def murray():
         conn.close()
 
 
+@app.route("/murray/mechanisms")
+def murray_mechanisms():
+    """How individual Indian land left trust status, 1948–57 (Murray Memorandum Table XII).
+
+    Reads public.murray_trust_exit_mechanisms (derived from iath.murray_p081_87_t12).
+    Dispossession families and the set-apart inheritance channel are kept distinct;
+    the per-agency reconciliation gap is surfaced rather than hidden.
+    """
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # Overall family totals (dispossession families + inheritance, set apart)
+        cur.execute("""
+            SELECT mechanism_family, set_apart, family_sort,
+                   SUM(transactions) AS txns, COUNT(DISTINCT agency) AS agencies
+            FROM murray_trust_exit_mechanisms
+            WHERE mechanism_family IS NOT NULL
+            GROUP BY mechanism_family, set_apart, family_sort
+            ORDER BY family_sort
+        """)
+        families = [{"family": r["mechanism_family"], "set_apart": r["set_apart"],
+                     "txns": int(r["txns"]), "agencies": int(r["agencies"])}
+                    for r in cur.fetchall()]
+
+        # Per-agency breakdown — agency is the native unit of Table XII (all 52,
+        # including multi-tribe agencies that don't map to a single BLM tribe).
+        cur.execute("""
+            SELECT agency, blm_tribe_name, reported_total, itemized_total,
+                   reconciliation_gap, mechanism_family, set_apart, family_sort, transactions
+            FROM murray_trust_exit_mechanisms
+            ORDER BY agency, family_sort
+        """)
+        agencies = {}
+        for r in cur.fetchall():
+            a = agencies.setdefault(r["agency"], {
+                "agency": r["agency"], "blm_tribe_name": r["blm_tribe_name"],
+                "reported_total": r["reported_total"], "itemized_total": r["itemized_total"],
+                "gap": r["reconciliation_gap"], "families": []})
+            if r["mechanism_family"]:
+                a["families"].append({"family": r["mechanism_family"],
+                                      "set_apart": r["set_apart"],
+                                      "txns": int(r["transactions"])})
+        by_agency = sorted(agencies.values(),
+                           key=lambda x: (x["itemized_total"] or 0), reverse=True)
+
+        dispossession = sum(f["txns"] for f in families if not f["set_apart"])
+        inheritance = sum(f["txns"] for f in families if f["set_apart"])
+        zero_agencies = [a["agency"] for a in by_agency
+                         if (a["reported_total"] or 0) == 0 and not a["families"]]
+        gap_agencies = [a for a in by_agency if a["gap"] not in (0, None)]
+
+        return render_template("murray_mechanisms.html",
+                               families=families, by_agency=by_agency,
+                               dispossession=dispossession, inheritance=inheritance,
+                               agencies_total=len(by_agency),
+                               zero_agencies=zero_agencies,
+                               gap_count=len(gap_agencies))
+    finally:
+        conn.close()
+
+
+@app.route("/wilson/states")
+def wilson_states():
+    """Indian land by state, to 1934 — Wilson Report Tables V & VII (state level).
+
+    Reads public.wilson_land_loss_by_state (Table VII — original tribal acreage and
+    the deductions from it) and public.wilson_ownership_1934_by_state (Table V — the
+    1934 ownership composition). Both derived from the iath raw layer; both reconcile
+    cleanly, so no taxonomy/gap handling is needed here.
+    """
+    conn = get_db()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        def fnum(v):
+            return float(v) if v is not None else 0
+
+        cur.execute("""
+            SELECT state, original_acres, added_acres, gross_acres,
+                   ceded_acres, surplus_acres, miscellaneous_acres, deductions_total,
+                   allotments_number, allotments_acres, allotments_alienated_acres
+            FROM public.wilson_land_loss_by_state
+            WHERE NOT is_national_total
+            ORDER BY deductions_total DESC NULLS LAST
+        """)
+        loss = []
+        for r in cur.fetchall():
+            loss.append({k: (r[k] if k == "state" else fnum(r[k])) for k in r})
+
+        cur.execute("SELECT * FROM public.wilson_land_loss_by_state WHERE is_national_total")
+        nat = cur.fetchone()
+        national = {k: (nat[k] if k in ("state", "is_national_total", "source") else fnum(nat[k]))
+                    for k in nat}
+
+        cur.execute("""
+            SELECT state, living_allottee_acres, deceased_allottee_acres,
+                   tribal_acres, government_acres, total_acres
+            FROM public.wilson_ownership_1934_by_state
+            WHERE NOT is_national_total
+            ORDER BY total_acres DESC NULLS LAST
+        """)
+        ownership = []
+        for r in cur.fetchall():
+            ownership.append({k: (r[k] if k == "state" else fnum(r[k])) for k in r})
+
+        return render_template("wilson_states.html",
+                               loss=loss, ownership=ownership, national=national)
+    finally:
+        conn.close()
+
+
 @app.route("/dubois")
 def dubois():
     """Du Bois-inspired data visualizations."""
